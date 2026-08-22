@@ -1,0 +1,36 @@
+# Preprocessing Requirements
+
+## Goal
+
+Normalize candidate answers without destroying meaningful programming reasoning.
+
+## Input
+
+Raw candidate answer.
+
+## Required Handling
+
+The preprocessing stage must handle:
+
+- Extra whitespace
+- Formatting
+- Repeated text
+- Empty answers
+- Very long answers
+- Special characters
+
+## Important Rule
+
+Meaningful reasoning must not be removed during preprocessing.
+
+## Output
+
+The original answer must always be preserved.
+
+Expected structure:
+
+```json
+{
+  "original_answer": "...",
+  "normalized_answer": "..."
+}
