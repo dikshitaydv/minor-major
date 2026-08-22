@@ -1,3 +1,6 @@
+import re
+
+
 CONCEPT_KEYWORDS = {
     "hash map": [
         "hash map",
@@ -57,12 +60,13 @@ def extract_concepts(answer: str) -> dict:
         }
 
     text = answer.lower()
-
     concepts = []
 
     for concept, keywords in CONCEPT_KEYWORDS.items():
         for keyword in keywords:
-            if keyword in text:
+            pattern = r"(?<!\w)" + re.escape(keyword) + r"(?!\w)"
+
+            if re.search(pattern, text):
                 concepts.append(concept)
                 break
 

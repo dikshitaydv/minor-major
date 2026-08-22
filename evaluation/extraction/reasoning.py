@@ -1,3 +1,6 @@
+import re
+
+
 REASONING_PATTERNS = [
     "because",
     "therefore",
@@ -15,6 +18,11 @@ REASONING_PATTERNS = [
     "iterate",
     "loop",
     "use",
+    "gives",
+    "allows",
+    "allowing",
+    "determines",
+    "requires",
 ]
 
 
@@ -22,8 +30,9 @@ def extract_reasoning(answer: str) -> dict:
     """
     Extract reasoning-related statements from a candidate answer.
 
-    This initial version identifies sentences containing
-    common reasoning or algorithm-action indicators.
+    The extractor identifies sentences containing common
+    reasoning or algorithm-action indicators while preserving
+    meaningful explanatory statements.
     """
 
     if not answer:
@@ -31,9 +40,11 @@ def extract_reasoning(answer: str) -> dict:
             "reasoning": []
         }
 
+    # Split on sentence-ending punctuation while preserving
+    # meaningful content.
     sentences = [
         sentence.strip()
-        for sentence in answer.replace("\n", ".").split(".")
+        for sentence in re.split(r"[.!?]+", answer)
         if sentence.strip()
     ]
 
@@ -42,8 +53,13 @@ def extract_reasoning(answer: str) -> dict:
     for sentence in sentences:
         sentence_lower = sentence.lower()
 
-        if any(pattern in sentence_lower for pattern in REASONING_PATTERNS):
-            reasoning.append(sentence)
+        for pattern in REASONING_PATTERNS:
+            # Match complete words/phrases rather than substrings.
+            pattern_regex = r"(?<!\w)" + re.escape(pattern) + r"(?!\w)"
+
+            if re.search(pattern_regex, sentence_lower):
+                reasoning.append(sentence)
+                break
 
     return {
         "reasoning": reasoning
