@@ -60,20 +60,66 @@ Return ONLY valid JSON in this format:
 }}
 """
 
-    response = httpx.post(
-        f"{OLLAMA_BASE_URL}/api/generate",
-        json={
-        "model": LLM_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "think": False,
-        "format": "json"
-        },
-        timeout=120
-    )
+    try:
+        response = httpx.post(
+            f"{OLLAMA_BASE_URL}/api/generate",
+            json={
+                "model": LLM_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "think": False,
+                "format": "json"
+            },
+            timeout=120
+        )
 
-    response.raise_for_status()
+        response.raise_for_status()
 
-    result = response.json()
+        result = response.json()
 
-    return json.loads(result["response"])
+    except httpx.TimeoutException:
+        return {
+            "scores": {
+                "algorithm_correctness": 0,
+                "logical_reasoning": 0,
+                "concept_coverage": 0,
+                "completeness": 0,
+                "data_structure_usage": 0,
+                "complexity": 0,
+                "edge_cases": 0
+            },
+            "reasoning": "The LLM request timed out.",
+            "errors": ["LLM request timed out"]
+        }
+
+    except httpx.HTTPStatusError:
+        return {
+            "scores": {
+                "algorithm_correctness": 0,
+                "logical_reasoning": 0,
+                "concept_coverage": 0,
+                "completeness": 0,
+                "data_structure_usage": 0,
+                "complexity": 0,
+                "edge_cases": 0
+            },
+            "reasoning": "The LLM API returned an HTTP error.",
+            "errors": ["LLM API error"]
+        }
+
+    try:
+        return json.loads(result["response"])
+    except (json.JSONDecodeError, TypeError):
+        return {
+            "scores": {
+                "algorithm_correctness": 0,
+                "logical_reasoning": 0,
+                "concept_coverage": 0,
+                "completeness": 0,
+                "data_structure_usage": 0,
+                "complexity": 0,
+                "edge_cases": 0
+            },
+            "reasoning": "The LLM returned malformed JSON.",
+            "errors": ["Malformed LLM JSON response"]
+        }

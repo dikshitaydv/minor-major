@@ -97,3 +97,109 @@ def test_alternative_solution():
 
     assert "algorithm_correctness" in evaluation
     assert "explanation" in evaluation
+
+def test_malformed_llm_json():
+    from unittest.mock import patch
+
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {
+                "response": '{"scores": {"algorithm_correctness": 10'
+            }
+
+    candidate_features = {
+        "normalized_answer": "Use a hash map.",
+        "concepts_detected": ["hash map"],
+        "reasoning": ["Use a hash map to check the complement."],
+        "complexity_claim": {
+            "time": "O(n)",
+            "space": "O(n)"
+        }
+    }
+
+    problem = {
+        "statement": "Find two numbers that add to a target."
+    }
+
+    with patch("evaluation.llm.llm_evaluator.httpx.post", return_value=FakeResponse()):
+        from evaluation.llm.llm_evaluator import evaluate_with_llm
+
+        result = evaluate_with_llm(
+            candidate_features,
+            problem
+        )
+
+    assert "scores" in result
+    assert "errors" in result
+
+def test_llm_timeout():
+    from unittest.mock import patch
+    import httpx
+
+    candidate_features = {
+        "normalized_answer": "Use a hash map.",
+        "concepts_detected": ["hash map"],
+        "reasoning": ["Use a hash map to check the complement."],
+        "complexity_claim": {
+            "time": "O(n)",
+            "space": "O(n)"
+        }
+    }
+
+    problem = {
+        "statement": "Find two numbers that add to a target."
+    }
+
+    with patch(
+        "evaluation.llm.llm_evaluator.httpx.post",
+        side_effect=httpx.TimeoutException("LLM request timed out")
+    ):
+        from evaluation.llm.llm_evaluator import evaluate_with_llm
+
+        result = evaluate_with_llm(
+            candidate_features,
+            problem
+        )
+
+    assert "scores" in result
+    assert "errors" in result
+    assert "LLM request timed out" in result["errors"]
+def test_llm_http_error():
+    from unittest.mock import patch
+    import httpx
+
+    candidate_features = {
+        "normalized_answer": "Use a hash map.",
+        "concepts_detected": ["hash map"],
+        "reasoning": ["Use a hash map to check the complement."],
+        "complexity_claim": {
+            "time": "O(n)",
+            "space": "O(n)"
+        }
+    }
+
+    problem = {
+        "statement": "Find two numbers that add to a target."
+    }
+
+    with patch(
+        "evaluation.llm.llm_evaluator.httpx.post",
+        side_effect=httpx.HTTPStatusError(
+            "Server error",
+            request=httpx.Request("POST", "http://localhost:11434"),
+            response=httpx.Response(500)
+        )
+    ):
+        from evaluation.llm.llm_evaluator import evaluate_with_llm
+
+        result = evaluate_with_llm(
+            candidate_features,
+            problem
+        )
+
+    assert "scores" in result
+    assert "errors" in result
+    assert "LLM API error" in result["errors"]
