@@ -1,0 +1,61 @@
+{
+  "problem_id": "P001",
+
+  "reference_solution": {
+
+    "expected_approach": "Use a hash map to store previously seen values and their indices.",
+
+    "why": "The hash map allows the solution to check whether the required complement has already been seen while traversing the array.",
+
+    "detailed_explanation": [
+      "Traverse the array from left to right.",
+      "For each current value, calculate the complement as target - current value.",
+      "Check whether the complement exists in the hash map.",
+      "If the complement exists, return its stored index together with the current index.",
+      "If it does not exist, store the current value and its index in the hash map."
+    ],
+
+    "pseudocode": [
+      "Create an empty hash map.",
+      "For each value and index in the array:",
+      "Calculate complement = target - value.",
+      "If complement exists in the hash map, return the stored index and current index.",
+      "Otherwise, store value and its index."
+    ],
+
+    "expected_data_structures": [
+      "hash-map",
+      "array"
+    ],
+
+    "expected_complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    },
+
+    "reasoning_steps": [
+      "Iterate through the array.",
+      "Calculate the complement.",
+      "Check whether the complement exists.",
+      "Return the two indices if found.",
+      "Otherwise store the current value and index.",
+      "Continue until a valid pair is found."
+    ],
+
+    "edge_cases": [
+      "Duplicate values",
+      "Negative values",
+      "Zero",
+      "No solution"
+    ],
+
+    "alternative_solutions": [
+      {
+        "name": "Brute Force",
+        "description": "Check every pair of elements and return the indices of a pair whose sum equals the target.",
+        "time": "O(n^2)",
+        "space": "O(1)"
+      }
+    ]
+  }
+}

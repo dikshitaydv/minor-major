@@ -1,0 +1,80 @@
+{
+  "problem_id": "P001",
+  "problem_title": "Two Sum",
+  "difficulty": "Easy",
+
+  "primary_concept": "hashing",
+
+  "secondary_concepts": [
+    "arrays",
+    "lookup",
+    "complement-search"
+  ],
+
+  "problem_statement": {
+    "description": "Given an array of integers and a target value, identify two elements whose sum equals the target and return their indices.",
+
+    "input": "An array of integers and a target value.",
+
+    "output": "The indices of two elements whose sum equals the target.",
+
+    "constraints": [],
+    
+    "examples": [],
+
+    "important_conditions": []
+  },
+
+  "expected_algorithm": {
+    "approach": "Use a hash map to store previously seen values and their indices.",
+
+    "steps": [
+      "Iterate through the array.",
+      "Calculate complement = target - current value.",
+      "Check whether the complement has already been seen.",
+      "If found, return the stored index and current index.",
+      "Otherwise, store the current value and its index."
+    ]
+  },
+
+  "expected_data_structures": [
+    "hash-map",
+    "array"
+  ],
+
+  "expected_complexity": {
+    "time": "O(n)",
+    "space": "O(n)"
+  },
+
+  "required_concepts": [
+    "array-traversal",
+    "hash-map",
+    "complement-calculation",
+    "lookup",
+    "index-tracking"
+  ],
+
+  "expected_reasoning_steps": [
+    "Iterate through the array.",
+    "Calculate the complement.",
+    "Check whether the complement exists.",
+    "If found, return the two indices.",
+    "Otherwise, store the current value and index.",
+    "Continue until a valid pair is found."
+  ],
+
+  "edge_cases": [
+    "Duplicate values",
+    "Negative values",
+    "Zero",
+    "No solution"
+  ],
+
+  "common_mistakes": [
+    "Using O(n^2) unnecessarily",
+    "Returning values instead of indices",
+    "Not updating the hash map",
+    "Incorrect complement calculation"
+  ]
+}
