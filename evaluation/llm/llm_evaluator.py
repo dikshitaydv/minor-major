@@ -1,7 +1,6 @@
 import json
-import httpx
 
-from evaluation.configs.ai_config import OLLAMA_BASE_URL, LLM_MODEL
+from evaluation.llm.ollama_client import generate_evaluation
 
 
 def evaluate_with_llm(
@@ -40,21 +39,24 @@ Evaluate the candidate on these dimensions:
 Score each dimension from 0 to 100 based on the candidate answer.
 
 Important:
-- Do NOT copy the example scores.
+- Do NOT copy example scores.
 - The scores must reflect your actual evaluation.
 - A correct solution should receive high scores.
 - A partially correct solution should receive intermediate scores.
 - An incorrect solution should receive low scores.
-- Judge the candidate against the problem, not just against the reference wording.
-- A valid alternative algorithm should NOT be penalized simply because it differs from the reference solution.
+- Judge the candidate against the problem, not just against reference wording.
+- A valid alternative algorithm should NOT be penalized simply because it
+  differs from a reference solution.
+- Evaluate algorithm correctness independently from complexity.
+- Evaluate edge-case handling independently from algorithm correctness.
+- Do not assume that a solution is incorrect simply because it uses a
+  different algorithm or data structure.
+- Do not reward verbosity.
+- Do not penalize concise but logically correct answers.
 
-Also provide:
-- reasoning: short explanation of the evaluation
-- errors: list of detected problems
+Evaluate each dimension independently.
 
-Return ONLY valid JSON in this format:
-
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON in this exact format:
 
 {{
   "scores": {{
@@ -69,30 +71,32 @@ Return ONLY valid JSON in this format:
   "reasoning": "<short explanation>",
   "errors": []
 }}
-Each <score> must be an integer from 0 to 100.
-Do not copy placeholder values from this example.
-Do not use the same score for every dimension unless the candidate genuinely deserves the same score on every dimension.
-Evaluate each dimension independently.
+
+Rules:
+
+- Each score must be an integer from 0 to 100.
+- Do not use placeholder values.
+- Do not use the same score for every dimension unless justified.
+- Evaluate every dimension independently.
+- Return no markdown.
+- Return no text outside the JSON object.
 """
 
+    # --------------------------------------------------
+    # Call Ollama through the central Ollama client
+    # --------------------------------------------------
+
     try:
-        response = httpx.post(
-            f"{OLLAMA_BASE_URL}/api/generate",
-            json={
-                "model": LLM_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "think": False,
-                "format": "json"
-            },
-            timeout=120
+
+        result = generate_evaluation(prompt)
+
+        evaluation = result.get(
+            "evaluation",
+            {}
         )
 
-        response.raise_for_status()
+    except Exception as error:
 
-        result = response.json()
-
-    except httpx.TimeoutException:
         return {
             "scores": {
                 "algorithm_correctness": 0,
@@ -103,11 +107,16 @@ Evaluate each dimension independently.
                 "complexity": 0,
                 "edge_cases": 0
             },
-            "reasoning": "The LLM request timed out.",
-            "errors": ["LLM request timed out"]
+            "reasoning": "The LLM request failed.",
+            "errors": [str(error)]
         }
 
-    except httpx.HTTPStatusError:
+    # --------------------------------------------------
+    # Validate returned evaluation
+    # --------------------------------------------------
+
+    if not isinstance(evaluation, dict):
+
         return {
             "scores": {
                 "algorithm_correctness": 0,
@@ -118,23 +127,65 @@ Evaluate each dimension independently.
                 "complexity": 0,
                 "edge_cases": 0
             },
-            "reasoning": "The LLM API returned an HTTP error.",
-            "errors": ["LLM API error"]
+            "reasoning": "The LLM returned an invalid evaluation.",
+            "errors": ["Invalid LLM evaluation format"]
         }
 
-    try:
-        return json.loads(result["response"])
-    except (json.JSONDecodeError, TypeError):
-        return {
-            "scores": {
-                "algorithm_correctness": 0,
-                "logical_reasoning": 0,
-                "concept_coverage": 0,
-                "completeness": 0,
-                "data_structure_usage": 0,
-                "complexity": 0,
-                "edge_cases": 0
-            },
-            "reasoning": "The LLM returned malformed JSON.",
-            "errors": ["Malformed LLM JSON response"]
-        }
+    scores = evaluation.get(
+        "scores",
+        {}
+    )
+
+    required_scores = [
+        "algorithm_correctness",
+        "logical_reasoning",
+        "concept_coverage",
+        "completeness",
+        "data_structure_usage",
+        "complexity",
+        "edge_cases"
+    ]
+
+    # --------------------------------------------------
+    # Validate scores
+    # --------------------------------------------------
+
+    for score_name in required_scores:
+
+        if score_name not in scores:
+
+            scores[score_name] = 0
+
+        try:
+
+            scores[score_name] = int(
+                scores[score_name]
+            )
+
+        except (ValueError, TypeError):
+
+            scores[score_name] = 0
+
+        scores[score_name] = max(
+            0,
+            min(
+                100,
+                scores[score_name]
+            )
+        )
+
+    # --------------------------------------------------
+    # Return clean evaluation
+    # --------------------------------------------------
+
+    return {
+        "scores": scores,
+        "reasoning": evaluation.get(
+            "reasoning",
+            "No reasoning provided."
+        ),
+        "errors": evaluation.get(
+            "errors",
+            []
+        )
+    }

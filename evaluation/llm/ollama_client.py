@@ -1,36 +1,8 @@
 import json
 import urllib.request
-import sys
 import time
-import threading
 
 from evaluation.configs.ai_config import OLLAMA_BASE_URL, LLM_MODEL
-
-
-def _show_loader(stop_event):
-    """
-    Display a spinner while Ollama is generating the evaluation.
-    """
-
-    spinner = ["|", "/", "-", "\\"]
-
-    i = 0
-
-    while not stop_event.is_set():
-
-        sys.stdout.write(
-            f"\rEvaluating with {LLM_MODEL}... "
-            f"{spinner[i % len(spinner)]}"
-        )
-
-        sys.stdout.flush()
-
-        i += 1
-        time.sleep(0.2)
-
-    # Clear the loader line after completion
-    sys.stdout.write("\r" + " " * 70 + "\r")
-    sys.stdout.flush()
 
 
 def generate_evaluation(prompt: str) -> dict:
@@ -38,6 +10,19 @@ def generate_evaluation(prompt: str) -> dict:
     Send an evaluation prompt to the local Ollama LLM
     and return the generated response.
     """
+
+    # --------------------------------------------------
+    # Confirm that this file is actually being called
+    # --------------------------------------------------
+
+    print(
+        "\n>>> OLLAMA CLIENT WAS CALLED <<<\n",
+        flush=True
+    )
+
+    # --------------------------------------------------
+    # Prepare Ollama request
+    # --------------------------------------------------
 
     payload = {
         "model": LLM_MODEL,
@@ -62,44 +47,82 @@ def generate_evaluation(prompt: str) -> dict:
     )
 
     # --------------------------------------------------
-    # Start loader
+    # Show evaluation started
     # --------------------------------------------------
 
-    stop_event = threading.Event()
+    print()
+    print("=" * 60)
+    print("              AI EVALUATION IN PROGRESS")
+    print("=" * 60)
+    print(f"Model       : {LLM_MODEL}")
+    print("Status      : Evaluating candidate solution...")
+    print("Please wait...")
+    print("=" * 60)
+    print(flush=True)
 
-    loader_thread = threading.Thread(
-        target=_show_loader,
-        args=(stop_event,),
-        daemon=True
-    )
+    start_time = time.time()
 
-    loader_thread.start()
+    # --------------------------------------------------
+    # Send request to Ollama
+    # --------------------------------------------------
 
     try:
 
-        # --------------------------------------------------
-        # Ollama request
-        # --------------------------------------------------
-
         with urllib.request.urlopen(request) as response:
+
             result = json.loads(
                 response.read().decode("utf-8")
             )
 
-    finally:
+    except Exception as error:
 
-        # --------------------------------------------------
-        # Stop loader
-        # --------------------------------------------------
+        print()
+        print("=" * 60)
+        print("                 EVALUATION FAILED")
+        print("=" * 60)
+        print(f"Error: {error}")
+        print("=" * 60)
+        print()
 
-        stop_event.set()
-        loader_thread.join()
+        raise
 
-    response_text = result.get("response", "")
+    # --------------------------------------------------
+    # Calculate execution time
+    # --------------------------------------------------
+
+    elapsed_time = time.time() - start_time
+
+    # --------------------------------------------------
+    # Show evaluation completed
+    # --------------------------------------------------
+
+    print()
+    print("=" * 60)
+    print("              AI EVALUATION COMPLETED")
+    print("=" * 60)
+    print(f"Model       : {result.get('model', LLM_MODEL)}")
+    print(f"Time Taken  : {elapsed_time:.2f} seconds")
+    print("=" * 60)
+    print()
+
+    # --------------------------------------------------
+    # Extract model response
+    # --------------------------------------------------
+
+    response_text = result.get(
+        "response",
+        ""
+    )
+
+    # --------------------------------------------------
+    # Parse JSON returned by Ollama
+    # --------------------------------------------------
 
     try:
 
-        evaluation = json.loads(response_text)
+        evaluation = json.loads(
+            response_text
+        )
 
     except json.JSONDecodeError:
 
@@ -107,7 +130,14 @@ def generate_evaluation(prompt: str) -> dict:
             "raw_response": response_text
         }
 
+    # --------------------------------------------------
+    # Return structured result
+    # --------------------------------------------------
+
     return {
-        "model": result.get("model"),
+        "model": result.get(
+            "model",
+            LLM_MODEL
+        ),
         "evaluation": evaluation
     }
