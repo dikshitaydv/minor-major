@@ -1,0 +1,67 @@
+{
+  "problem_id": "P002",
+
+  "reference_solution": {
+
+    "expected_approach": "Use a stack to keep track of opening brackets and match each closing bracket with the most recently opened bracket.",
+
+    "why": "The stack follows the last-in-first-out order required for properly nested brackets, allowing each closing bracket to be matched with the correct opening bracket.",
+
+    "detailed_explanation": [
+      "Traverse the string from left to right.",
+      "For each opening bracket, push it onto the stack.",
+      "For each closing bracket, check whether the stack is empty or whether its top does not match the corresponding opening bracket.",
+      "If there is a mismatch, the string is invalid.",
+      "If the closing bracket matches the top of the stack, pop the opening bracket.",
+      "After traversing the entire string, the string is valid only if the stack is empty."
+    ],
+
+    "pseudocode": [
+      "Create an empty stack.",
+      "For each character in the string:",
+      "If the character is an opening bracket, push it onto the stack.",
+      "Otherwise, check whether the stack is non-empty and the top matches the closing bracket.",
+      "If it does not match, return false.",
+      "Otherwise, pop the matching opening bracket.",
+      "After processing all characters, return true only if the stack is empty."
+    ],
+
+    "expected_data_structures": [
+      "stack",
+      "string"
+    ],
+
+    "expected_complexity": {
+      "time": "O(n)",
+      "space": "O(n)"
+    },
+
+    "reasoning_steps": [
+      "Traverse the string.",
+      "Push opening brackets onto the stack.",
+      "For each closing bracket, check the top of the stack.",
+      "Return false if the brackets do not match.",
+      "Pop the matching opening bracket.",
+      "Continue until the entire string is processed.",
+      "Check that the stack is empty at the end."
+    ],
+
+    "edge_cases": [
+      "Empty string",
+      "Only opening brackets",
+      "Only closing brackets",
+      "Mismatched bracket types",
+      "Nested brackets",
+      "Adjacent valid bracket pairs"
+    ],
+
+    "alternative_solutions": [
+      {
+        "name": "Repeated Pair Removal",
+        "description": "Repeatedly remove adjacent valid bracket pairs such as (), [], and {}. If all brackets can be removed and the string becomes empty, the input is valid.",
+        "time": "O(n^2)",
+        "space": "O(n)"
+      }
+    ]
+  }
+}

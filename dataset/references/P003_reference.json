@@ -1,0 +1,66 @@
+{
+  "problem_id": "P003",
+
+  "reference_solution": {
+
+    "expected_approach": "Use binary search on the sorted array by maintaining left and right boundaries and repeatedly eliminating half of the remaining search space.",
+
+    "why": "Because the array is sorted, comparing the target with the middle element determines which half of the array can be discarded, reducing the search space by half at each step.",
+
+    "detailed_explanation": [
+      "Initialize the left boundary to the first index and the right boundary to the last index.",
+      "Calculate the middle index between the left and right boundaries.",
+      "If the middle element equals the target, return its index.",
+      "If the middle element is smaller than the target, discard the left half by moving the left boundary to the position after the middle.",
+      "If the middle element is greater than the target, discard the right half by moving the right boundary to the position before the middle.",
+      "Continue until the target is found or the search range becomes empty."
+    ],
+
+    "pseudocode": [
+      "Set left = 0 and right = length of array - 1.",
+      "While left is less than or equal to right:",
+      "Calculate mid = left + (right - left) / 2.",
+      "If array[mid] equals target, return mid.",
+      "If array[mid] is less than target, move left to mid + 1.",
+      "Otherwise, move right to mid - 1.",
+      "Return -1 if the target is not found."
+    ],
+
+    "expected_data_structures": [
+      "array"
+    ],
+
+    "expected_complexity": {
+      "time": "O(log n)",
+      "space": "O(1)"
+    },
+
+    "reasoning_steps": [
+      "Initialize the search boundaries.",
+      "Find the middle element.",
+      "Compare the middle element with the target.",
+      "Return the middle index if the target is found.",
+      "Discard the left half if the middle element is smaller than the target.",
+      "Discard the right half if the middle element is greater than the target.",
+      "Continue until the target is found or the search range is empty."
+    ],
+
+    "edge_cases": [
+      "Empty array",
+      "Single-element array",
+      "Target at the first position",
+      "Target at the last position",
+      "Target not present",
+      "Target equal to the middle element"
+    ],
+
+    "alternative_solutions": [
+      {
+        "name": "Linear Search",
+        "description": "Traverse the array from left to right and compare each element with the target until the target is found or the array ends.",
+        "time": "O(n)",
+        "space": "O(1)"
+      }
+    ]
+  }
+}
