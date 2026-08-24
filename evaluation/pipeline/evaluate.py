@@ -2,6 +2,7 @@ from evaluation.extraction.extraction_service import extract_candidate_features
 from evaluation.llm.llm_evaluator import evaluate_with_llm
 from evaluation.embeddings.semantic_evaluator import calculate_semantic_similarity
 from evaluation.scoring.confidence import calculate_confidence
+from evaluation.scoring.classification import classify_answer
 
 
 def evaluate_submission(
@@ -50,6 +51,7 @@ def evaluate_submission(
                 "reasoning": "No candidate answer was provided.",
                 "errors": ["Empty candidate answer"]
             },
+            "ai_classification": "Incorrect",
             "semantic_similarity": 0.0,
             "confidence": 0.0
         }
@@ -63,6 +65,11 @@ def evaluate_submission(
     llm_evaluation = evaluate_with_llm(
         candidate_features,
         problem
+    )
+    # Step 2.5: Classify the candidate answer
+    ai_classification = classify_answer(
+    candidate_features,
+    llm_evaluation
     )
 
     # Step 3: Semantic similarity
@@ -81,6 +88,7 @@ def evaluate_submission(
         "problem": problem,
         "candidate": candidate_features,
         "llm_evaluation": llm_evaluation,
+        "ai_classification": ai_classification,
        "semantic_similarity": semantic_similarity,
        "confidence": confidence
     }

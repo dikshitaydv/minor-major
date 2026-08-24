@@ -26,13 +26,13 @@ def calculate_confidence(
         return 0.0
 
     llm_score = sum(
-        scores.get(dimension, 0)
+        float(scores.get(dimension, 0))
         for dimension in dimensions
-    ) / (len(dimensions) * 10)
+    ) / (len(dimensions) * 100)
 
     semantic_score = max(
         0.0,
-        min(1.0, semantic_similarity)
+        min(1.0, float(semantic_similarity))
     )
 
     confidence = (

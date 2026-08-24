@@ -37,7 +37,16 @@ Evaluate the candidate on these dimensions:
 6. complexity
 7. edge_cases
 
-Give each score from 0 to 10.
+Score each dimension from 0 to 100 based on the candidate answer.
+
+Important:
+- Do NOT copy the example scores.
+- The scores must reflect your actual evaluation.
+- A correct solution should receive high scores.
+- A partially correct solution should receive intermediate scores.
+- An incorrect solution should receive low scores.
+- Judge the candidate against the problem, not just against the reference wording.
+- A valid alternative algorithm should NOT be penalized simply because it differs from the reference solution.
 
 Also provide:
 - reasoning: short explanation of the evaluation
@@ -45,19 +54,25 @@ Also provide:
 
 Return ONLY valid JSON in this format:
 
+Return ONLY valid JSON in this format:
+
 {{
   "scores": {{
-    "algorithm_correctness": 0,
-    "logical_reasoning": 0,
-    "concept_coverage": 0,
-    "completeness": 0,
-    "data_structure_usage": 0,
-    "complexity": 0,
-    "edge_cases": 0
+    "algorithm_correctness": <score>,
+    "logical_reasoning": <score>,
+    "concept_coverage": <score>,
+    "completeness": <score>,
+    "data_structure_usage": <score>,
+    "complexity": <score>,
+    "edge_cases": <score>
   }},
-  "reasoning": "",
+  "reasoning": "<short explanation>",
   "errors": []
 }}
+Each <score> must be an integer from 0 to 100.
+Do not copy placeholder values from this example.
+Do not use the same score for every dimension unless the candidate genuinely deserves the same score on every dimension.
+Evaluate each dimension independently.
 """
 
     try:
