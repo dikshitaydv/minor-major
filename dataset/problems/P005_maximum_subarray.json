@@ -1,0 +1,67 @@
+{
+  "problem_id": "P005",
+  "problem_title": "Maximum Subarray",
+  "difficulty": "Medium",
+  "primary_concept": "dynamic-programming",
+  "secondary_concepts": [
+    "kadane",
+    "arrays",
+    "running-maximum"
+  ],
+  "problem_statement": {
+    "description": "Given an integer array, find a contiguous, non-empty subarray whose elements have the largest possible sum. Return the maximum sum among all such contiguous subarrays. The array may contain positive, negative, and zero values.",
+    "input": "An integer array containing positive, negative, and zero values.",
+    "output": "The maximum sum of any contiguous non-empty subarray.",
+    "constraints": [],
+    "examples": [],
+    "important_conditions": [
+      "The selected subarray must be non-empty."
+    ]
+  },
+  "expected_algorithm": {
+    "approach": "Use Kadane's algorithm to maintain the best subarray ending at the current position and the global best sum.",
+    "steps": [
+      "Initialize the current best and global best using the first element.",
+      "For each remaining element, choose between starting a new subarray and extending the current one.",
+      "Update the global maximum.",
+      "Continue through the array.",
+      "Return the global maximum."
+    ]
+  },
+  "expected_data_structures": [
+    "array"
+  ],
+  "expected_complexity": {
+    "time": "O(n)",
+    "space": "O(1)"
+  },
+  "required_concepts": [
+    "dynamic-programming",
+    "kadane",
+    "running-sum",
+    "local-maximum",
+    "global-maximum",
+    "array-traversal"
+  ],
+  "expected_reasoning_steps": [
+    "Initialize from the first element.",
+    "Consider starting a new subarray or extending the current one.",
+    "Update the best subarray ending at the current position.",
+    "Update the global maximum.",
+    "Continue through the array.",
+    "Return the maximum sum."
+  ],
+  "edge_cases": [
+    "Single-element array",
+    "All-negative array",
+    "All-positive array",
+    "Zeros",
+    "Mixed positive and negative values"
+  ],
+  "common_mistakes": [
+    "Resetting on every negative value without comparing the current element",
+    "Returning zero for an all-negative array",
+    "Confusing non-contiguous selection with contiguous subarray",
+    "Claiming incorrect complexity"
+  ]
+}

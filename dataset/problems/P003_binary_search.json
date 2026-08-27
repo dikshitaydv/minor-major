@@ -1,0 +1,71 @@
+{
+  "problem_id": "P003",
+  "problem_title": "Binary Search",
+  "difficulty": "Easy",
+  "primary_concept": "binary-search",
+  "secondary_concepts": [
+    "sorted-array",
+    "range-elimination",
+    "comparison"
+  ],
+  "problem_statement": {
+    "description": "Given a sorted array of integers and a target integer, determine the index at which the target occurs. If the target does not exist in the array, return -1. The array is sorted in ascending order and each element may be assumed to be comparable with the target.",
+    "input": "A sorted array of integers and a target integer.",
+    "output": "The target index if present; otherwise -1.",
+    "constraints": [],
+    "examples": [],
+    "important_conditions": [
+      "The array is sorted in ascending order."
+    ]
+  },
+  "expected_algorithm": {
+    "approach": "Use binary search by maintaining left and right boundaries and repeatedly eliminating half of the remaining search space.",
+    "steps": [
+      "Initialize left and right boundaries.",
+      "Calculate the middle index.",
+      "If the middle element equals the target, return its index.",
+      "If the middle element is smaller, move left to mid + 1.",
+      "If the middle element is larger, move right to mid - 1.",
+      "Continue until the target is found or the search range is empty."
+    ]
+  },
+  "expected_data_structures": [
+    "array"
+  ],
+  "expected_complexity": {
+    "time": "O(log n)",
+    "space": "O(1)"
+  },
+  "required_concepts": [
+    "binary-search",
+    "sorted-array",
+    "left-right-boundaries",
+    "midpoint",
+    "comparison",
+    "range-elimination"
+  ],
+  "expected_reasoning_steps": [
+    "Initialize search boundaries.",
+    "Find the middle element.",
+    "Compare middle element with target.",
+    "Return when found.",
+    "Discard the left half when middle is smaller.",
+    "Discard the right half when middle is larger.",
+    "Stop when range is empty."
+  ],
+  "edge_cases": [
+    "Empty array",
+    "Single-element array",
+    "Target at first position",
+    "Target at last position",
+    "Target not present",
+    "Target equal to middle element"
+  ],
+  "common_mistakes": [
+    "Using binary search on an unsorted array",
+    "Updating the wrong boundary",
+    "Infinite loops from incorrect boundary updates",
+    "Returning the wrong index",
+    "Claiming O(n) or O(1) time incorrectly"
+  ]
+}

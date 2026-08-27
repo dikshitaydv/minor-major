@@ -1,5 +1,5 @@
 import json
-
+import httpx
 from evaluation.llm.ollama_client import generate_evaluation
 
 

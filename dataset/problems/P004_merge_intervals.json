@@ -1,0 +1,72 @@
+{
+  "problem_id": "P004",
+  "problem_title": "Merge Intervals",
+  "difficulty": "Medium",
+  "primary_concept": "sorting",
+  "secondary_concepts": [
+    "intervals",
+    "overlap-detection",
+    "range-merging"
+  ],
+  "problem_statement": {
+    "description": "Given a collection of intervals where each interval contains a start and end value, merge all intervals that overlap. Return a collection of non-overlapping intervals that covers the same ranges as the original input. Intervals that only touch at a boundary are considered overlapping when their ranges intersect.",
+    "input": "A collection of intervals represented by start and end values.",
+    "output": "A collection of merged, non-overlapping intervals.",
+    "constraints": [],
+    "examples": [],
+    "important_conditions": [
+      "Touching intervals are considered overlapping when their ranges intersect."
+    ]
+  },
+  "expected_algorithm": {
+    "approach": "Sort the intervals by starting value and then merge overlapping intervals while traversing the sorted intervals.",
+    "steps": [
+      "Sort intervals by start value.",
+      "Initialize an empty result list.",
+      "Add the first interval to the result when applicable.",
+      "Compare each interval with the last merged interval.",
+      "If they overlap, extend the last interval's end.",
+      "Otherwise add the current interval separately.",
+      "Return the merged result."
+    ]
+  },
+  "expected_data_structures": [
+    "array",
+    "list"
+  ],
+  "expected_complexity": {
+    "time": "O(n log n)",
+    "space": "O(n)"
+  },
+  "required_concepts": [
+    "sorting",
+    "intervals",
+    "overlap-detection",
+    "merging",
+    "range-processing"
+  ],
+  "expected_reasoning_steps": [
+    "Sort intervals by starting value.",
+    "Initialize the result.",
+    "Compare each interval with the last merged interval.",
+    "Merge overlapping intervals.",
+    "Keep non-overlapping intervals separate.",
+    "Continue through all intervals.",
+    "Return the result."
+  ],
+  "edge_cases": [
+    "Empty list of intervals",
+    "Single interval",
+    "Intervals that do not overlap",
+    "Intervals that completely overlap",
+    "Intervals with the same starting value",
+    "Multiple consecutive overlapping intervals"
+  ],
+  "common_mistakes": [
+    "Skipping the sorting step",
+    "Merging non-overlapping intervals",
+    "Failing to extend the end to the maximum",
+    "Handling only one overlap",
+    "Incorrectly handling same-start intervals"
+  ]
+}

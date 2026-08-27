@@ -123,13 +123,19 @@ def test_final_interview():
 
         "concepts_detected": [
             "HashMap",
+            "complement",
+            "indices",
             "complexity",
             "edge cases"
         ],
 
         "reasoning": [
-            "Calculate complement",
-            "HashMap lookup",
+            "Calculate complement as target minus current value",
+            "Check HashMap before storing current value",
+            "Store values with their indices",
+            "Return indices when complement is found",
+            "Avoid using the same element twice",
+            "Process each element once",
             "Handle duplicate values",
             "Handle negative values",
             "Handle insufficient input",

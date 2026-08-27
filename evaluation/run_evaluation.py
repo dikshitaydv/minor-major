@@ -16,7 +16,7 @@ candidate_answer = (
     "I'll use a hash map. For each number, I'll calculate "
     "target-number. If the complement is already in the map, "
     "I'll return the two indices; otherwise I'll store the "
-    "number and index. O(1) time, O(1) space."
+    "number and index. O(n) time, O(n) space."
 )
 
 
