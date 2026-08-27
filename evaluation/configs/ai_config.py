@@ -1,7 +1,31 @@
 import os
 from dotenv import load_dotenv
 
+
+# ==========================================================
+# Load environment variables
+# ==========================================================
+
 load_dotenv()
+
+
+# ==========================================================
+# OpenAI Configuration
+# ==========================================================
+
+OPENAI_API_KEY = os.getenv(
+    "OPENAI_API_KEY"
+)
+
+OPENAI_MODEL = os.getenv(
+    "OPENAI_MODEL",
+    "gpt-4.1-mini"
+)
+
+
+# ==========================================================
+# Ollama Configuration
+# ==========================================================
 
 OLLAMA_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL",

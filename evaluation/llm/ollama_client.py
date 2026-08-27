@@ -31,7 +31,7 @@ def generate_evaluation(prompt: str) -> dict:
         "think": False,
         "format": "json",
         "options": {
-            "num_predict": 350
+            "num_predict": 1200
         }
     }
 
@@ -124,7 +124,40 @@ def generate_evaluation(prompt: str) -> dict:
             response_text
         )
 
+        # --------------------------------------------------
+        # DEBUG: Show the exact JSON returned by Qwen3
+        # --------------------------------------------------
+
+        print()
+        print("=" * 60)
+        print("              RAW OLLAMA EVALUATION")
+        print("=" * 60)
+
+        print(
+            json.dumps(
+                evaluation,
+                indent=2
+            )
+        )
+
+        print("=" * 60)
+        print()
+
     except json.JSONDecodeError:
+
+        # --------------------------------------------------
+        # DEBUG: Show raw response if JSON parsing failed
+        # --------------------------------------------------
+
+        print()
+        print("=" * 60)
+        print("          INVALID OLLAMA JSON RESPONSE")
+        print("=" * 60)
+
+        print(response_text)
+
+        print("=" * 60)
+        print()
 
         evaluation = {
             "raw_response": response_text
