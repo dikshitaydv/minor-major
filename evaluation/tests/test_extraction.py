@@ -273,3 +273,83 @@ def test_complexity_only_space():
 
     assert result["complexity_claim"]["time"] is None
     assert result["complexity_claim"]["space"] == "o(n)"
+    
+def test_structured_hash_map_extraction():
+    answer = (
+        "I will use a hash map to store previously seen values."
+    )
+
+    result = extract_candidate_features(answer)
+
+    assert result["approach"] == "hash map"
+    assert result["algorithms"] == []
+    assert result["data_structures"] == ["hash map"]
+
+
+def test_structured_algorithm_extraction():
+    answer = (
+        "I will use binary search on the sorted array."
+    )
+
+    result = extract_candidate_features(answer)
+
+    assert result["approach"] == "binary search"
+    assert "binary search" in result["algorithms"]
+    assert result["data_structures"] == []
+
+
+def test_structured_multiple_algorithms():
+    answer = (
+        "I will sort the array and then use two pointers."
+    )
+
+    result = extract_candidate_features(answer)
+
+    assert result["approach"] == "two pointer"
+    assert "two pointer" in result["algorithms"]
+    assert "sorting" in result["algorithms"]
+    assert result["data_structures"] == []
+
+
+def test_structured_data_structures():
+    answer = (
+        "I will use a stack and a queue to process the elements."
+    )
+
+    result = extract_candidate_features(answer)
+
+    assert "stack" in result["data_structures"]
+    assert "queue" in result["data_structures"]
+    assert result["algorithms"] == []
+
+
+def test_structured_empty_answer():
+    result = extract_candidate_features("")
+
+    assert result["approach"] == ""
+    assert result["algorithms"] == []
+    assert result["concepts"] == []
+    assert result["data_structures"] == []
+
+
+def test_edge_case_extraction():
+    answer = (
+        "If the input is empty, return an empty result. "
+        "Also handle duplicate values and negative numbers."
+    )
+
+    result = extract_candidate_features(answer)
+
+    assert "empty_input" in result["edge_cases"]
+    assert "duplicate_values" in result["edge_cases"]
+    assert "negative_values" in result["edge_cases"]
+
+
+def test_no_edge_cases():
+    answer = (
+        "I will use a hash map to store previously seen values."
+    )
+
+    result = extract_candidate_features(answer)
+
+    assert result["edge_cases"] == []

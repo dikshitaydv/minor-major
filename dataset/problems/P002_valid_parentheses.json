@@ -1,0 +1,68 @@
+{
+  "problem_id": "P002",
+  "problem_title": "Valid Parentheses",
+  "difficulty": "Easy",
+  "primary_concept": "stack",
+  "secondary_concepts": [
+    "bracket-matching",
+    "string-traversal",
+    "nesting"
+  ],
+  "problem_statement": {
+    "description": "Given a string containing only the bracket characters (, ), {, }, [ and ], determine whether the brackets form a valid sequence. Every opening bracket must be closed by the corresponding type of bracket, brackets must close in the correct order, and no closing bracket may appear without its matching opening bracket.",
+    "input": "A string containing bracket characters.",
+    "output": "true if the bracket sequence is valid; otherwise false.",
+    "constraints": [],
+    "examples": [],
+    "important_conditions": []
+  },
+  "expected_algorithm": {
+    "approach": "Use a stack to keep track of opening brackets and match each closing bracket with the most recently opened bracket.",
+    "steps": [
+      "Traverse the string from left to right.",
+      "Push each opening bracket onto the stack.",
+      "For each closing bracket, check that the stack is non-empty and the top matches.",
+      "If the brackets do not match, return false.",
+      "If they match, pop the opening bracket.",
+      "After traversal, return true only if the stack is empty."
+    ]
+  },
+  "expected_data_structures": [
+    "stack",
+    "string"
+  ],
+  "expected_complexity": {
+    "time": "O(n)",
+    "space": "O(n)"
+  },
+  "required_concepts": [
+    "stack",
+    "opening-brackets",
+    "closing-brackets",
+    "matching",
+    "last-in-first-out",
+    "string-traversal"
+  ],
+  "expected_reasoning_steps": [
+    "Traverse the string.",
+    "Push opening brackets onto the stack.",
+    "Check the stack top for each closing bracket.",
+    "Return false on mismatch.",
+    "Pop a matching opening bracket.",
+    "Check that the stack is empty at the end."
+  ],
+  "edge_cases": [
+    "Empty string",
+    "Only opening brackets",
+    "Only closing brackets",
+    "Mismatched bracket types",
+    "Nested brackets",
+    "Adjacent valid bracket pairs"
+  ],
+  "common_mistakes": [
+    "Ignoring bracket order",
+    "Accepting mismatched types",
+    "Failing on an empty stack before a closing bracket",
+    "Forgetting to check that the stack is empty at the end"
+  ]
+}

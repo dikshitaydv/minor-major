@@ -1,7 +1,60 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Dict, List, Any
 
+@dataclass
+class CandidateNLPState:
+    """
+    Structured representation of information extracted from
+    the candidate's natural-language coding response.
 
+    This state represents what the candidate said or expressed.
+    It does NOT determine whether the candidate's claims are correct
+    and does NOT assign evaluation scores.
+    """
+
+    approach: str = ""
+
+    algorithms: List[str] = field(
+        default_factory=list
+    )
+
+    concepts: List[str] = field(
+        default_factory=list
+    )
+
+    data_structures: List[str] = field(
+        default_factory=list
+    )
+
+    time_complexity: Optional[str] = None
+
+    space_complexity: Optional[str] = None
+
+    edge_cases: List[str] = field(
+        default_factory=list
+    )
+
+    reasoning_summary: str = ""
+
+    confidence: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert NLP state into a dictionary suitable for
+        passing to the evaluation layer.
+        """
+
+        return {
+            "approach": self.approach,
+            "algorithms": self.algorithms.copy(),
+            "concepts": self.concepts.copy(),
+            "data_structures": self.data_structures.copy(),
+            "time_complexity": self.time_complexity,
+            "space_complexity": self.space_complexity,
+            "edge_cases": self.edge_cases.copy(),
+            "reasoning_summary": self.reasoning_summary,
+            "confidence": self.confidence
+        }
 @dataclass
 class CandidateEvaluationState:
     """
@@ -35,6 +88,14 @@ class CandidateEvaluationState:
     current_answer: str = ""
 
     current_interviewer_question: Optional[str] = None
+    
+    # ==================================================
+    # NLP / CONTEXT STATE
+    # ==================================================
+
+    nlp_state: CandidateNLPState = field(
+        default_factory=CandidateNLPState
+    )
 
     # ==================================================
     # CURRENT SCORES
@@ -94,6 +155,37 @@ class CandidateEvaluationState:
     # UPDATE STATE
     # ==================================================
 
+        # ==================================================
+    # UPDATE NLP STATE
+    # ==================================================
+
+    def update_nlp_state(
+        self,
+        nlp_state: CandidateNLPState
+    ):
+        """
+        Replace the current NLP state with the structured
+        information extracted from the latest candidate response.
+
+        This method does not perform scoring or correctness
+        evaluation.
+        """
+
+        if not isinstance(
+            nlp_state,
+            CandidateNLPState
+        ):
+            raise TypeError(
+                "nlp_state must be a CandidateNLPState instance."
+            )
+
+        if not 0.0 <= nlp_state.confidence <= 1.0:
+            raise ValueError(
+                "NLP confidence must be between 0.0 and 1.0."
+            )
+
+        self.nlp_state = nlp_state
+        
     def update(
         self,
         candidate_answer: str,
@@ -325,6 +417,8 @@ class CandidateEvaluationState:
                 self.current_interviewer_question
             ),
 
+            "nlp_state": self.nlp_state.to_dict(),
+            
             "scores": self.scores.copy(),
 
             "primary_classification": (

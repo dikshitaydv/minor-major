@@ -1,0 +1,51 @@
+{
+  "problem_id": "P005",
+  "reference_solution": {
+    "expected_approach": "Use Kadane's algorithm to maintain the best subarray ending at the current position and the global best sum.",
+    "why": "At each position, the best subarray ending there either starts at the current value or extends the best subarray ending at the previous position. Tracking the global best gives the maximum contiguous sum in one pass.",
+    "detailed_explanation": [
+      "Initialize the current and global best using the first element.",
+      "For each next value, choose the larger of the value itself and the previous current best plus the value.",
+      "Update the global best if the current best is larger.",
+      "Continue through the array.",
+      "Return the global best."
+    ],
+    "pseudocode": [
+      "Initialize current = array[0] and best = array[0].",
+      "For each value after the first:",
+      "Set current = max(value, current + value).",
+      "Set best = max(best, current).",
+      "Return best."
+    ],
+    "expected_data_structures": [
+      "array"
+    ],
+    "expected_complexity": {
+      "time": "O(n)",
+      "space": "O(1)"
+    },
+    "reasoning_steps": [
+      "Initialize from the first element.",
+      "Consider starting a new subarray or extending the current one.",
+      "Update the best subarray ending at the current position.",
+      "Update the global maximum.",
+      "Continue through the array.",
+      "Return the maximum sum."
+    ],
+    "edge_cases": [
+      "Single-element array",
+      "All-negative array",
+      "All-positive array",
+      "Zeros",
+      "Mixed positive and negative values"
+    ],
+    "alternative_solutions": [
+      {
+        "name": "Brute Force",
+        "description": "Enumerate every contiguous subarray and compute its sum, keeping the largest sum.",
+        "time": "O(n^2)",
+        "space": "O(1)"
+      }
+    ]
+  }
+}

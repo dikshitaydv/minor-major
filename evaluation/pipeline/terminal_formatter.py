@@ -76,7 +76,7 @@ def print_evaluation(result: dict) -> None:
         "logical_reasoning": "Logical Reasoning",
         "concept_coverage": "Concept Coverage",
         "completeness": "Completeness",
-        "data_structure_usage": "Data Structure Usage",
+        "data_structure": "Data Structure Usage",
         "complexity": "Complexity",
         "edge_cases": "Edge Cases"
     }
@@ -85,9 +85,10 @@ def print_evaluation(result: dict) -> None:
 
         score = scores.get(key, 0)
 
-        print(
-            f"{label:<30} : {score:>3}/100"
-        )
+        if isinstance(score, dict):
+            score = score.get("score") or 0
+
+        print(f"{label:<30} : {score:>3}/100")
 
     # ==========================================================
     # CLASSIFICATION

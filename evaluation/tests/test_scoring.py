@@ -4,13 +4,13 @@ from evaluation.scoring.confidence import calculate_confidence
 def test_confidence_score():
     llm_evaluation = {
         "scores": {
-            "algorithm_correctness": 10,
-            "logical_reasoning": 10,
-            "concept_coverage": 10,
-            "completeness": 10,
-            "data_structure_usage": 10,
-            "complexity": 10,
-            "edge_cases": 10
+            "algorithm_correctness": 100,
+            "logical_reasoning": 100,
+            "concept_coverage": 100,
+            "completeness": 100,
+            "data_structure_usage": 100,
+            "complexity": 100,
+            "edge_cases": 100
         }
     }
 

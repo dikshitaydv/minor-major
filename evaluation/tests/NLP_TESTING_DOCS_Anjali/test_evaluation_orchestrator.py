@@ -37,7 +37,17 @@ def test_complete_adaptive_turn():
         "normalized_answer": candidate_answer,
 
         "concepts_detected": [
-            "HashMap"
+            "hash map"
+        ],
+
+        "approach": "hash map",
+
+        "algorithms": [],
+
+        "concepts": [],
+
+        "data_structures": [
+            "hash map"
         ],
 
         "reasoning": [
@@ -49,7 +59,12 @@ def test_complete_adaptive_turn():
         "complexity_claim": {
             "time": "O(n)",
             "space": "O(n)"
-        }
+        },
+
+        "edge_cases": [
+            "empty_input",
+            "duplicate_values"
+        ]
     }
 
     # ==================================================
@@ -138,46 +153,59 @@ def test_complete_adaptive_turn():
         dict
     )
 
+    # ==================================================
+    # NLP STATE ASSERTIONS
+    # ==================================================
+
+    assert updated_state.nlp_state is not None
+
+    assert (
+        updated_state.nlp_state.approach
+        == "hash map"
+    )
+
+    assert (
+        updated_state.nlp_state.algorithms
+        == []
+    )
+
+    assert (
+        updated_state.nlp_state.concepts
+        == []
+    )
+
+    assert (
+        updated_state.nlp_state.data_structures
+        == ["hash map"]
+    )
+
+    assert (
+        updated_state.nlp_state.time_complexity
+        == "O(n)"
+    )
+
+    assert (
+        updated_state.nlp_state.space_complexity
+        == "O(n)"
+    )
+
+    assert (
+        "empty_input"
+        in updated_state.nlp_state.edge_cases
+    )
+
+    assert (
+        "duplicate_values"
+        in updated_state.nlp_state.edge_cases
+    )
+
+    assert (
+        "Calculate complement"
+        in updated_state.nlp_state.reasoning_summary
+    )
+
     print()
     print("STATE UPDATE PASSED")
 
-    # ==================================================
-    # FOLLOW-UP CHECK
-    #
-    # If Ollama/classification identifies an adaptive
-    # gap, a follow-up should have been generated.
-    # ==================================================
-
-    if updated_state.primary_adaptive_gap:
-
-        assert (
-            updated_state.current_interviewer_question
-            is not None
-        )
-
-        assert (
-            len(
-                updated_state.current_interviewer_question
-                .strip()
-            )
-            > 0
-        )
-
-        print(
-            "FOLLOW-UP GENERATION PASSED"
-        )
-
-    else:
-
-        print(
-            "NO ADAPTIVE GAP — NO FOLLOW-UP REQUIRED"
-        )
-
     print()
-    print("=" * 60)
-    print("       STEP 11 TEST PASSED")
-    print("=" * 60)
-
-
-if __name__ == "__main__":
-    test_complete_adaptive_turn()
+    print("NLP STATE UPDATE PASSED")

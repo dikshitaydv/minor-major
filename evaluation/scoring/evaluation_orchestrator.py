@@ -13,7 +13,8 @@ from evaluation.scoring.adaptive_probe import (
 )
 
 from evaluation.scoring.candidate_state import (
-    CandidateEvaluationState
+    CandidateEvaluationState,
+    CandidateNLPState
 )
 
 from evaluation.interviewer.followup_strategy import (
@@ -56,6 +57,60 @@ def evaluate_candidate_turn(
         Follow-Up Question OR Finish
     """
 
+        # ==================================================
+    # 0. UPDATE NLP STATE
+    # ==================================================
+
+    nlp_state = CandidateNLPState(
+        approach=candidate_features.get(
+            "approach",
+            ""
+        ),
+
+        algorithms=candidate_features.get(
+            "algorithms",
+            []
+        ).copy(),
+
+        concepts=candidate_features.get(
+            "concepts",
+            []
+        ).copy(),
+
+        data_structures=candidate_features.get(
+            "data_structures",
+            []
+        ).copy(),
+
+        time_complexity=(
+            candidate_features
+            .get("complexity_claim", {})
+            .get("time")
+        ),
+
+        space_complexity=(
+            candidate_features
+            .get("complexity_claim", {})
+            .get("space")
+        ),
+
+        edge_cases=candidate_features.get(
+            "edge_cases",
+            []
+        ).copy(),
+
+        reasoning_summary=" ".join(
+            candidate_features.get(
+                "reasoning",
+                []
+            )
+        ),
+
+        confidence=1.0
+    )
+
+    state.update_nlp_state(nlp_state)
+    
     # ==================================================
     # 1. OLLAMA EVALUATION
     # ==================================================

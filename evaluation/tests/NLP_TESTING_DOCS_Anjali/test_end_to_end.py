@@ -274,17 +274,23 @@ def test_end_to_end():
             # ==============================================
 
             answer_3 = (
-                "For edge cases, I would consider duplicate "
-                "values, negative numbers, an empty array, "
-                "an array with fewer than two elements, "
-                "and the case where no valid pair exists."
+                "For each number, I calculate its complement as "
+                "target minus the current number. I first check whether "
+                "that complement is already in the HashMap. The map stores "
+                "previously processed values and their indices, so the "
+                "lookup takes O(1) average time. I only add the current "
+                "number after checking its complement, which prevents using "
+                "the same element twice. Once a matching complement is "
+                "found, I return its stored index and the current index. "
+                "The overall time complexity is O(n) and the space complexity "
+                "is O(n). This also handles duplicate values, negative "
+                "numbers, empty arrays, arrays with fewer than two elements, "
+                "and cases where no valid pair exists."
             )
 
             features_3 = build_features(
                 answer=answer_3,
-
                 time_complexity="O(n)",
-
                 space_complexity="O(n)"
             )
 
