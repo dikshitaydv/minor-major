@@ -1,7 +1,7 @@
 from evaluation.extraction.extraction_service import (
     extract_candidate_features
 )
-
+from adaptive.policy_engine import PolicyEngine
 from evaluation.scoring.candidate_state import (
     CandidateEvaluationState
 )
@@ -37,17 +37,24 @@ class InterviewSession:
     """
 
     def __init__(
-        self,
-        candidate_id: str,
-        question_id: str,
-        problem: dict
+    self,
+    candidate_id: str,
+    question_id: str,
+    problem: dict,
+    time_remaining: int = 600,
+    candidate_level: str = "medium"
     ):
         self.problem = problem
+
+        self.time_remaining = time_remaining
+        self.candidate_level = candidate_level
 
         self.state = CandidateEvaluationState(
             candidate_id=candidate_id,
             question_id=question_id
         )
+
+        self.policy_engine = PolicyEngine()
 
         self.finished = False
 
@@ -108,6 +115,20 @@ class InterviewSession:
 
             candidate_features=candidate_features
         )
+
+        # ----------------------------------------------
+        # Apply adaptive interview policy
+        # ----------------------------------------------
+
+        policy_decision = self.policy_engine.decide(
+        scores=self.state.scores,
+        time_remaining=self.time_remaining,
+        candidate_level=self.candidate_level
+        )
+
+        print()
+        print("Policy Decision:")
+        print(policy_decision)
 
         # ----------------------------------------------
         # Check whether interview continues
