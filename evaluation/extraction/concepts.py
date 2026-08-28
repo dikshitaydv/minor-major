@@ -7,8 +7,14 @@ CONCEPT_KEYWORDS = {
         "hashmap",
         "unordered_map",
         "dictionary",
-        "dict"
+        "dict",
+        "previously seen values",
+        "previously seen numbers",
+        "seen values in a map",
+        "store values in a map",
+        "store numbers in a map"
     ],
+    
     "two pointer": [
         "two pointer",
         "two pointers"

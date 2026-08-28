@@ -14,8 +14,8 @@ def test_normal_answer():
     assert result["original_answer"] == answer
     assert "hash map" in result["concepts_detected"]
     assert len(result["reasoning"]) > 0
-    assert result["complexity_claim"]["time"] == "o(n)"
-    assert result["complexity_claim"]["space"] == "o(n)"
+    assert result["complexity_claim"]["time"] == "O(n)"
+    assert result["complexity_claim"]["space"] == "O(n)"
 
 
 def test_empty_answer():
@@ -64,8 +64,8 @@ def test_verbose_answer():
 
     assert "hash map" in result["concepts_detected"]
     assert len(result["reasoning"]) >= 4
-    assert result["complexity_claim"]["time"] == "o(n)"
-    assert result["complexity_claim"]["space"] == "o(n)"
+    assert result["complexity_claim"]["time"] == "O(n)"
+    assert result["complexity_claim"]["space"] == "O(n)"
 
 
 def test_concise_answer():
@@ -74,7 +74,7 @@ def test_concise_answer():
     result = extract_candidate_features(answer)
 
     assert "hash map" in result["concepts_detected"]
-    assert result["complexity_claim"]["time"] == "o(n)"
+    assert result["complexity_claim"]["time"] == "O(n)"
     assert result["complexity_claim"]["space"] is None
 
 def test_whitespace_normalization():
@@ -225,8 +225,8 @@ def test_complexity_with_spaces():
         "Time complexity: O( n log n ), Space complexity: O( n )."
     )
 
-    assert result["complexity_claim"]["time"] == "o(nlogn)"
-    assert result["complexity_claim"]["space"] == "o(n)"
+    assert result["complexity_claim"]["time"] == "O(nlogn)"
+    assert result["complexity_claim"]["space"] == "O(n)"
 
 
 def test_complexity_without_colon():
@@ -235,8 +235,8 @@ def test_complexity_without_colon():
         "The space complexity is O(1)."
     )
 
-    assert result["complexity_claim"]["time"] == "o(nlogn)"
-    assert result["complexity_claim"]["space"] == "o(1)"
+    assert result["complexity_claim"]["time"] == "O(nlogn)"
+    assert result["complexity_claim"]["space"] == "O(1)"
 
 
 def test_complexity_equals_format():
@@ -244,8 +244,8 @@ def test_complexity_equals_format():
         "Time complexity = O(n). Space complexity = O(1)."
     )
 
-    assert result["complexity_claim"]["time"] == "o(n)"
-    assert result["complexity_claim"]["space"] == "o(1)"
+    assert result["complexity_claim"]["time"] == "O(n)"
+    assert result["complexity_claim"]["space"] == "O(1)"
 
 
 def test_complexity_missing_claim():
@@ -262,7 +262,7 @@ def test_complexity_only_time():
         "The time complexity is O(n)."
     )
 
-    assert result["complexity_claim"]["time"] == "o(n)"
+    assert result["complexity_claim"]["time"] == "O(n)"
     assert result["complexity_claim"]["space"] is None
 
 
@@ -272,7 +272,7 @@ def test_complexity_only_space():
     )
 
     assert result["complexity_claim"]["time"] is None
-    assert result["complexity_claim"]["space"] == "o(n)"
+    assert result["complexity_claim"]["space"] == "O(n)"
     
 def test_structured_hash_map_extraction():
     answer = (
@@ -326,10 +326,20 @@ def test_structured_data_structures():
 def test_structured_empty_answer():
     result = extract_candidate_features("")
 
-    assert result["approach"] == ""
-    assert result["algorithms"] == []
-    assert result["concepts"] == []
-    assert result["data_structures"] == []
+    assert result["approach"] is None
+
+    assert result["time_complexity"] is None
+    assert result["space_complexity"] is None
+
+    assert result["edge_cases"] == []
+
+    assert result["reasoning_summary"] is None
+
+    assert result["assumptions"] == []
+
+    assert result["optimization"] is None
+
+    assert result["confidence"] == 0.0
 
 
 def test_edge_case_extraction():

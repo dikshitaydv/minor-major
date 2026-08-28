@@ -1,3 +1,7 @@
+from evaluation.extraction.extraction_service import (
+    extract_candidate_features
+)
+
 from evaluation.scoring.candidate_state import (
     CandidateEvaluationState
 )
@@ -54,7 +58,7 @@ class InterviewSession:
     def submit_answer(
         self,
         candidate_answer: str,
-        candidate_features: dict
+        candidate_features: dict | None = None
     ) -> CandidateEvaluationState:
         """
         Submit one candidate answer to the adaptive
@@ -82,6 +86,15 @@ class InterviewSession:
                 "Candidate answer cannot be empty."
             )
 
+        # ----------------------------------------------
+        # Extract NLP features when they are not supplied
+        # ----------------------------------------------
+
+        if candidate_features is None:
+            candidate_features = extract_candidate_features(
+                candidate_answer
+            )
+        
         # ----------------------------------------------
         # Evaluate current turn
         # ----------------------------------------------

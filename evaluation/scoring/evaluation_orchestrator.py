@@ -57,15 +57,12 @@ def evaluate_candidate_turn(
         Follow-Up Question OR Finish
     """
 
-        # ==================================================
+    # ==================================================
     # 0. UPDATE NLP STATE
     # ==================================================
 
     nlp_state = CandidateNLPState(
-        approach=candidate_features.get(
-            "approach",
-            ""
-        ),
+        approach=candidate_features.get("approach"),
 
         algorithms=candidate_features.get(
             "algorithms",
@@ -84,14 +81,12 @@ def evaluate_candidate_turn(
 
         time_complexity=(
             candidate_features
-            .get("complexity_claim", {})
-            .get("time")
+            .get("time_complexity")
         ),
 
         space_complexity=(
             candidate_features
-            .get("complexity_claim", {})
-            .get("space")
+            .get("space_complexity")
         ),
 
         edge_cases=candidate_features.get(
@@ -99,14 +94,23 @@ def evaluate_candidate_turn(
             []
         ).copy(),
 
-        reasoning_summary=" ".join(
-            candidate_features.get(
-                "reasoning",
-                []
-            )
+        reasoning_summary=candidate_features.get(
+            "reasoning_summary"
         ),
 
-        confidence=1.0
+        assumptions=candidate_features.get(
+            "assumptions",
+            []
+        ).copy(),
+
+        optimization=candidate_features.get(
+            "optimization"
+        ),
+        
+        confidence=candidate_features.get(
+            "confidence",
+            0.0
+        ) or 0.0
     )
 
     state.update_nlp_state(nlp_state)

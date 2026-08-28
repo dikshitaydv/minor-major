@@ -12,7 +12,7 @@ class CandidateNLPState:
     and does NOT assign evaluation scores.
     """
 
-    approach: str = ""
+    approach: Optional[str] = None
 
     algorithms: List[str] = field(
         default_factory=list
@@ -34,7 +34,13 @@ class CandidateNLPState:
         default_factory=list
     )
 
-    reasoning_summary: str = ""
+    reasoning_summary: Optional[str] = None
+    
+    assumptions: List[str] = field(
+        default_factory=list
+    )
+    
+    optimization: Optional[bool] = None
 
     confidence: float = 0.0
 
@@ -53,6 +59,8 @@ class CandidateNLPState:
             "space_complexity": self.space_complexity,
             "edge_cases": self.edge_cases.copy(),
             "reasoning_summary": self.reasoning_summary,
+            "assumptions": self.assumptions.copy(),
+            "optimization": self.optimization,
             "confidence": self.confidence
         }
 @dataclass
@@ -164,11 +172,13 @@ class CandidateEvaluationState:
         nlp_state: CandidateNLPState
     ):
         """
-        Replace the current NLP state with the structured
-        information extracted from the latest candidate response.
+        Merge newly extracted NLP information into the
+        existing candidate state.
 
-        This method does not perform scoring or correctness
-        evaluation.
+        New information is added.
+
+        Missing information from the current turn does
+        not erase information extracted from earlier turns.
         """
 
         if not isinstance(
@@ -184,7 +194,74 @@ class CandidateEvaluationState:
                 "NLP confidence must be between 0.0 and 1.0."
             )
 
-        self.nlp_state = nlp_state
+        # --------------------------------------------------
+        # Scalar fields
+        # --------------------------------------------------
+
+        if nlp_state.approach is not None:
+            self.nlp_state.approach = (
+                nlp_state.approach
+            )
+
+        if nlp_state.time_complexity is not None:
+            self.nlp_state.time_complexity = (
+                nlp_state.time_complexity
+            )
+
+        if nlp_state.space_complexity is not None:
+            self.nlp_state.space_complexity = (
+                nlp_state.space_complexity
+            )
+
+        if nlp_state.reasoning_summary is not None:
+            if self.nlp_state.reasoning_summary:
+                self.nlp_state.reasoning_summary = (
+                    self.nlp_state.reasoning_summary
+                    + " "
+                    + nlp_state.reasoning_summary
+                )
+            else:
+                self.nlp_state.reasoning_summary = (
+                    nlp_state.reasoning_summary
+                )
+
+        if nlp_state.optimization is not None:
+            self.nlp_state.optimization = (
+                nlp_state.optimization
+            )
+
+        # --------------------------------------------------
+        # List fields
+        # --------------------------------------------------
+
+        for value in nlp_state.algorithms:
+            if value not in self.nlp_state.algorithms:
+                self.nlp_state.algorithms.append(value)
+
+        for value in nlp_state.concepts:
+            if value not in self.nlp_state.concepts:
+                self.nlp_state.concepts.append(value)
+
+        for value in nlp_state.data_structures:
+            if value not in self.nlp_state.data_structures:
+                self.nlp_state.data_structures.append(value)
+
+        for value in nlp_state.edge_cases:
+            if value not in self.nlp_state.edge_cases:
+                self.nlp_state.edge_cases.append(value)
+
+        for value in nlp_state.assumptions:
+            if value not in self.nlp_state.assumptions:
+                self.nlp_state.assumptions.append(value)
+
+        # --------------------------------------------------
+        # Confidence
+        # --------------------------------------------------
+
+        self.nlp_state.confidence = max(
+            self.nlp_state.confidence,
+            nlp_state.confidence
+        )   
         
     def update(
         self,
