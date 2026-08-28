@@ -13,10 +13,9 @@ problem = {
 
 
 candidate_answer = (
-    "I'll use a hash map. For each number, I'll calculate "
-    "target-number. If the complement is already in the map, "
-    "I'll return the two indices; otherwise I'll store the "
-    "number and index. O(n) time, O(n) space."
+    "I'll use a hash map. I'll store the numbers I've already "
+    "seen and check whether the complement exists. "
+    "This should take O(n) time and O(n) space."
 )
 
 
