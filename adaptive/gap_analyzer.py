@@ -41,10 +41,20 @@ def analyze_gaps(scores: dict[str, float]) -> dict[str, Any]:
 
         normalized_scores[normalized_dimension] = score
 
-    # Sort from weakest score to strongest score.
+    # Ignore NOT_ASSESSED dimensions.
+    # None means the dimension has not been assessed yet,
+    # so it must not be treated as a low score or a gap.
+
+    assessed_scores = {
+    dimension: score
+    for dimension, score in normalized_scores.items()
+    if score is not None
+    }
+
+    # Sort assessed dimensions from weakest to strongest.
     prioritized_gaps = sorted(
-        normalized_scores,
-        key=normalized_scores.get
+    assessed_scores,
+    key=assessed_scores.get
     )
 
     primary_gap = (
