@@ -232,6 +232,7 @@ class InterviewSession:
                 "the interview is still in progress."
             )
 
+
         return build_final_result(
             self.state
         )
