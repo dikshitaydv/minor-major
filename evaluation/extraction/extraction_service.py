@@ -211,7 +211,7 @@ def extract_candidate_features(answer: str) -> dict:
         "complexity_claim"
     ]
 
-    confidence = _calculate_nlp_confidence(
+    nlp_extraction_confidence = _calculate_nlp_confidence(
         concepts=concepts,
         reasoning=reasoning,
         complexity=complexity,
@@ -279,5 +279,5 @@ def extract_candidate_features(answer: str) -> dict:
 
         "optimization": optimization,
 
-        "confidence": confidence
+        "nlp_extraction_confidence": nlp_extraction_confidence
     }

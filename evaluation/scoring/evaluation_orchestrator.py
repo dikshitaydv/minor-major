@@ -106,15 +106,17 @@ def evaluate_candidate_turn(
         optimization=candidate_features.get(
             "optimization"
         ),
-        
-        confidence=candidate_features.get(
-            "confidence",
-            0.0
-        ) or 0.0
+
+        nlp_extraction_confidence=(
+            candidate_features.get(
+                "nlp_extraction_confidence",
+                0.0
+            ) or 0.0
+        )
     )
 
     state.update_nlp_state(nlp_state)
-    
+
     # ==================================================
     # 1. OLLAMA EVALUATION
     # ==================================================
@@ -418,6 +420,7 @@ def evaluate_candidate_turn(
     # Store this as a convenient state attribute.
     # CandidateEvaluationState does not declare this field,
     # so set it dynamically to avoid static type errors.
+
     setattr(
         state,
         "should_continue",
@@ -433,8 +436,6 @@ def evaluate_candidate_turn(
         # CandidateEvaluationState requires
         # interviewer_question to be a string.
         # Empty string means there is no next question.
-
-        
 
         return state
 
@@ -453,8 +454,6 @@ def evaluate_candidate_turn(
 
     if not followup_target:
 
-       
-
         return state
 
     # ==================================================
@@ -468,8 +467,6 @@ def evaluate_candidate_turn(
     )
 
     if not followup_strategy:
-
-       
 
         return state
 
