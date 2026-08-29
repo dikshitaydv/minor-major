@@ -94,9 +94,13 @@ def test_nlp_confidence_range():
         "I'll use a HashMap because lookup is constant time."
     )
 
-    assert 0.0 <= result["confidence"] <= 1.0
-    
-    
+    assert (
+        0.0
+        <= result["nlp_extraction_confidence"]
+        <= 1.0
+    )
+
+
 from evaluation.scoring.candidate_state import (
     CandidateEvaluationState,
     CandidateNLPState
@@ -126,7 +130,9 @@ def test_multi_turn_nlp_accumulation():
             reasoning_summary=turn_1["reasoning_summary"],
             assumptions=turn_1["assumptions"],
             optimization=turn_1["optimization"],
-            confidence=turn_1["confidence"]
+            nlp_extraction_confidence=(
+                turn_1["nlp_extraction_confidence"]
+            )
         )
     )
 
@@ -147,7 +153,9 @@ def test_multi_turn_nlp_accumulation():
             reasoning_summary=turn_2["reasoning_summary"],
             assumptions=turn_2["assumptions"],
             optimization=turn_2["optimization"],
-            confidence=turn_2["confidence"]
+            nlp_extraction_confidence=(
+                turn_2["nlp_extraction_confidence"]
+            )
         )
     )
 
@@ -168,7 +176,9 @@ def test_multi_turn_nlp_accumulation():
             reasoning_summary=turn_3["reasoning_summary"],
             assumptions=turn_3["assumptions"],
             optimization=turn_3["optimization"],
-            confidence=turn_3["confidence"]
+            nlp_extraction_confidence=(
+                turn_3["nlp_extraction_confidence"]
+            )
         )
     )
 

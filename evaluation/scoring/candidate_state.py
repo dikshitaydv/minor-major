@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Any
 
+
 @dataclass
 class CandidateNLPState:
     """
@@ -35,14 +36,14 @@ class CandidateNLPState:
     )
 
     reasoning_summary: Optional[str] = None
-    
+
     assumptions: List[str] = field(
         default_factory=list
     )
-    
+
     optimization: Optional[bool] = None
 
-    confidence: float = 0.0
+    nlp_extraction_confidence: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         """
@@ -61,8 +62,12 @@ class CandidateNLPState:
             "reasoning_summary": self.reasoning_summary,
             "assumptions": self.assumptions.copy(),
             "optimization": self.optimization,
-            "confidence": self.confidence
+            "nlp_extraction_confidence": (
+                self.nlp_extraction_confidence
+            )
         }
+
+
 @dataclass
 class CandidateEvaluationState:
     """
@@ -96,7 +101,7 @@ class CandidateEvaluationState:
     current_answer: str = ""
 
     current_interviewer_question: Optional[str] = None
-    
+
     # ==================================================
     # NLP / CONTEXT STATE
     # ==================================================
@@ -160,10 +165,6 @@ class CandidateEvaluationState:
     )
 
     # ==================================================
-    # UPDATE STATE
-    # ==================================================
-
-        # ==================================================
     # UPDATE NLP STATE
     # ==================================================
 
@@ -189,9 +190,9 @@ class CandidateEvaluationState:
                 "nlp_state must be a CandidateNLPState instance."
             )
 
-        if not 0.0 <= nlp_state.confidence <= 1.0:
+        if not 0.0 <= nlp_state.nlp_extraction_confidence <= 1.0:
             raise ValueError(
-                "NLP confidence must be between 0.0 and 1.0."
+                "NLP extraction confidence must be between 0.0 and 1.0."
             )
 
         # --------------------------------------------------
@@ -255,14 +256,14 @@ class CandidateEvaluationState:
                 self.nlp_state.assumptions.append(value)
 
         # --------------------------------------------------
-        # Confidence
+        # NLP Extraction Confidence
         # --------------------------------------------------
 
-        self.nlp_state.confidence = max(
-            self.nlp_state.confidence,
-            nlp_state.confidence
-        )   
-        
+        self.nlp_state.nlp_extraction_confidence = max(
+            self.nlp_state.nlp_extraction_confidence,
+            nlp_state.nlp_extraction_confidence
+        )
+
     def update(
         self,
         candidate_answer: str,
@@ -495,7 +496,7 @@ class CandidateEvaluationState:
             ),
 
             "nlp_state": self.nlp_state.to_dict(),
-            
+
             "scores": self.scores.copy(),
 
             "primary_classification": (

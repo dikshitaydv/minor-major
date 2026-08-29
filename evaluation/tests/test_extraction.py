@@ -77,6 +77,7 @@ def test_concise_answer():
     assert result["complexity_claim"]["time"] == "O(n)"
     assert result["complexity_claim"]["space"] is None
 
+
 def test_whitespace_normalization():
     answer = "   I   use a hash map.\n\n\tThen I check the complement.   "
 
@@ -122,7 +123,9 @@ def test_repeated_reasoning_is_preserved():
     result = extract_candidate_features(answer)
 
     assert "First I use a hash map." in result["normalized_answer"]
-    assert result["normalized_answer"].count("First I use a hash map.") == 2
+    assert result["normalized_answer"].count(
+        "First I use a hash map."
+    ) == 2
 
 
 def test_long_answer_is_not_truncated():
@@ -132,6 +135,7 @@ def test_long_answer_is_not_truncated():
 
     assert len(result["original_answer"]) == len(answer)
     assert len(result["normalized_answer"]) > 0
+
 
 def test_concept_case_insensitive():
     result = extract_candidate_features(
@@ -176,6 +180,7 @@ def test_no_concepts():
 
     assert result["concepts_detected"] == []
 
+
 def test_reasoning_question_and_exclamation_sentences():
     answer = (
         "What should I store? "
@@ -186,8 +191,14 @@ def test_reasoning_question_and_exclamation_sentences():
     result = extract_candidate_features(answer)
 
     assert len(result["reasoning"]) >= 2
-    assert any("store the values" in step.lower() for step in result["reasoning"])
-    assert any("check the complement" in step.lower() for step in result["reasoning"])
+    assert any(
+        "store the values" in step.lower()
+        for step in result["reasoning"]
+    )
+    assert any(
+        "check the complement" in step.lower()
+        for step in result["reasoning"]
+    )
 
 
 def test_reasoning_logical_explanation():
@@ -219,6 +230,7 @@ def test_reasoning_does_not_match_if_inside_word():
 
     # "if" inside "difference" should not count as reasoning.
     assert result["reasoning"] == []
+
 
 def test_complexity_with_spaces():
     result = extract_candidate_features(
@@ -273,7 +285,8 @@ def test_complexity_only_space():
 
     assert result["complexity_claim"]["time"] is None
     assert result["complexity_claim"]["space"] == "O(n)"
-    
+
+
 def test_structured_hash_map_extraction():
     answer = (
         "I will use a hash map to store previously seen values."
@@ -339,7 +352,7 @@ def test_structured_empty_answer():
 
     assert result["optimization"] is None
 
-    assert result["confidence"] == 0.0
+    assert result["nlp_extraction_confidence"] == 0.0
 
 
 def test_edge_case_extraction():
