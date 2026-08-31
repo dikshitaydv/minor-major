@@ -3,7 +3,7 @@ import urllib.request
 
 from evaluation.configs.ai_config import (
     OLLAMA_BASE_URL,
-    LLM_MODEL
+    FOLLOWUP_MODEL
 )
 
 
@@ -217,7 +217,7 @@ The JSON MUST have exactly this structure:
     # ==================================================
 
     payload = {
-        "model": LLM_MODEL,
+        "model": FOLLOWUP_MODEL,
         "prompt": prompt,
         "stream": False,
         "think": False,
@@ -231,8 +231,13 @@ The JSON MUST have exactly this structure:
         payload
     ).encode("utf-8")
 
+    ollama_url = (
+    f"{OLLAMA_BASE_URL.rstrip('/')}"
+    "/api/generate"
+    )
+
     request = urllib.request.Request(
-        f"{OLLAMA_BASE_URL}/api/generate",
+        ollama_url,
         data=data,
         headers={
             "Content-Type": "application/json"

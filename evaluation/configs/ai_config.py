@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 
@@ -6,8 +7,13 @@ from dotenv import load_dotenv
 # Load environment variables
 # ==========================================================
 
-load_dotenv()
+EVALUATION_DIR = Path(__file__).resolve().parent.parent
 
+ENV_FILE = EVALUATION_DIR / ".env"
+
+load_dotenv(
+    ENV_FILE
+)
 
 # ==========================================================
 # OpenAI Configuration
@@ -32,10 +38,33 @@ OLLAMA_BASE_URL = os.getenv(
     "http://localhost:11434"
 )
 
-LLM_MODEL = os.getenv(
-    "LLM_MODEL",
+
+# ==========================================================
+# Ollama Models
+# ==========================================================
+
+# NLP extraction model
+EXTRACTOR_MODEL = os.getenv(
+    "EXTRACTOR_MODEL",
     "qwen3:4b"
 )
+
+# Candidate evaluation model
+EVALUATOR_MODEL = os.getenv(
+    "EVALUATOR_MODEL",
+    "qwen3:1.7b"
+)
+
+# Interview follow-up generation model
+FOLLOWUP_MODEL = os.getenv(
+    "FOLLOWUP_MODEL",
+    "qwen3:1.7b"
+)
+
+
+# ==========================================================
+# Embedding Model
+# ==========================================================
 
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL",

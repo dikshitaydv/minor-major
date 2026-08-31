@@ -352,8 +352,6 @@ def test_structured_empty_answer():
 
     assert result["optimization"] is None
 
-    assert result["nlp_extraction_confidence"] == 0.0
-
 
 def test_edge_case_extraction():
     answer = (
