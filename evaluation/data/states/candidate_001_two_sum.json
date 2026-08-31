@@ -1,0 +1,26 @@
+{
+  "candidate_id": "candidate_001",
+  "question_id": "two_sum",
+  "candidate_answer": null,
+  "nlp_state": {
+    "approach": null,
+    "algorithms": [],
+    "concepts": [],
+    "data_structures": [],
+    "time_complexity": null,
+    "space_complexity": null,
+    "edge_cases": [],
+    "reasoning_summary": "Calculate complement Check HashMap",
+    "assumptions": [],
+    "optimization": null
+  },
+  "scores": {},
+  "primary_classification": null,
+  "secondary_classification": null,
+  "adaptive_classifications": [],
+  "primary_adaptive_gap": null,
+  "evidence": {},
+  "history": [],
+  "current_interviewer_question": null,
+  "should_continue": false
+}

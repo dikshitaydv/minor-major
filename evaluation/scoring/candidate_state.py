@@ -1,29 +1,64 @@
-from dataclasses import dataclass, field
-from typing import Optional, Dict, List, Any
+from dataclasses import dataclass, field, asdict
+from typing import Any, Optional
 
+
+# ============================================================
+# HELPERS
+# ============================================================
+
+def _merge_unique(
+    existing: list,
+    incoming: list
+) -> list:
+    """
+    Merge two lists while preserving order and removing
+    duplicates.
+    """
+
+    result = list(
+        existing or []
+    )
+
+    for value in incoming or []:
+
+        if value is None:
+            continue
+
+        if value not in result:
+
+            result.append(
+                value
+            )
+
+    return result
+
+
+# ============================================================
+# CANDIDATE NLP STATE
+# ============================================================
 
 @dataclass
 class CandidateNLPState:
     """
-    Structured representation of information extracted from
-    the candidate's natural-language coding response.
+    Accumulated semantic state extracted from candidate answers.
 
-    This state represents what the candidate said or expressed.
-    It does NOT determine whether the candidate's claims are correct
-    and does NOT assign evaluation scores.
+    IMPORTANT:
+
+    This class contains no NLP logic, regexes, or keyword rules.
+    It only stores and merges results produced by the LLM extractor.
     """
 
     approach: Optional[str] = None
 
-    algorithms: List[str] = field(
+    algorithms: list[str] = field(
         default_factory=list
     )
 
-    concepts: List[str] = field(
+    concepts: list[str] = field(
         default_factory=list
     )
 
-    data_structures: List[str] = field(
+    data_structures: list[str] = field(
         default_factory=list
     )
 
@@ -31,497 +66,556 @@ class CandidateNLPState:
 
     space_complexity: Optional[str] = None
 
-    edge_cases: List[str] = field(
+    edge_cases: list[str] = field(
         default_factory=list
     )
 
     reasoning_summary: Optional[str] = None
 
-    assumptions: List[str] = field(
+    assumptions: list[str] = field(
         default_factory=list
     )
 
+    # None means optimization was not discussed.
+    # True means optimization was explicitly discussed/proposed.
+    # False means optimization was explicitly discussed and
+    # the candidate said no further optimization is needed.
     optimization: Optional[bool] = None
 
-    nlp_extraction_confidence: float = 0.0
+    # ========================================================
+    # SERIALIZATION
+    # ========================================================
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict:
         """
-        Convert NLP state into a dictionary suitable for
-        passing to the evaluation layer.
+        Convert NLP state to a serializable dictionary.
         """
 
-        return {
-            "approach": self.approach,
-            "algorithms": self.algorithms.copy(),
-            "concepts": self.concepts.copy(),
-            "data_structures": self.data_structures.copy(),
-            "time_complexity": self.time_complexity,
-            "space_complexity": self.space_complexity,
-            "edge_cases": self.edge_cases.copy(),
-            "reasoning_summary": self.reasoning_summary,
-            "assumptions": self.assumptions.copy(),
-            "optimization": self.optimization,
-            "nlp_extraction_confidence": (
-                self.nlp_extraction_confidence
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: Optional[dict]
+    ) -> "CandidateNLPState":
+        """
+        Reconstruct NLP state from persisted data.
+
+        Older saved files may contain fields that no longer exist.
+        Unknown or deprecated fields are ignored.
+        """
+
+        if not isinstance(data, dict):
+            return cls()
+
+        return cls(
+            approach=data.get(
+                "approach"
+            ),
+
+            algorithms=list(
+                data.get("algorithms") or []
+            ),
+
+            concepts=list(
+                data.get("concepts") or []
+            ),
+
+            data_structures=list(
+                data.get("data_structures") or []
+            ),
+
+            time_complexity=data.get(
+                "time_complexity"
+            ),
+
+            space_complexity=data.get(
+                "space_complexity"
+            ),
+
+            edge_cases=list(
+                data.get("edge_cases") or []
+            ),
+
+            reasoning_summary=data.get(
+                "reasoning_summary"
+            ),
+
+            assumptions=list(
+                data.get("assumptions") or []
+            ),
+
+            optimization=data.get(
+                "optimization"
+            ),
+        )
+
+    # ========================================================
+    # MERGE
+    # ========================================================
+
+    def merge(
+        self,
+        new_state: "CandidateNLPState"
+    ) -> None:
+        """
+        Merge a new turn into the accumulated state.
+
+        Missing information from a later turn NEVER erases
+        information already established in an earlier turn.
+        """
+
+        if new_state is None:
+            return
+
+        if not isinstance(
+            new_state,
+            CandidateNLPState
+        ):
+            raise TypeError(
+                "new_state must be a CandidateNLPState."
             )
-        }
 
+        # ====================================================
+        # APPROACH
+        # ====================================================
+
+        if new_state.approach:
+
+            if not self.approach:
+
+                self.approach = (
+                    new_state.approach
+                )
+
+            elif self.approach != new_state.approach:
+
+                # Preserve the original primary approach.
+                #
+                # The extractor decides semantic meaning.
+                # State merging must not invent or replace
+                # an approach.
+
+                pass
+
+        # ====================================================
+        # ALGORITHMS
+        # ====================================================
+
+        self.algorithms = _merge_unique(
+            self.algorithms,
+            new_state.algorithms
+        )
+
+        # ====================================================
+        # CONCEPTS
+        # ====================================================
+
+        self.concepts = _merge_unique(
+            self.concepts,
+            new_state.concepts
+        )
+
+        # ====================================================
+        # DATA STRUCTURES
+        # ====================================================
+
+        self.data_structures = _merge_unique(
+            self.data_structures,
+            new_state.data_structures
+        )
+
+        # ====================================================
+        # COMPLEXITY
+        # ====================================================
+
+        # None means the candidate did not provide this
+        # information in the current turn.
+        #
+        # Therefore a later missing value must not erase
+        # an earlier explicitly stated value.
+
+        if new_state.time_complexity is not None:
+
+            self.time_complexity = (
+                new_state.time_complexity
+            )
+
+        if new_state.space_complexity is not None:
+
+            self.space_complexity = (
+                new_state.space_complexity
+            )
+
+        # ====================================================
+        # EDGE CASES
+        # ====================================================
+
+        self.edge_cases = _merge_unique(
+            self.edge_cases,
+            new_state.edge_cases
+        )
+
+        # ====================================================
+        # ASSUMPTIONS
+        # ====================================================
+
+        self.assumptions = _merge_unique(
+            self.assumptions,
+            new_state.assumptions
+        )
+
+        # ====================================================
+        # REASONING
+        # ====================================================
+
+        if new_state.reasoning_summary:
+
+            if self.reasoning_summary:
+
+                if (
+                    new_state.reasoning_summary
+                    != self.reasoning_summary
+                ):
+
+                    self.reasoning_summary = (
+                        self.reasoning_summary.rstrip()
+                        + " "
+                        + new_state.reasoning_summary.strip()
+                    )
+
+            else:
+
+                self.reasoning_summary = (
+                    new_state.reasoning_summary
+                )
+
+        # ====================================================
+        # OPTIMIZATION
+        # ====================================================
+
+        # None means:
+        # "optimization was not discussed."
+        #
+        # Therefore None from a later turn must NOT erase
+        # an earlier explicit optimization discussion.
+
+        if new_state.optimization is not None:
+
+            self.optimization = (
+                new_state.optimization
+            )
+
+
+# ============================================================
+# CANDIDATE EVALUATION STATE
+# ============================================================
 
 @dataclass
 class CandidateEvaluationState:
     """
-    Represents the candidate's current evaluation state
-    for one coding interview question.
+    Complete state for one candidate/question interview.
 
-    The state is updated after every candidate response.
-
-    Newly assessed scores replace previous scores.
-
-    NOT_ASSESSED dimensions do not erase previously
-    established scores.
-
-    Interviewer questions are stored so the system can
-    maintain conversational context and avoid repetition.
+    NLP state is accumulated across turns and persisted so later
+    evaluation stages/processes can load the same state.
     """
 
-    # ==================================================
-    # IDENTIFICATION
-    # ==================================================
-
     candidate_id: str
+
     question_id: str
 
-    # ==================================================
-    # CONVERSATION
-    # ==================================================
-
-    turn_number: int = 1
-
-    current_answer: str = ""
-
-    current_interviewer_question: Optional[str] = None
-
-    # ==================================================
-    # NLP / CONTEXT STATE
-    # ==================================================
+    candidate_answer: Optional[str] = None
 
     nlp_state: CandidateNLPState = field(
         default_factory=CandidateNLPState
     )
 
-    # ==================================================
-    # CURRENT SCORES
-    # ==================================================
-
-    scores: dict = field(
-        default_factory=lambda: {
-            "algorithm_correctness": None,
-            "logical_reasoning": None,
-            "concept_coverage": None,
-            "completeness": None,
-            "data_structure": None,
-            "complexity": None,
-            "edge_cases": None
-        }
+    scores: dict[str, Optional[float]] = field(
+        default_factory=dict
     )
-
-    # ==================================================
-    # CURRENT CLASSIFICATION
-    # ==================================================
 
     primary_classification: Optional[str] = None
 
     secondary_classification: Optional[str] = None
 
-    adaptive_classifications: list = field(
+    adaptive_classifications: list[Any] = field(
         default_factory=list
     )
 
     primary_adaptive_gap: Optional[str] = None
 
-    # ==================================================
-    # DIMENSION EVIDENCE
-    # ==================================================
-
-    evidence: dict = field(
-        default_factory=lambda: {
-            "algorithm_correctness": None,
-            "logical_reasoning": None,
-            "concept_coverage": None,
-            "completeness": None,
-            "data_structure": None,
-            "complexity": None,
-            "edge_cases": None
-        }
+    evidence: dict[str, Optional[str]] = field(
+        default_factory=dict
     )
 
-    # ==================================================
-    # HISTORY
-    # ==================================================
-
-    history: list = field(
+    history: list[dict[str, Any]] = field(
         default_factory=list
     )
 
-    # ==================================================
-    # UPDATE NLP STATE
-    # ==================================================
+    current_interviewer_question: Optional[str] = None
+
+    should_continue: bool = False
+
+    # ========================================================
+    # TURN NUMBER
+    # ========================================================
+
+    @property
+    def turn_number(self) -> int:
+        """
+        Return the current interview turn number.
+
+        The interview starts at turn 1.
+
+        After an answer has been processed and stored in history,
+        the next turn number is returned.
+
+        Therefore:
+
+            history = []       -> turn_number = 1
+            history = [turn1]  -> turn_number = 2
+            history = [turn1,
+                       turn2]   -> turn_number = 3
+
+        This is a derived value and is intentionally not stored
+        separately in persistence.
+        """
+
+        return len(
+            self.history
+        ) + 1
+
+    # ========================================================
+    # NLP STATE
+    # ========================================================
 
     def update_nlp_state(
         self,
-        nlp_state: CandidateNLPState
-    ):
+        new_state: CandidateNLPState
+    ) -> None:
         """
-        Merge newly extracted NLP information into the
-        existing candidate state.
-
-        New information is added.
-
-        Missing information from the current turn does
-        not erase information extracted from earlier turns.
+        Accumulate one LLM extraction result into the
+        candidate's persistent NLP state.
         """
 
         if not isinstance(
-            nlp_state,
+            new_state,
             CandidateNLPState
         ):
             raise TypeError(
-                "nlp_state must be a CandidateNLPState instance."
+                "new_state must be a CandidateNLPState."
             )
 
-        if not 0.0 <= nlp_state.nlp_extraction_confidence <= 1.0:
-            raise ValueError(
-                "NLP extraction confidence must be between 0.0 and 1.0."
-            )
-
-        # --------------------------------------------------
-        # Scalar fields
-        # --------------------------------------------------
-
-        if nlp_state.approach is not None:
-            self.nlp_state.approach = (
-                nlp_state.approach
-            )
-
-        if nlp_state.time_complexity is not None:
-            self.nlp_state.time_complexity = (
-                nlp_state.time_complexity
-            )
-
-        if nlp_state.space_complexity is not None:
-            self.nlp_state.space_complexity = (
-                nlp_state.space_complexity
-            )
-
-        if nlp_state.reasoning_summary is not None:
-            if self.nlp_state.reasoning_summary:
-                self.nlp_state.reasoning_summary = (
-                    self.nlp_state.reasoning_summary
-                    + " "
-                    + nlp_state.reasoning_summary
-                )
-            else:
-                self.nlp_state.reasoning_summary = (
-                    nlp_state.reasoning_summary
-                )
-
-        if nlp_state.optimization is not None:
-            self.nlp_state.optimization = (
-                nlp_state.optimization
-            )
-
-        # --------------------------------------------------
-        # List fields
-        # --------------------------------------------------
-
-        for value in nlp_state.algorithms:
-            if value not in self.nlp_state.algorithms:
-                self.nlp_state.algorithms.append(value)
-
-        for value in nlp_state.concepts:
-            if value not in self.nlp_state.concepts:
-                self.nlp_state.concepts.append(value)
-
-        for value in nlp_state.data_structures:
-            if value not in self.nlp_state.data_structures:
-                self.nlp_state.data_structures.append(value)
-
-        for value in nlp_state.edge_cases:
-            if value not in self.nlp_state.edge_cases:
-                self.nlp_state.edge_cases.append(value)
-
-        for value in nlp_state.assumptions:
-            if value not in self.nlp_state.assumptions:
-                self.nlp_state.assumptions.append(value)
-
-        # --------------------------------------------------
-        # NLP Extraction Confidence
-        # --------------------------------------------------
-
-        self.nlp_state.nlp_extraction_confidence = max(
-            self.nlp_state.nlp_extraction_confidence,
-            nlp_state.nlp_extraction_confidence
+        self.nlp_state.merge(
+            new_state
         )
+
+    # ========================================================
+    # EVALUATION UPDATE
+    # ========================================================
 
     def update(
         self,
-        candidate_answer: str,
-        scores: dict,
-        primary_classification: Optional[str],
-        secondary_classification: Optional[str],
-        adaptive_classifications: list,
-        primary_adaptive_gap: Optional[str],
+        candidate_answer: Optional[str] = None,
+        scores: Optional[dict] = None,
+        primary_classification: Optional[str] = None,
+        secondary_classification: Optional[str] = None,
+        adaptive_classifications: Optional[list] = None,
+        primary_adaptive_gap: Optional[str] = None,
         evidence: Optional[dict] = None,
-        interviewer_question: Optional[str] = None
-    ):
+    ) -> None:
         """
-        Update candidate state after a new response.
-
-        The previous state is saved into history first.
-
-        Only newly assessed scores replace previous scores.
-
-        NOT_ASSESSED dimensions retain their previous scores.
-
-        New evidence replaces previous evidence for the
-        dimensions that were assessed.
-
-        The interviewer question associated with the
-        candidate response is stored.
+        Update the non-NLP evaluation portion of state and append
+        a turn snapshot to history.
         """
 
-        # ==================================================
-        # SAVE PREVIOUS STATE
-        # ==================================================
+        if candidate_answer is not None:
 
-        self.history.append(
-            self.to_dict(
-                include_history=False
-            )
-        )
-
-        # ==================================================
-        # MOVE TO NEXT TURN
-        # ==================================================
-
-        self.turn_number += 1
-
-        # ==================================================
-        # UPDATE CURRENT ANSWER
-        # ==================================================
-
-        self.current_answer = candidate_answer
-
-        # ==================================================
-        # UPDATE INTERVIEWER QUESTION
-        # ==================================================
-
-        if interviewer_question is not None:
-
-            self.current_interviewer_question = (
-                interviewer_question
+            self.candidate_answer = (
+                candidate_answer
             )
 
-        # ==================================================
-        # MERGE SCORES
-        # ==================================================
+        if scores is not None:
 
-        for dimension_name in self.scores:
-
-            new_score = scores.get(
-                dimension_name
+            self.scores = dict(
+                scores
             )
 
-            # Only replace when the new response
-            # actually assessed this dimension.
+        if primary_classification is not None:
 
-            if new_score is not None:
+            self.primary_classification = (
+                primary_classification
+            )
 
-                self.scores[
-                    dimension_name
-                ] = new_score
+        if secondary_classification is not None:
 
-        # ==================================================
-        # MERGE EVIDENCE
-        # ==================================================
+            self.secondary_classification = (
+                secondary_classification
+            )
 
-        if evidence is not None:
+        if adaptive_classifications is not None:
 
-            for dimension_name in self.evidence:
-
-                new_evidence = evidence.get(
-                    dimension_name
-                )
-
-                if (
-                    new_evidence is not None
-                    and str(new_evidence).strip()
-                ):
-
-                    self.evidence[
-                        dimension_name
-                    ] = new_evidence
-
-        # ==================================================
-        # UPDATE CLASSIFICATIONS
-        # ==================================================
-
-        self.primary_classification = (
-            primary_classification
-        )
-
-        self.secondary_classification = (
-            secondary_classification
-        )
-
-        self.adaptive_classifications = (
-            adaptive_classifications
-        )
+            self.adaptive_classifications = list(
+                adaptive_classifications
+            )
 
         self.primary_adaptive_gap = (
             primary_adaptive_gap
         )
 
-    # ==================================================
-    # ADD INTERVIEWER QUESTION
-    # ==================================================
+        if evidence is not None:
+
+            self.evidence = dict(
+                evidence
+            )
+
+        # ====================================================
+        # TURN SNAPSHOT
+        # ====================================================
+
+        self.history.append(
+            {
+                "candidate_answer": (
+                    self.candidate_answer
+                ),
+
+                "scores": dict(
+                    self.scores
+                ),
+
+                "primary_classification": (
+                    self.primary_classification
+                ),
+
+                "secondary_classification": (
+                    self.secondary_classification
+                ),
+
+                "adaptive_classifications": list(
+                    self.adaptive_classifications
+                ),
+
+                "primary_adaptive_gap": (
+                    self.primary_adaptive_gap
+                ),
+
+                "evidence": dict(
+                    self.evidence
+                ),
+
+                # Persist the accumulated NLP state
+                # with every turn.
+                "nlp_state": (
+                    self.nlp_state.to_dict()
+                ),
+            }
+        )
+
+    # ========================================================
+    # INTERVIEWER QUESTION
+    # ========================================================
 
     def set_interviewer_question(
         self,
-        question: str
-    ):
-        """
-        Store the latest interviewer question.
-
-        This is useful when a question is generated after
-        the candidate state has already been updated.
-        """
-
-        if not isinstance(
-            question,
-            str
-        ):
-            raise TypeError(
-                "Interviewer question must be a string."
-            )
-
-        question = question.strip()
-
-        if not question:
-            raise ValueError(
-                "Interviewer question cannot be empty."
-            )
+        question: Optional[str]
+    ) -> None:
 
         self.current_interviewer_question = (
             question
         )
 
-    # ==================================================
-    # GET PREVIOUS QUESTIONS
-    # ==================================================
-
-    def get_previous_questions(self) -> list:
-        """
-        Return all interviewer questions stored in
-        previous conversation turns.
-        """
-
-        questions = []
-
-        # --------------------------------------------------
-        # Questions from history
-        # --------------------------------------------------
-
-        for previous_turn in self.history:
-
-            if not isinstance(
-                previous_turn,
-                dict
-            ):
-                continue
-
-            question = previous_turn.get(
-                "current_interviewer_question"
-            )
-
-            if (
-                isinstance(question, str)
-                and question.strip()
-            ):
-                questions.append(
-                    question.strip()
-                )
-
-        # --------------------------------------------------
-        # Include current question
-        # --------------------------------------------------
-
-        if (
-            isinstance(
-                self.current_interviewer_question,
-                str
-            )
-            and self.current_interviewer_question.strip()
-        ):
-            questions.append(
-                self.current_interviewer_question.strip()
-            )
-
-        return questions
-
-    # ==================================================
+    # ========================================================
     # SERIALIZATION
-    # ==================================================
+    # ========================================================
 
-    def to_dict(
-        self,
-        include_history: bool = True
-    ) -> dict:
+    def to_dict(self) -> dict:
         """
-        Convert current state into a dictionary.
+        Convert complete candidate state into a dictionary.
         """
 
-        state = {
-            "candidate_id": self.candidate_id,
+        return asdict(
+            self
+        )
 
-            "question_id": self.question_id,
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict
+    ) -> "CandidateEvaluationState":
+        """
+        Reconstruct candidate state from persisted JSON.
 
-            "turn_number": self.turn_number,
+        Unknown/old fields are ignored.
+        """
 
-            "current_answer": self.current_answer,
-
-            "current_interviewer_question": (
-                self.current_interviewer_question
-            ),
-
-            "nlp_state": self.nlp_state.to_dict(),
-
-            "scores": self.scores.copy(),
-
-            "primary_classification": (
-                self.primary_classification
-            ),
-
-            "secondary_classification": (
-                self.secondary_classification
-            ),
-
-            "adaptive_classifications": (
-                self.adaptive_classifications.copy()
-            ),
-
-            "primary_adaptive_gap": (
-                self.primary_adaptive_gap
-            ),
-
-            "evidence": self.evidence.copy()
-        }
-
-        if include_history:
-
-            state["history"] = (
-                self.history.copy()
+        if not isinstance(
+            data,
+            dict
+        ):
+            raise TypeError(
+                "Saved candidate state must be a dictionary."
             )
+
+        state = cls(
+
+            candidate_id=data[
+                "candidate_id"
+            ],
+
+            question_id=data[
+                "question_id"
+            ],
+
+            candidate_answer=data.get(
+                "candidate_answer"
+            ),
+
+            nlp_state=CandidateNLPState.from_dict(
+                data.get(
+                    "nlp_state"
+                )
+            ),
+
+            scores=dict(
+                data.get("scores") or {}
+            ),
+
+            primary_classification=data.get(
+                "primary_classification"
+            ),
+
+            secondary_classification=data.get(
+                "secondary_classification"
+            ),
+
+            adaptive_classifications=list(
+                data.get(
+                    "adaptive_classifications"
+                ) or []
+            ),
+
+            primary_adaptive_gap=data.get(
+                "primary_adaptive_gap"
+            ),
+
+            evidence=dict(
+                data.get("evidence") or {}
+            ),
+
+            history=list(
+                data.get("history") or []
+            ),
+
+            current_interviewer_question=data.get(
+                "current_interviewer_question"
+            ),
+
+            should_continue=bool(
+                data.get(
+                    "should_continue",
+                    False
+                )
+            ),
+        )
 
         return state

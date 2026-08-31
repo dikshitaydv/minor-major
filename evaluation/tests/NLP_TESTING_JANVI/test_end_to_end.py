@@ -10,35 +10,6 @@ def print_separator(title):
     print("=" * 60)
 
 
-def build_features(
-    answer: str,
-    time_complexity=None,
-    space_complexity=None
-):
-    """
-    Build the candidate features required by
-    the current LLM evaluation pipeline.
-    """
-
-    return {
-        "normalized_answer": answer,
-
-        "concepts_detected": [
-            "HashMap"
-        ],
-
-        "reasoning": [
-            "Calculate complement",
-            "Check HashMap"
-        ],
-
-        "complexity_claim": {
-            "time": time_complexity,
-            "space": space_complexity
-        }
-    }
-
-
 def test_end_to_end():
 
     print_separator(
@@ -50,7 +21,7 @@ def test_end_to_end():
     # ==================================================
 
     problem = {
-        "problem_id" : "P001",
+        "problem_id": "P001",
         "title": "Two Sum",
 
         "description": (
@@ -66,9 +37,7 @@ def test_end_to_end():
 
     session = InterviewSession(
         candidate_id="candidate_001",
-
         question_id="two_sum",
-
         problem=problem
     )
 
@@ -90,10 +59,6 @@ def test_end_to_end():
         "for every number."
     )
 
-    features_1 = build_features(
-        answer=answer_1
-    )
-
     print_separator(
         "TURN 1 — INITIAL ANSWER"
     )
@@ -102,10 +67,14 @@ def test_end_to_end():
     print("Candidate:")
     print(answer_1)
 
-    state = session.submit_answer(
-        candidate_answer=answer_1,
+    # IMPORTANT:
+    # Do NOT pass candidate_features.
+    #
+    # InterviewSession will call the REAL
+    # qwen3:4b extractor automatically.
 
-        candidate_features=features_1
+    state = session.submit_answer(
+        candidate_answer=answer_1
     )
 
     print()
@@ -186,14 +155,6 @@ def test_end_to_end():
             "can store up to n elements."
         )
 
-        features_2 = build_features(
-            answer=answer_2,
-
-            time_complexity="O(n)",
-
-            space_complexity="O(n)"
-        )
-
         print_separator(
             "TURN 2 — FOLLOW-UP ANSWER"
         )
@@ -202,10 +163,13 @@ def test_end_to_end():
         print("Candidate:")
         print(answer_2)
 
-        state = session.submit_answer(
-            candidate_answer=answer_2,
+        # IMPORTANT:
+        # Again, do NOT pass candidate_features.
+        #
+        # The REAL qwen3:4b extractor runs here.
 
-            candidate_features=features_2
+        state = session.submit_answer(
+            candidate_answer=answer_2
         )
 
         print()
@@ -289,12 +253,6 @@ def test_end_to_end():
                 "and cases where no valid pair exists."
             )
 
-            features_3 = build_features(
-                answer=answer_3,
-                time_complexity="O(n)",
-                space_complexity="O(n)"
-            )
-
             print_separator(
                 "TURN 3 — FINAL FOLLOW-UP ANSWER"
             )
@@ -303,10 +261,13 @@ def test_end_to_end():
             print("Candidate:")
             print(answer_3)
 
-            state = session.submit_answer(
-                candidate_answer=answer_3,
+            # IMPORTANT:
+            # Do NOT pass candidate_features.
+            #
+            # The REAL qwen3:4b extractor runs here.
 
-                candidate_features=features_3
+            state = session.submit_answer(
+                candidate_answer=answer_3
             )
 
             print()

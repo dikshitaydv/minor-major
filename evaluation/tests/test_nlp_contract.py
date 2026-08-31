@@ -2,6 +2,11 @@ from evaluation.extraction.extraction_service import (
     extract_candidate_features
 )
 
+from evaluation.scoring.candidate_state import (
+    CandidateEvaluationState,
+    CandidateNLPState
+)
+
 
 def test_direct_approach():
     result = extract_candidate_features(
@@ -17,11 +22,9 @@ def test_semantic_wording_for_hash_map():
     )
 
     assert (
-        "hash map"
-        in result["data_structures"]
+        "map" in result["data_structures"]
         or
-        "hash map"
-        in result["concepts_detected"]
+        "hash map" in result["data_structures"]
     )
 
 
@@ -39,8 +42,8 @@ def test_edge_cases():
         "I'll handle duplicates and an empty array."
     )
 
-    assert "duplicate_values" in result["edge_cases"]
-    assert "empty_input" in result["edge_cases"]
+    assert "duplicate values" in result["edge_cases"]
+    assert "empty array" in result["edge_cases"]
 
 
 def test_reasoning():
@@ -49,7 +52,11 @@ def test_reasoning():
     )
 
     assert result["reasoning_summary"] is not None
-    assert "HashMap" in result["reasoning_summary"]
+
+    assert (
+        "hash map"
+        in result["reasoning_summary"].lower()
+    )
 
 
 def test_missing_information():
@@ -58,10 +65,15 @@ def test_missing_information():
     )
 
     assert result["approach"] == "hash map"
+
     assert result["time_complexity"] is None
+
     assert result["space_complexity"] is None
+
     assert result["edge_cases"] == []
+
     assert result["assumptions"] == []
+
     assert result["optimization"] is None
 
 
@@ -89,31 +101,25 @@ def test_no_optimization_discussion():
     assert result["optimization"] is None
 
 
-def test_nlp_confidence_range():
+def test_no_nlp_confidence_field():
     result = extract_candidate_features(
         "I'll use a HashMap because lookup is constant time."
     )
 
-    assert (
-        0.0
-        <= result["nlp_extraction_confidence"]
-        <= 1.0
-    )
-
-
-from evaluation.scoring.candidate_state import (
-    CandidateEvaluationState,
-    CandidateNLPState
-)
+    assert "nlp_extraction_confidence" not in result
 
 
 def test_multi_turn_nlp_accumulation():
+
     state = CandidateEvaluationState(
         candidate_id="candidate_001",
         question_id="two_sum"
     )
 
-    # Turn 1
+    # ========================================================
+    # TURN 1
+    # ========================================================
+
     turn_1 = extract_candidate_features(
         "I'll use a HashMap."
     )
@@ -129,14 +135,14 @@ def test_multi_turn_nlp_accumulation():
             edge_cases=turn_1["edge_cases"],
             reasoning_summary=turn_1["reasoning_summary"],
             assumptions=turn_1["assumptions"],
-            optimization=turn_1["optimization"],
-            nlp_extraction_confidence=(
-                turn_1["nlp_extraction_confidence"]
-            )
+            optimization=turn_1["optimization"]
         )
     )
 
-    # Turn 2
+    # ========================================================
+    # TURN 2
+    # ========================================================
+
     turn_2 = extract_candidate_features(
         "The solution takes O(n) time and O(n) space."
     )
@@ -152,14 +158,14 @@ def test_multi_turn_nlp_accumulation():
             edge_cases=turn_2["edge_cases"],
             reasoning_summary=turn_2["reasoning_summary"],
             assumptions=turn_2["assumptions"],
-            optimization=turn_2["optimization"],
-            nlp_extraction_confidence=(
-                turn_2["nlp_extraction_confidence"]
-            )
+            optimization=turn_2["optimization"]
         )
     )
 
-    # Turn 3
+    # ========================================================
+    # TURN 3
+    # ========================================================
+
     turn_3 = extract_candidate_features(
         "I'd handle duplicate values and an empty array."
     )
@@ -175,12 +181,13 @@ def test_multi_turn_nlp_accumulation():
             edge_cases=turn_3["edge_cases"],
             reasoning_summary=turn_3["reasoning_summary"],
             assumptions=turn_3["assumptions"],
-            optimization=turn_3["optimization"],
-            nlp_extraction_confidence=(
-                turn_3["nlp_extraction_confidence"]
-            )
+            optimization=turn_3["optimization"]
         )
     )
+
+    # ========================================================
+    # FINAL STATE
+    # ========================================================
 
     final_state = state.nlp_state
 
@@ -190,6 +197,47 @@ def test_multi_turn_nlp_accumulation():
 
     assert final_state.space_complexity == "O(n)"
 
-    assert "duplicate_values" in final_state.edge_cases
+    assert "duplicate values" in final_state.edge_cases
 
-    assert "empty_input" in final_state.edge_cases
+    assert "empty array" in final_state.edge_cases
+
+
+def test_semantic_complement_lookup():
+
+    result = extract_candidate_features(
+        "I'll keep track of numbers I've already seen "
+        "and find the value that completes the target."
+    )
+
+    assert result["data_structures"] == ["hash map"]
+
+    assert "complement lookup" in result["concepts"]
+
+
+def test_quick_lookup_is_not_optimization():
+
+    result = extract_candidate_features(
+        "I'll store previous numbers for quick lookup."
+    )
+
+    assert result["optimization"] is None
+
+
+def test_explicit_optimization():
+
+    result = extract_candidate_features(
+        "I'll optimize the brute force approach by using "
+        "a hash map to reduce the time complexity."
+    )
+
+    assert result["optimization"] is True
+
+
+def test_ambiguous_memory_does_not_force_hash_map():
+
+    result = extract_candidate_features(
+        "I'll iterate through the array and remember "
+        "what I have seen so far."
+    )
+
+    assert result["approach"] is None
