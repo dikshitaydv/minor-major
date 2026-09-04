@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+from openpyxl import load_workbook
+
 
 # ==========================================================
 # DATASET ROOT
@@ -11,6 +13,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATASET_ROOT = PROJECT_ROOT / "dataset"
 
 REFERENCES_DIR = DATASET_ROOT / "references"
+
+REFERENCE_DATASET = (
+    REFERENCES_DIR
+    / "leetcode_1_to_10_reference_dataset_minimal.xlsx"
+)
+
 RUBRICS_DIR = DATASET_ROOT / "rubrics"
 
 
@@ -51,18 +59,6 @@ def _load_json(path: Path) -> dict:
 def _get_problem_id(problem: dict) -> str:
     """
     Extract the dataset problem ID from the problem object.
-
-    Supported forms:
-
-        {
-            "id": "P001"
-        }
-
-    or:
-
-        {
-            "problem_id": "P001"
-        }
     """
 
     if not isinstance(problem, dict):
@@ -76,67 +72,255 @@ def _get_problem_id(problem: dict) -> str:
     )
 
     if problem_id:
-        return str(problem_id).strip()
+        return str(
+            problem_id
+        ).strip()
 
     raise ValueError(
-        "Problem does not contain 'id' or 'problem_id'. "
-        "The dataset reference/rubric cannot be located."
+        "Problem does not contain 'id' or 'problem_id'."
     )
 
 
 # ==========================================================
-# PUBLIC API
+# REFERENCE DATASET
 # ==========================================================
 
-def load_reference_solution(problem: dict) -> dict:
+def load_reference_dataset() -> dict:
     """
-    Load the reference solution for a problem.
+    Load all reference solutions from the Excel dataset.
+
+    Returns:
+
+        {
+            "P001": {
+                "problem_id": "P001",
+                "problem_title": "...",
+                "reference_solutions": [...]
+            },
+            ...
+        }
     """
 
-    problem_id = _get_problem_id(problem)
+    if not REFERENCE_DATASET.exists():
+        raise FileNotFoundError(
+            f"Reference dataset not found: "
+            f"{REFERENCE_DATASET}"
+        )
 
-    path = (
-        REFERENCES_DIR
-        / f"{problem_id}_reference.json"
+    workbook = load_workbook(
+        REFERENCE_DATASET,
+        read_only=True,
+        data_only=True
     )
 
-    return _load_json(path)
+    try:
+
+        if "Reference Solutions" not in workbook.sheetnames:
+            raise ValueError(
+                "Excel dataset does not contain the "
+                "'Reference Solutions' sheet."
+            )
+
+        sheet = workbook[
+            "Reference Solutions"
+        ]
+
+        rows = sheet.iter_rows(
+            values_only=True
+        )
+
+        headers = next(
+            rows,
+            None
+        )
+
+        if not headers:
+            raise ValueError(
+                "Reference dataset is empty."
+            )
+
+        headers = [
+            str(header).strip()
+            if header is not None
+            else ""
+            for header in headers
+        ]
+
+        dataset = {}
+
+        for row in rows:
+
+            if not any(
+                value is not None
+                for value in row
+            ):
+                continue
+
+            reference = {}
+
+            for index, header in enumerate(headers):
+
+                if not header:
+                    continue
+
+                value = (
+                    row[index]
+                    if index < len(row)
+                    else None
+                )
+
+                reference[
+                    header
+                ] = value
+
+            problem_id = reference.get(
+                "Problem ID"
+            )
+
+            if problem_id is None:
+                continue
+
+            problem_id = str(
+                problem_id
+            ).strip()
+
+            reference_id = reference.get(
+                "Reference ID"
+            )
+
+            if reference_id is not None:
+                reference[
+                    "Reference ID"
+                ] = str(
+                    reference_id
+                ).strip()
+
+            if problem_id not in dataset:
+
+                dataset[
+                    problem_id
+                ] = {
+                    "problem_id": problem_id,
+                    "problem_title": reference.get(
+                        "Problem Title"
+                    ),
+                    "reference_solutions": []
+                }
+
+            dataset[
+                problem_id
+            ][
+                "reference_solutions"
+            ].append(
+                reference
+            )
+
+        return dataset
+
+    finally:
+
+        workbook.close()
 
 
-def load_rubric(problem: dict) -> dict:
+# ==========================================================
+# REFERENCE SOLUTIONS
+# ==========================================================
+
+def load_reference_solution(
+    problem: dict
+) -> list[dict]:
+    """
+    Load all reference solutions for a problem.
+
+    A problem may have multiple reference solutions.
+
+    Returns a list containing all references for that problem.
+    """
+
+    problem_id = _get_problem_id(
+        problem
+    )
+
+    dataset = load_reference_dataset()
+
+    problem_data = dataset.get(
+        problem_id
+    )
+
+    if problem_data is None:
+        raise FileNotFoundError(
+            f"No reference solutions found for "
+            f"problem: {problem_id}"
+        )
+
+    references = problem_data.get(
+        "reference_solutions",
+        []
+    )
+
+    if not references:
+        raise ValueError(
+            f"Problem {problem_id} has no reference solutions."
+        )
+
+    return references
+
+
+# ==========================================================
+# RUBRIC
+# ==========================================================
+
+def load_rubric(
+    problem: dict
+) -> dict:
     """
     Load the evaluation rubric for a problem.
     """
 
-    problem_id = _get_problem_id(problem)
+    problem_id = _get_problem_id(
+        problem
+    )
 
     path = (
         RUBRICS_DIR
         / f"{problem_id}_rubric.json"
     )
 
-    return _load_json(path)
+    return _load_json(
+        path
+    )
 
 
-def load_evaluation_context(problem: dict) -> tuple[dict, dict]:
+# ==========================================================
+# EVALUATION CONTEXT
+# ==========================================================
+
+def load_evaluation_context(
+    problem: dict
+) -> tuple[list[dict], dict]:
     """
-    Load both the reference solution and rubric
+    Load all reference solutions and the rubric
     for the given problem.
 
     Returns:
 
         (
-            reference_solution,
+            reference_solutions,
             rubric
         )
     """
 
-    reference_solution = load_reference_solution(
-        problem
+    reference_solutions = (
+        load_reference_solution(
+            problem
+        )
     )
 
     rubric = load_rubric(
         problem
     )
 
-    return reference_solution, rubric
+    return (
+        reference_solutions,
+        rubric
+    )

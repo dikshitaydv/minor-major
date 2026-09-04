@@ -671,3 +671,150 @@ def generate_evaluation(prompt: str) -> dict:
         ),
         "evaluation": evaluation,
     }
+    
+def generate_structured_json(
+    prompt: str,
+    model: str,
+    schema: dict,
+    num_predict: int = 800,
+) -> dict:
+    """
+    Send a prompt to Ollama requesting a structured JSON response.
+
+    This is a generic LLM transport function. It does not perform
+    evaluation or semantic interpretation.
+    """
+
+    if not isinstance(prompt, str):
+        raise TypeError(
+            "Prompt must be a string."
+        )
+
+    if not prompt.strip():
+        raise ValueError(
+            "Prompt cannot be empty."
+        )
+
+    if not isinstance(model, str) or not model.strip():
+        raise ValueError(
+            "Model must be a non-empty string."
+        )
+
+    if not isinstance(schema, dict):
+        raise TypeError(
+            "schema must be a dictionary."
+        )
+
+    ollama_url = _build_ollama_url()
+
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "think": False,
+        "format": schema,
+        "options": {
+            "temperature": 0.1,
+            "num_predict": num_predict,
+        },
+    }
+
+    data = json.dumps(
+        payload
+    ).encode("utf-8")
+
+    request = urllib.request.Request(
+        ollama_url,
+        data=data,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+
+    start_time = time.time()
+
+    try:
+
+        with urllib.request.urlopen(
+            request,
+            timeout=300,
+        ) as response:
+
+            raw_response = response.read().decode(
+                "utf-8"
+            )
+
+    except urllib.error.HTTPError as error:
+
+        try:
+            error_body = error.read().decode(
+                "utf-8",
+                errors="replace",
+            )
+        except Exception:
+            error_body = ""
+
+        message = (
+            f"HTTP {error.code}: {error.reason}"
+        )
+
+        if error_body.strip():
+            message += (
+                f" | Ollama response: "
+                f"{error_body.strip()}"
+            )
+
+        raise RuntimeError(
+            f"Ollama structured JSON request failed: "
+            f"{message}"
+        ) from error
+
+    except Exception as error:
+
+        raise RuntimeError(
+            f"Ollama structured JSON request failed: "
+            f"{error}"
+        ) from error
+
+    try:
+
+        result = json.loads(
+            raw_response
+        )
+
+    except json.JSONDecodeError as error:
+
+        raise RuntimeError(
+            "Ollama returned invalid HTTP JSON."
+        ) from error
+
+    if not isinstance(result, dict):
+        raise RuntimeError(
+            "Ollama HTTP response must be a JSON object."
+        )
+
+    response_text = result.get(
+        "response"
+    )
+
+    if not isinstance(
+        response_text,
+        str
+    ):
+        raise RuntimeError(
+            "Ollama response did not contain a valid "
+            "'response' field."
+        )
+
+    response_text = response_text.strip()
+
+    if not response_text:
+        raise RuntimeError(
+            "Ollama returned an empty response."
+        )
+
+    return _parse_json_response(
+        response_text
+    )  

@@ -14,16 +14,37 @@ from adaptive.repetition_guard import RepetitionGuard
 
 class PolicyEngine:
     """
-    Decides what the system should evaluate next.
+    Decides what the adaptive interviewer should do next.
 
-    Uses:
-    - gap analysis
-    - progress tracking
-    - repetition prevention
-    - score thresholds
-    - candidate level
-    - remaining interview time
+    Dimension scores are weighted contributions out of 100.
+
+    Therefore the policy normalizes each dimension score against
+    its maximum possible weighted contribution before applying
+    generic thresholds.
+
+    Example:
+
+        algorithm_correctness weight = 25
+
+        score = 10
+
+        normalized score =
+            10 / 25 * 100
+            = 40%
+
+    This keeps adaptive thresholds independent of the dimension's
+    individual weight.
     """
+
+    DIMENSION_WEIGHTS = {
+        "algorithm_correctness": 25,
+        "logical_reasoning": 20,
+        "concept_coverage": 15,
+        "completeness": 10,
+        "data_structure": 10,
+        "complexity": 10,
+        "edge_cases": 10,
+    }
 
     def __init__(self):
         self.repetition_guard = RepetitionGuard(
@@ -32,67 +53,84 @@ class PolicyEngine:
 
         self.progress_tracker = ProgressTracker()
 
+    # ==========================================================
+    # MAIN DECISION
+    # ==========================================================
+
     def decide(
         self,
-        scores: dict[str, float],
+        scores: dict,
         time_remaining: int,
         candidate_level: str = "medium"
     ) -> dict:
-        """
-        Generate the next adaptive policy decision.
-        """
 
-        # Rule 1: Interview time is over.
         if time_remaining <= 0:
             return self._stop_decision(
                 "Interview time has ended."
             )
 
-        # Record scores for progress tracking.
         self.progress_tracker.record(scores)
 
-        # Step 1: Analyze weaknesses.
         gap_analysis = analyze_gaps(scores)
 
-        prioritized_gaps = gap_analysis["prioritized_gaps"]
-
-        # Step 2: Remove dimensions targeted too many times.
-        available_gaps = self.repetition_guard.filter_available(
-            prioritized_gaps
+        prioritized_gaps = (
+            gap_analysis.get(
+                "prioritized_gaps",
+                []
+            )
+            or []
         )
 
-        # Step 3: Remove gaps that are now resolved.
+        available_gaps = (
+            self.repetition_guard.filter_available(
+                prioritized_gaps
+            )
+        )
+
         available_gaps = [
             dimension
             for dimension in available_gaps
             if not self._is_gap_resolved(dimension)
         ]
 
-        # Rule 2: No unresolved gaps are available.
+        # ------------------------------------------------------
+        # If there are no detected gaps, do not automatically
+        # terminate because the interviewer may still need to
+        # probe unassessed dimensions.
+        # ------------------------------------------------------
+
         if not available_gaps:
             return self._stop_decision(
-                "No unresolved gaps are available for follow-up."
+                "No assessed weakness requires a targeted follow-up."
             )
 
-        # Step 4: Choose the highest-priority available gap.
         target_dimension = available_gaps[0]
 
-        # Get the score for the selected dimension.
         target_score = self._get_score(
             scores,
             target_dimension
         )
 
-        # Step 5: Decide whether a follow-up is needed.
+        normalized_score = self._normalize_score(
+            target_dimension,
+            target_score
+        )
+
+        # ------------------------------------------------------
+        # IMPORTANT:
+        #
+        # FOLLOW_UP_THRESHOLD is interpreted on a 0-100
+        # normalized scale.
+        # ------------------------------------------------------
+
         if (
-            target_score is not None
-            and target_score >= FOLLOW_UP_THRESHOLD
+            normalized_score is not None
+            and normalized_score >= FOLLOW_UP_THRESHOLD
         ):
             return self._stop_decision(
-                "No significant weakness requires a follow-up."
+                "Selected gap is no longer below the follow-up threshold."
             )
 
-        # Step 6: Time-aware decision.
         time_policy = self._get_time_policy(
             time_remaining
         )
@@ -102,19 +140,16 @@ class PolicyEngine:
                 "Not enough time to start a new topic."
             )
 
-        # Step 7: Determine difficulty.
         difficulty = self._determine_difficulty(
             candidate_level,
-            target_score
+            normalized_score
         )
 
-        # Step 8: Determine goal.
         goal = self._determine_goal(
             target_dimension,
-            target_score
+            normalized_score
         )
 
-        # Record selected dimension for repetition prevention.
         self.repetition_guard.record_dimension(
             target_dimension
         )
@@ -133,16 +168,92 @@ class PolicyEngine:
             )
         }
 
+    # ==========================================================
+    # SCORE HELPERS
+    # ==========================================================
+
+    def _get_score(
+        self,
+        scores: dict,
+        dimension: str
+    ) -> float | None:
+
+        if dimension == "data_structure":
+            dimension = "data_structure"
+
+        value = scores.get(
+            dimension
+        )
+
+        # ------------------------------------------------------
+        # Scores normally arrive as:
+        #
+        # {
+        #     "score": 10,
+        #     "assessment_status": "ASSESSED"
+        # }
+        #
+        # Be tolerant of a plain numeric score as well.
+        # ------------------------------------------------------
+
+        if isinstance(value, dict):
+
+            value = value.get(
+                "score"
+            )
+
+        if value is None:
+            return None
+
+        try:
+            return float(value)
+
+        except (
+            TypeError,
+            ValueError
+        ):
+            return None
+
+    def _normalize_score(
+        self,
+        dimension: str,
+        score: float | None
+    ) -> float | None:
+
+        if score is None:
+            return None
+
+        weight = self.DIMENSION_WEIGHTS.get(
+            dimension
+        )
+
+        if weight is None or weight <= 0:
+            return None
+
+        normalized = (
+            score / weight
+        ) * 100
+
+        return max(
+            0.0,
+            min(
+                100.0,
+                normalized
+            )
+        )
+
+    # ==========================================================
+    # GAP RESOLUTION
+    # ==========================================================
+
     def _is_gap_resolved(
         self,
         dimension: str
     ) -> bool:
-        """
-        Check whether the latest score for a dimension
-        is high enough that it no longer needs follow-up.
-        """
 
-        latest_scores = self.progress_tracker.latest_scores()
+        latest_scores = (
+            self.progress_tracker.latest_scores()
+        )
 
         if latest_scores is None:
             return False
@@ -152,34 +263,27 @@ class PolicyEngine:
             dimension
         )
 
-        if latest_score is None:
+        normalized_score = self._normalize_score(
+            dimension,
+            latest_score
+        )
+
+        if normalized_score is None:
             return False
 
-        return latest_score >= FOLLOW_UP_THRESHOLD
+        return (
+            normalized_score
+            >= FOLLOW_UP_THRESHOLD
+        )
 
-    def _get_score(
-        self,
-        scores: dict[str, float],
-        dimension: str
-    ) -> float | None:
-        """
-        Get the score for a normalized dimension name.
-        """
-
-        if dimension == "data_structure":
-            return scores.get(
-                "data_structure_usage"
-            )
-
-        return scores.get(dimension)
+    # ==========================================================
+    # TIME POLICY
+    # ==========================================================
 
     def _get_time_policy(
         self,
         time_remaining: int
     ) -> str:
-        """
-        Determine the adaptive strategy based on time remaining.
-        """
 
         if time_remaining <= 0:
             return "STOP"
@@ -195,14 +299,15 @@ class PolicyEngine:
 
         return "EXPLORE_MULTIPLE_GAPS"
 
+    # ==========================================================
+    # DIFFICULTY
+    # ==========================================================
+
     def _determine_difficulty(
         self,
         candidate_level: str,
-        score: float | None
+        normalized_score: float | None
     ) -> str:
-        """
-        Choose follow-up difficulty.
-        """
 
         if candidate_level == "beginner":
             return "easy"
@@ -211,37 +316,39 @@ class PolicyEngine:
             return "hard"
 
         if (
-            score is not None
-            and score < LOW_SCORE_THRESHOLD
+            normalized_score is not None
+            and normalized_score < LOW_SCORE_THRESHOLD
         ):
             return "easy"
 
         return "medium"
 
+    # ==========================================================
+    # GOAL
+    # ==========================================================
+
     def _determine_goal(
         self,
         dimension: str,
-        score: float | None
+        normalized_score: float | None
     ) -> str:
-        """
-        Determine what the follow-up should achieve.
-        """
 
         if (
-            score is not None
-            and score < LOW_SCORE_THRESHOLD
+            normalized_score is not None
+            and normalized_score < LOW_SCORE_THRESHOLD
         ):
             return f"clarify_{dimension}"
 
         return f"probe_{dimension}"
 
+    # ==========================================================
+    # STOP
+    # ==========================================================
+
     def _stop_decision(
         self,
         reason: str
     ) -> dict:
-        """
-        Return a consistent stop decision.
-        """
 
         return {
             "action": "STOP",
