@@ -1,8 +1,6 @@
 {
   "problem_id": "P001",
-
   "rubric": {
-
     "weights": {
       "algorithm_correctness": 25,
       "logical_reasoning": 20,
@@ -12,11 +10,8 @@
       "complexity_analysis": 10,
       "edge_case_handling": 10
     },
-
     "total_weight": 100,
-
     "dimensions": {
-
       "algorithm_correctness": {
         "weight": 25,
         "evaluation": "Evaluate whether the proposed approach actually solves Two Sum.",
@@ -25,12 +20,10 @@
         "low_credit": "The candidate recognizes part of the problem but the proposed algorithm is substantially flawed.",
         "zero_credit": "The proposed approach cannot solve the problem."
       },
-
       "logical_reasoning": {
         "weight": 20,
-        "evaluation": "Evaluate whether the candidate's reasoning follows a valid sequence."
+        "evaluation": "Evaluate whether the candidate's reasoning follows a valid sequence and connects the proposed steps to the required output."
       },
-
       "concept_coverage": {
         "weight": 15,
         "expected_concepts": [
@@ -41,23 +34,19 @@
           "index-tracking"
         ]
       },
-
       "completeness": {
         "weight": 10,
         "evaluation": "Evaluate whether the candidate sufficiently explains the approach, important steps, complexity, and relevant considerations."
       },
-
       "data_structure_selection": {
         "weight": 10,
         "expected": "hash-map"
       },
-
       "complexity_analysis": {
         "weight": 10,
         "expected_time": "O(n)",
         "expected_space": "O(n)"
       },
-
       "edge_case_handling": {
         "weight": 10,
         "expected_cases": [

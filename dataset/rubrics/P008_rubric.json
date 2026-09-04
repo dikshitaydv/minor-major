@@ -1,5 +1,5 @@
 {
-  "problem_id": "P004",
+  "problem_id": "P008",
   "rubric": {
     "weights": {
       "algorithm_correctness": 25,
@@ -14,7 +14,7 @@
     "dimensions": {
       "algorithm_correctness": {
         "weight": 25,
-        "evaluation": "Evaluate whether the proposed approach actually solves Median of Two Sorted Arrays.",
+        "evaluation": "Evaluate whether the proposed approach actually solves String to Integer (atoi).",
         "full_credit": "The algorithm correctly solves the problem.",
         "partial_credit": "The overall idea is correct but contains a small logical issue.",
         "low_credit": "The candidate recognizes part of the problem but the proposed algorithm is substantially flawed.",
@@ -27,11 +27,11 @@
       "concept_coverage": {
         "weight": 15,
         "expected_concepts": [
-          "binary-search",
-          "partitioning",
-          "sorted-arrays",
-          "median-calculation",
-          "boundary-handling"
+          "string-parsing",
+          "whitespace-handling",
+          "sign-handling",
+          "digit-processing",
+          "overflow-clamping"
         ]
       },
       "completeness": {
@@ -40,21 +40,23 @@
       },
       "data_structure_selection": {
         "weight": 10,
-        "expected": "arrays"
+        "expected": "string"
       },
       "complexity_analysis": {
         "weight": 10,
-        "expected_time": "O(log(min(m,n)))",
+        "expected_time": "O(n)",
         "expected_space": "O(1)"
       },
       "edge_case_handling": {
         "weight": 10,
         "expected_cases": [
-          "One array empty",
-          "Unequal lengths",
-          "Even total length",
-          "Odd total length",
-          "Boundary values"
+          "Leading whitespace",
+          "Optional sign",
+          "Leading zeroes",
+          "Non-digit characters",
+          "Positive overflow",
+          "Negative overflow",
+          "No digits"
         ]
       }
     }

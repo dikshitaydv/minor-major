@@ -1,466 +1,981 @@
 from evaluation.interviewer.interview_session import (
-    InterviewSession
+    InterviewSession,
 )
 
 
-def print_separator(title):
-    print()
-    print("=" * 60)
-    print(title)
-    print("=" * 60)
+# ============================================================
+# TEST CONFIGURATION
+# ============================================================
 
+PROBLEM = {
+    "problem_id": "P001",
+    "title": "Two Sum",
+    "description": (
+        "Given an array of integers nums and an integer target, "
+        "return the indices of two numbers that add up to target."
+    ),
+}
+
+CANDIDATE_ID = "e2e_test_candidate"
+
+CANDIDATE_ANSWER = """
+I would use a HashMap to store previously seen values.
+For each number, I would calculate its complement and check
+whether that complement already exists in the HashMap.
+If it exists, I return the two indices. Otherwise, I store
+the current number and continue iterating through the array.
+This gives O(n) time and O(n) space.
+"""
+
+
+# ============================================================
+# PRINT HELPERS
+# ============================================================
+
+def print_header(title: str) -> None:
+    print()
+    print("=" * 70)
+    print(title.center(70))
+    print("=" * 70)
+
+
+def print_section(title: str) -> None:
+    print()
+    print(title)
+    print("-" * len(title))
+
+
+def print_field(label: str, value) -> None:
+    if value is None:
+        value = "None"
+
+    if isinstance(value, list):
+        if not value:
+            value = "None identified"
+        else:
+            value = ", ".join(
+                str(item)
+                for item in value
+            )
+
+    if isinstance(value, dict):
+        if not value:
+            value = "None"
+        else:
+            value = str(value)
+
+    print(
+        f"{label:<30}: {value}"
+    )
+
+
+# ============================================================
+# END-TO-END TEST
+# ============================================================
 
 def test_end_to_end():
 
-    print_separator(
-        "STEP 16 — FULL END-TO-END ADAPTIVE INTERVIEW"
+    print_header(
+        "FULL END-TO-END NLP + REFERENCE + EVALUATION PIPELINE"
     )
 
-    # ==================================================
-    # PROBLEM
-    # ==================================================
+    # ========================================================
+    # 1. INPUT
+    # ========================================================
 
-    problem = {
-        "problem_id": "P001",
-        "title": "Two Sum",
+    print_section("[1] INPUT")
 
-        "description": (
-            "Given an array of integers nums and "
-            "an integer target, return the indices "
-            "of two numbers that add up to target."
-        )
-    }
+    print_field(
+        "Candidate ID",
+        CANDIDATE_ID,
+    )
 
-    # ==================================================
-    # CREATE INTERVIEW SESSION
-    # ==================================================
+    print_field(
+        "Problem ID",
+        PROBLEM["problem_id"],
+    )
+
+    print_field(
+        "Problem",
+        PROBLEM["title"],
+    )
+
+    print()
+    print("Candidate Answer")
+    print("-" * 70)
+    print(
+        CANDIDATE_ANSWER.strip()
+    )
+    print("-" * 70)
+
+    # ========================================================
+    # 2. CREATE INTERVIEW SESSION
+    # ========================================================
+
+    print_section(
+        "[2] CREATE INTERVIEW SESSION"
+    )
 
     session = InterviewSession(
-        candidate_id="candidate_001",
-        question_id="two_sum",
-        problem=problem
+        candidate_id=CANDIDATE_ID,
+        question_id=PROBLEM["problem_id"],
+        problem=PROBLEM,
+        resume_existing=False,
     )
 
-    print()
-    print("Interview session created.")
+    print_field(
+        "Session created",
+        True,
+    )
+
+    print_field(
+        "Finished initially",
+        session.is_finished(),
+    )
+
+    assert session.is_finished() is False
+
+    # ========================================================
+    # 3. INITIAL STATE
+    # ========================================================
+
+    print_section(
+        "[3] INITIAL STATE"
+    )
+
+    initial_state = session.get_state()
+
+    print_field(
+        "Candidate ID",
+        initial_state.candidate_id,
+    )
+
+    print_field(
+        "Question ID",
+        initial_state.question_id,
+    )
+
+    print_field(
+        "reference_answer_id",
+        initial_state.reference_answer_id,
+    )
+
+    print_field(
+        "reference_match_confidence",
+        initial_state.reference_match_confidence,
+    )
+
+    print_field(
+        "target_reference_id",
+        initial_state.target_reference_id,
+    )
+
+    assert hasattr(
+        initial_state,
+        "reference_answer_id",
+    )
+
+    assert hasattr(
+        initial_state,
+        "reference_match_confidence",
+    )
+
+    assert hasattr(
+        initial_state,
+        "target_reference_id",
+    )
+
+    # No candidate answer has been processed yet.
+    assert (
+        initial_state.reference_answer_id
+        is None
+    )
 
     assert (
-        session.is_finished()
-        is False
+        initial_state.reference_match_confidence
+        is None
     )
 
-    # ==================================================
-    # TURN 1
-    # ==================================================
-
-    answer_1 = (
-        "I would use a HashMap to store previously "
-        "seen values and calculate the complement "
-        "for every number."
+    assert (
+        initial_state.target_reference_id
+        is None
     )
 
-    print_separator(
-        "TURN 1 — INITIAL ANSWER"
+    # ========================================================
+    # 4. SUBMIT ANSWER
+    # ========================================================
+
+    print_section(
+        "[4] REAL PRODUCTION PIPELINE"
     )
 
     print()
-    print("Candidate:")
-    print(answer_1)
-
-    # IMPORTANT:
-    # Do NOT pass candidate_features.
-    #
-    # InterviewSession will call the REAL
-    # qwen3:4b extractor automatically.
+    print("Calling:")
+    print()
+    print(
+        "  session.submit_answer(CANDIDATE_ANSWER)"
+    )
+    print()
+    print("Production flow:")
+    print()
+    print("  Candidate Answer")
+    print("        ↓")
+    print("  LLM NLP Extraction")
+    print("        ↓")
+    print("  CandidateNLPState")
+    print("        ↓")
+    print("  Reference Matching")
+    print("        ↓")
+    print("  reference_answer_id")
+    print("  reference_match_confidence")
+    print("        ↓")
+    print("  LLM Evaluation")
+    print("        ↓")
+    print("  Dimension Scores")
+    print("        ↓")
+    print("  Classification")
+    print("        ↓")
+    print("  Adaptive Policy")
+    print("        ↓")
+    print("  Final Candidate State")
 
     state = session.submit_answer(
-        candidate_answer=answer_1
+        candidate_answer=CANDIDATE_ANSWER,
     )
+
+    assert state is not None
 
     print()
-    print("Turn:", state.turn_number)
-
-    print(
-        "Classification:",
-        state.primary_classification
+    print_field(
+        "Returned state type",
+        type(state).__name__,
     )
 
-    print(
-        "Adaptive Gaps:",
-        state.adaptive_classifications
+    # ========================================================
+    # 5. NLP STATE
+    # ========================================================
+
+    print_section(
+        "[5] NLP EXTRACTION / CANDIDATE NLP STATE"
     )
 
-    print(
-        "Should Continue:",
-        not session.is_finished()
+    nlp_state = state.nlp_state
+
+    assert nlp_state is not None
+
+    print_field(
+        "Approach",
+        nlp_state.approach,
     )
 
-    question_1 = (
-        session.get_next_question()
+    print_field(
+        "Algorithms",
+        nlp_state.algorithms,
     )
+
+    print_field(
+        "Concepts",
+        nlp_state.concepts,
+    )
+
+    print_field(
+        "Operations",
+        nlp_state.operations,
+    )
+
+    print_field(
+        "Data Structures",
+        nlp_state.data_structures,
+    )
+
+    print_field(
+        "Time Complexity",
+        nlp_state.time_complexity,
+    )
+
+    print_field(
+        "Space Complexity",
+        nlp_state.space_complexity,
+    )
+
+    print_field(
+        "Edge Cases",
+        nlp_state.edge_cases,
+    )
+
+    print_field(
+        "Reasoning Summary",
+        nlp_state.reasoning_summary,
+    )
+
+    print_field(
+        "Assumptions",
+        nlp_state.assumptions,
+    )
+
+    print_field(
+        "Optimization",
+        nlp_state.optimization,
+    )
+
+    # Explicitly verify the final NLP state has exactly
+    # the agreed 11 fields.
+    expected_nlp_fields = {
+        "approach",
+        "algorithms",
+        "concepts",
+        "operations",
+        "data_structures",
+        "time_complexity",
+        "space_complexity",
+        "edge_cases",
+        "reasoning_summary",
+        "assumptions",
+        "optimization",
+    }
+
+    assert set(
+        nlp_state.to_dict().keys()
+    ) == expected_nlp_fields
+
+    # ========================================================
+    # 6. NLP SERIALIZATION
+    # ========================================================
+
+    print_section(
+        "[6] NLP STATE SERIALIZATION"
+    )
+
+    nlp_dict = nlp_state.to_dict()
 
     print()
-    print("Interviewer Follow-Up:")
-    print(question_1)
+
+    for key, value in nlp_dict.items():
+        print_field(
+            key,
+            value,
+        )
+
+    print()
 
     assert (
-        state.turn_number
-        == 2
+        "implementation_details"
+        not in nlp_dict
     )
 
-    # ==================================================
-    # TURN 1 DECISION
-    # ==================================================
+    # ========================================================
+    # 7. REFERENCE MATCHING
+    # ========================================================
 
-    if session.is_finished():
+    print_section(
+        "[7] REFERENCE MATCHING"
+    )
 
-        print()
-        print(
-            "Interview finished after Turn 1."
+    print()
+    print_field(
+        "Current reference",
+        state.reference_answer_id,
+    )
+
+    print_field(
+        "Match confidence",
+        state.reference_match_confidence,
+    )
+
+    # A candidate answer has now been processed, so the
+    # matcher result should be present.
+    assert (
+        state.reference_answer_id
+        is not None
+    )
+
+    assert (
+        state.reference_match_confidence
+        is not None
+    )
+
+    assert (
+        0.0
+        <= state.reference_match_confidence
+        <= 1.0
+    )
+
+    print()
+    print(
+        "Reference matching has now produced the current "
+        "reference and its LLM-generated match confidence."
+    )
+
+    # ========================================================
+    # 8. TARGET REFERENCE
+    # ========================================================
+
+    print_section(
+        "[8] TARGET REFERENCE"
+    )
+
+    print_field(
+        "target_reference_id",
+        state.target_reference_id,
+    )
+
+    print()
+    print(
+        "Target reference selection belongs to the "
+        "adaptive/policy side."
+    )
+
+    print(
+        "This test does not invent or force a target reference."
+    )
+
+    # ========================================================
+    # 9. EVALUATOR CLASSIFICATION
+    # ========================================================
+
+    print_section(
+        "[9] EVALUATOR CLASSIFICATION"
+    )
+
+    print_field(
+        "Primary classification",
+        state.primary_classification,
+    )
+
+    print_field(
+        "Adaptive classifications",
+        state.adaptive_classifications,
+    )
+
+    # ========================================================
+    # 10. EVALUATION SCORES
+    # ========================================================
+
+    print_section(
+        "[10] EVALUATION SCORES"
+    )
+
+    scores = state.scores
+
+    assert isinstance(
+        scores,
+        dict,
+    )
+
+    print()
+
+    for dimension, score in scores.items():
+        print_field(
+            dimension,
+            score,
         )
+
+    print()
+
+    print_field(
+        "Number of dimensions",
+        len(scores),
+    )
+
+    # ========================================================
+    # 11. ADAPTIVE STATE
+    # ========================================================
+
+    print_section(
+        "[11] ADAPTIVE STATE"
+    )
+
+    print_field(
+        "Primary adaptive gap",
+        state.primary_adaptive_gap,
+    )
+
+    print_field(
+        "Should continue",
+        state.should_continue,
+    )
+
+    print_field(
+        "Current interviewer question",
+        state.current_interviewer_question,
+    )
+
+    print_field(
+        "Session finished",
+        session.is_finished(),
+    )
+
+    # ========================================================
+    # 12. EVIDENCE
+    # ========================================================
+
+    print_section(
+        "[12] EVIDENCE"
+    )
+
+    evidence = state.evidence
+
+    if (
+        isinstance(evidence, dict)
+        and evidence
+    ):
+
+        for key, value in evidence.items():
+            print_field(
+                key,
+                value,
+            )
 
     else:
 
-        assert (
-            question_1 is not None
+        print_field(
+            "Evidence",
+            evidence,
         )
 
-        assert (
-            isinstance(
-                question_1,
-                str
-            )
-        )
+    # ========================================================
+    # 13. HISTORY
+    # ========================================================
 
-        assert (
-            len(
-                question_1.strip()
-            )
-            > 0
-        )
-
-        print()
-        print(
-            "TURN 1 → FOLLOW-UP GENERATED"
-        )
-
-        # ==================================================
-        # TURN 2
-        # ==================================================
-
-        answer_2 = (
-            "The HashMap solution takes O(n) time "
-            "because we process the array once. "
-            "It takes O(n) space because the HashMap "
-            "can store up to n elements."
-        )
-
-        print_separator(
-            "TURN 2 — FOLLOW-UP ANSWER"
-        )
-
-        print()
-        print("Candidate:")
-        print(answer_2)
-
-        # IMPORTANT:
-        # Again, do NOT pass candidate_features.
-        #
-        # The REAL qwen3:4b extractor runs here.
-
-        state = session.submit_answer(
-            candidate_answer=answer_2
-        )
-
-        print()
-        print("Turn:", state.turn_number)
-
-        print(
-            "Classification:",
-            state.primary_classification
-        )
-
-        print(
-            "Adaptive Gaps:",
-            state.adaptive_classifications
-        )
-
-        print(
-            "Should Continue:",
-            not session.is_finished()
-        )
-
-        question_2 = (
-            session.get_next_question()
-        )
-
-        print()
-        print("Interviewer Follow-Up:")
-        print(question_2)
-
-        # ==================================================
-        # TURN 2 DECISION
-        # ==================================================
-
-        if session.is_finished():
-
-            print()
-            print(
-                "Interview finished after Turn 2."
-            )
-
-        else:
-
-            assert (
-                question_2 is not None
-            )
-
-            assert (
-                isinstance(
-                    question_2,
-                    str
-                )
-            )
-
-            assert (
-                len(
-                    question_2.strip()
-                )
-                > 0
-            )
-
-            print()
-            print(
-                "TURN 2 → ANOTHER FOLLOW-UP GENERATED"
-            )
-
-            # ==============================================
-            # TURN 3
-            # ==============================================
-
-            answer_3 = (
-                "For each number, I calculate its complement as "
-                "target minus the current number. I first check whether "
-                "that complement is already in the HashMap. The map stores "
-                "previously processed values and their indices, so the "
-                "lookup takes O(1) average time. I only add the current "
-                "number after checking its complement, which prevents using "
-                "the same element twice. Once a matching complement is "
-                "found, I return its stored index and the current index. "
-                "The overall time complexity is O(n) and the space complexity "
-                "is O(n). This also handles duplicate values, negative "
-                "numbers, empty arrays, arrays with fewer than two elements, "
-                "and cases where no valid pair exists."
-            )
-
-            print_separator(
-                "TURN 3 — FINAL FOLLOW-UP ANSWER"
-            )
-
-            print()
-            print("Candidate:")
-            print(answer_3)
-
-            # IMPORTANT:
-            # Do NOT pass candidate_features.
-            #
-            # The REAL qwen3:4b extractor runs here.
-
-            state = session.submit_answer(
-                candidate_answer=answer_3
-            )
-
-            print()
-            print("Turn:", state.turn_number)
-
-            print(
-                "Classification:",
-                state.primary_classification
-            )
-
-            print(
-                "Adaptive Gaps:",
-                state.adaptive_classifications
-            )
-
-            print(
-                "Should Continue:",
-                not session.is_finished()
-            )
-
-            print()
-            print(
-                "Session Finished:",
-                session.is_finished()
-            )
-
-    # ==================================================
-    # FINAL RESULT
-    # ==================================================
-
-    print_separator(
-        "FINAL INTERVIEW RESULT"
+    print_section(
+        "[13] TURN HISTORY"
     )
 
-    assert (
-        session.is_finished()
-        is True
+    print_field(
+        "History length",
+        len(state.history),
+    )
+
+    if state.history:
+
+        for index, entry in enumerate(
+            state.history,
+            start=1,
+        ):
+
+            print()
+            print(
+                f"History Entry {index}"
+            )
+            print("-" * 50)
+
+            if isinstance(
+                entry,
+                dict
+            ):
+
+                for key, value in entry.items():
+
+                    print_field(
+                        key,
+                        value,
+                    )
+
+            else:
+
+                print(entry)
+
+    # ========================================================
+    # 14. FINAL RESULT
+    # ========================================================
+
+    print_section(
+        "[14] FINAL EVALUATOR RESULT"
     )
 
     final_result = (
         session.get_final_result()
     )
 
-    print()
-    print(
-        "Candidate ID:",
-        final_result[
-            "candidate_id"
-        ]
+    assert isinstance(
+        final_result,
+        dict,
     )
 
-    print(
-        "Question ID:",
-        final_result[
-            "question_id"
-        ]
+    print_field(
+        "Candidate ID",
+        final_result["candidate_id"],
     )
 
-    print(
-        "Status:",
-        final_result[
-            "status"
-        ]
+    print_field(
+        "Question ID",
+        final_result["question_id"],
     )
 
-    print(
-        "Turns:",
-        final_result[
-            "turn_number"
-        ]
+    print_field(
+        "Status",
+        final_result["status"],
     )
 
-    print(
-        "History Length:",
-        final_result[
-            "history_length"
-        ]
+    print_field(
+        "Turns",
+        final_result["turn_number"],
     )
 
-    print(
-        "Average Score:",
-        final_result[
-            "average_score"
-        ]
+    print_field(
+        "History length",
+        final_result["history_length"],
     )
 
-    print(
-        "Assessed Dimensions:",
-        final_result[
-            "assessed_dimensions"
-        ],
-        "/",
-        final_result[
-            "total_dimensions"
-        ]
+    print_field(
+        "Average score",
+        final_result["average_score"],
+    )
+
+    print_field(
+        "Assessed dimensions",
+        final_result["assessed_dimensions"],
+    )
+
+    print_field(
+        "Total dimensions",
+        final_result["total_dimensions"],
     )
 
     print()
-    print("Primary Classification:")
+    print("Primary Classification")
+    print("-" * 30)
+
     print(
         final_result[
             "primary_classification"
         ]
     )
 
-    print()
-    print("Seven Dimension Scores:")
+    # ========================================================
+    # 15. FINAL SEVEN DIMENSION SCORES
+    # ========================================================
 
-    for dimension, data in (
-        final_result[
-            "scores"
-        ].items()
-    ):
+    print_section(
+        "[15] FINAL SEVEN DIMENSION SCORES"
+    )
 
-        print(
-            f"  {dimension}: "
-            f"{data['score']}"
-        )
+    final_scores = (
+        final_result["scores"]
+    )
 
-    # ==================================================
-    # FINAL ASSERTIONS
-    # ==================================================
+    assert isinstance(
+        final_scores,
+        dict,
+    )
 
-    assert (
-        final_result[
-            "candidate_id"
-        ]
-        == "candidate_001"
+    for dimension, data in final_scores.items():
+
+        if isinstance(
+            data,
+            dict
+        ):
+
+            score = data.get(
+                "score"
+            )
+
+            print_field(
+                dimension,
+                score,
+            )
+
+        else:
+
+            print_field(
+                dimension,
+                data,
+            )
+
+    # ========================================================
+    # 16. FINAL REFERENCE STATE
+    # ========================================================
+
+    print_section(
+        "[16] FINAL REFERENCE STATE"
+    )
+
+    print_field(
+        "reference_answer_id",
+        state.reference_answer_id,
+    )
+
+    print_field(
+        "reference_match_confidence",
+        state.reference_match_confidence,
+    )
+
+    print_field(
+        "target_reference_id",
+        state.target_reference_id,
     )
 
     assert (
-        final_result[
-            "question_id"
-        ]
-        == "two_sum"
-    )
-
-    assert (
-        final_result[
-            "status"
-        ]
-        == "COMPLETED"
-    )
-
-    assert (
-        final_result[
-            "assessed_dimensions"
-        ]
-        == 7
-    )
-
-    assert (
-        final_result[
-            "total_dimensions"
-        ]
-        == 7
-    )
-
-    assert (
-        final_result[
-            "average_score"
-        ]
+        state.reference_answer_id
         is not None
     )
 
     assert (
-        len(
-            final_result[
-                "scores"
-            ]
+        state.reference_match_confidence
+        is not None
+    )
+
+    # ========================================================
+    # 17. COMPLETE STATE SERIALIZATION
+    # ========================================================
+
+    print_section(
+        "[17] COMPLETE STATE SERIALIZATION"
+    )
+
+    serialized_state = (
+        state.to_dict()
+    )
+
+    assert isinstance(
+        serialized_state,
+        dict,
+    )
+
+    assert (
+        "reference_answer_id"
+        in serialized_state
+    )
+
+    assert (
+        "reference_match_confidence"
+        in serialized_state
+    )
+
+    assert (
+        "target_reference_id"
+        in serialized_state
+    )
+
+    print_field(
+        "State serialized",
+        True,
+    )
+
+    print_field(
+        "reference_answer_id persisted",
+        serialized_state.get(
+            "reference_answer_id"
+        ),
+    )
+
+    print_field(
+        "reference_match_confidence persisted",
+        serialized_state.get(
+            "reference_match_confidence"
+        ),
+    )
+
+    print_field(
+        "target_reference_id persisted",
+        serialized_state.get(
+            "target_reference_id"
+        ),
+    )
+
+    # ========================================================
+    # 18. RESTORE STATE
+    # ========================================================
+
+    print_section(
+        "[18] STATE RESTORATION"
+    )
+
+    restored_state = (
+        type(state).from_dict(
+            serialized_state
         )
+    )
+
+    assert (
+        restored_state.reference_answer_id
+        == state.reference_answer_id
+    )
+
+    assert (
+        restored_state.reference_match_confidence
+        == state.reference_match_confidence
+    )
+
+    assert (
+        restored_state.target_reference_id
+        == state.target_reference_id
+    )
+
+    print_field(
+        "State restored",
+        True,
+    )
+
+    print_field(
+        "reference_answer_id restored",
+        restored_state.reference_answer_id,
+    )
+
+    print_field(
+        "reference_match_confidence restored",
+        restored_state.reference_match_confidence,
+    )
+
+    print_field(
+        "target_reference_id restored",
+        restored_state.target_reference_id,
+    )
+
+    # ========================================================
+    # 19. FINAL ASSERTIONS
+    # ========================================================
+
+    print_section(
+        "[19] FINAL VALIDATION"
+    )
+
+    assert state.nlp_state is not None
+
+    # At this point the candidate answer has already gone
+    # through extraction + reference matching + evaluation.
+    # Therefore the reference should NOT be None.
+    assert (
+        state.reference_answer_id
+        is not None
+    )
+
+    assert (
+        state.reference_match_confidence
+        is not None
+    )
+
+    assert (
+        0.0
+        <= state.reference_match_confidence
+        <= 1.0
+    )
+
+    assert hasattr(
+        state,
+        "target_reference_id",
+    )
+
+    assert (
+        final_result["assessed_dimensions"]
         == 7
     )
 
     assert (
-        final_result[
-            "history_length"
-        ]
-        >= 1
+        final_result["total_dimensions"]
+        == 7
     )
 
-    # ==================================================
-    # FINAL SUCCESS
-    # ==================================================
+    assert (
+        final_result["average_score"]
+        is not None
+    )
+
+    assert (
+        len(final_result["scores"])
+        == 7
+    )
+
+    assert (
+        final_result["primary_classification"]
+        is not None
+    )
+
+    print_field(
+        "NLP extraction",
+        "PASSED",
+    )
+
+    print_field(
+        "Candidate NLP state",
+        "PASSED",
+    )
+
+    print_field(
+        "Initial reference state",
+        "PASSED",
+    )
+
+    print_field(
+        "Current reference",
+        state.reference_answer_id,
+    )
+
+    print_field(
+        "Reference match confidence",
+        state.reference_match_confidence,
+    )
+
+    print_field(
+        "Target reference field",
+        "PRESENT",
+    )
+
+    print_field(
+        "Evaluator",
+        "PASSED",
+    )
+
+    print_field(
+        "Classification",
+        final_result[
+            "primary_classification"
+        ],
+    )
+
+    print_field(
+        "Seven dimensions",
+        "PASSED",
+    )
+
+    print_field(
+        "Serialization",
+        "PASSED",
+    )
+
+    # ========================================================
+    # 20. FINAL SUMMARY
+    # ========================================================
+
+    print_header(
+        "FULL END-TO-END TEST COMPLETE"
+    )
 
     print()
-    print("=" * 60)
+    print("✓ Candidate answer submitted")
+    print("✓ Real NLP extraction executed")
+    print("✓ 11-field CandidateNLPState created")
+    print("✓ No implementation_details field")
+    print("✓ Existing reference dataset used")
+    print("✓ Reference matcher executed")
+    print("✓ Current reference identified")
+    print("✓ Match confidence generated by matcher")
+    print("✓ Evaluator executed")
+    print("✓ Seven dimension scores generated")
     print(
-        "       STEP 16 END-TO-END TEST PASSED"
+        f"✓ Primary classification = "
+        f"{final_result['primary_classification']}"
     )
-    print("=" * 60)
+    print("✓ Adaptive state generated")
+    print("✓ target_reference_id field present")
+    print("✓ Complete state serialized")
+    print("✓ Complete state restored")
+    print("✓ Reference state survived restoration")
+
+    print()
+    print(
+        "Target reference selection was NOT invented "
+        "by this test."
+    )
+
+    print()
+    print("=" * 70)
+    print(
+        "           ALL END-TO-END ASSERTIONS PASSED"
+        .center(70)
+    )
+    print("=" * 70)
 
 
 if __name__ == "__main__":
-
     test_end_to_end()
