@@ -152,3 +152,83 @@ def test_resolved_gap_moves_to_next_gap():
 
     # Complexity should no longer be selected.
     assert second["target_dimension"] == "edge_cases"
+def test_low_reference_confidence_asks_clarification():
+
+    engine = PolicyEngine()
+
+    scores = {
+        "algorithm_correctness": 70,
+        "logical_reasoning": 65,
+        "concept_coverage": 60,
+        "completeness": 70,
+        "data_structure_usage": 65,
+        "complexity": 60,
+        "edge_cases": 70
+    }
+
+    result = engine.decide(
+        scores=scores,
+        time_remaining=180,
+        reference_match_confidence=0.40,
+        current_reference_solution="Unknown approach",
+        target_reference_solution="Hash map approach"
+    )
+
+    assert result["action"] == "ASK_CLARIFICATION"
+    assert result["goal"] == "clarify_current_approach"
+
+
+def test_non_optimal_reference_asks_discovery():
+
+    engine = PolicyEngine()
+
+    scores = {
+        "algorithm_correctness": 70,
+        "logical_reasoning": 65,
+        "concept_coverage": 40,
+        "completeness": 70,
+        "data_structure_usage": 65,
+        "complexity": 60,
+        "edge_cases": 70
+    }
+
+    result = engine.decide(
+        scores=scores,
+        time_remaining=180,
+        reference_match_confidence=0.90,
+        current_reference_solution="Brute force approach",
+        target_reference_solution="Hash map approach",
+        possible_next_reference_solutions=[
+            "Hash map approach"
+        ],
+        missing_concepts=[
+            "concept_coverage"
+        ]
+    )
+
+    assert result["action"] == "ASK_DISCOVERY"
+    assert result["target_dimension"] == "concept_coverage"
+    assert result["goal"] == "discover_concept_coverage"
+
+
+def test_no_turns_remaining_stops():
+
+    engine = PolicyEngine()
+
+    scores = {
+        "algorithm_correctness": 50,
+        "logical_reasoning": 40,
+        "concept_coverage": 30,
+        "completeness": 50,
+        "data_structure_usage": 40,
+        "complexity": 35,
+        "edge_cases": 45
+    }
+
+    result = engine.decide(
+        scores=scores,
+        time_remaining=180,
+        turns_remaining=0
+    )
+
+    assert result["action"] == "STOP"
