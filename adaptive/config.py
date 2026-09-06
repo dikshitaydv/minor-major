@@ -15,3 +15,7 @@ MAX_DIMENSION_REVISITS = 2
 MORE_THAN_5_MINUTES = 300
 TWO_MINUTES = 120
 THIRTY_SECONDS = 30
+# Minimum confidence required to treat the candidate's
+# current approach as confidently identified.
+
+REFERENCE_CONFIDENCE_THRESHOLD = 0.60
