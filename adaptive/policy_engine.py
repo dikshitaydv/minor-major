@@ -15,7 +15,27 @@ from adaptive.repetition_guard import RepetitionGuard
 
 class PolicyEngine:
     """
-    Decides what the system should evaluate next.
+    Decides what the adaptive interviewer should do next.
+
+    Dimension scores are weighted contributions out of 100.
+
+    Therefore the policy normalizes each dimension score against
+    its maximum possible weighted contribution before applying
+    generic thresholds.
+
+    Example:
+
+        algorithm_correctness weight = 25
+
+        score = 10
+
+        normalized score =
+            10 / 25 * 100
+            = 40%
+
+    This keeps adaptive thresholds independent of the dimension's
+    individual weight.
+    Decides what the system should do next.
 
     Uses:
     - gap analysis
@@ -24,7 +44,27 @@ class PolicyEngine:
     - score thresholds
     - candidate level
     - remaining interview time
+
+    Updated reference-progression inputs:
+    - candidate state
+    - current matched reference solution
+    - reference match confidence
+    - target/optimal reference solution
+    - possible next reference solutions
+    - missing concepts
+    - hints already given
+    - remaining turns
     """
+
+    DIMENSION_WEIGHTS = {
+        "algorithm_correctness": 25,
+        "logical_reasoning": 20,
+        "concept_coverage": 15,
+        "completeness": 10,
+        "data_structure": 10,
+        "complexity": 10,
+        "edge_cases": 10,
+    }
 
     def __init__(self):
         self.repetition_guard = RepetitionGuard(
@@ -77,7 +117,33 @@ class PolicyEngine:
                 "Interview time has ended."
             )
 
-        # Record scores for progress tracking.
+        self.progress_tracker.record(scores)
+
+        gap_analysis = analyze_gaps(scores)
+
+        prioritized_gaps = (
+            gap_analysis.get(
+                "prioritized_gaps",
+                []
+            )
+            or []
+        )
+        # --------------------------------------------------
+        # Rule 2: No turns remaining
+        # --------------------------------------------------
+
+        if (
+            turns_remaining is not None
+            and turns_remaining <= 0
+        ):
+            return self._stop_decision(
+                "No interview turns remain."
+            )
+
+        # --------------------------------------------------
+        # Step 1: Record current scores for progress tracking
+        # --------------------------------------------------
+
         self.progress_tracker.record(scores)
 
         # --------------------------------------------------
@@ -219,7 +285,15 @@ class PolicyEngine:
             if not self._is_gap_resolved(dimension)
         ]
 
-        # Rule 2: No unresolved gaps are available.
+        # ------------------------------------------------------
+        # If there are no detected gaps, do not automatically
+        # terminate because the interviewer may still need to
+        # probe unassessed dimensions.
+        # ------------------------------------------------------
+        # --------------------------------------------------
+        # Rule 3: No unresolved gaps available
+        # --------------------------------------------------
+
         if not available_gaps:
             return self._stop_decision(
                 "No assessed weakness requires a targeted follow-up."
@@ -236,7 +310,21 @@ class PolicyEngine:
             target_dimension
         )
 
-        # Step 5: Decide whether a follow-up is needed.
+        normalized_score = self._normalize_score(
+            target_dimension,
+            target_score
+        )
+
+        # ------------------------------------------------------
+        # IMPORTANT:
+        #
+        # FOLLOW_UP_THRESHOLD is interpreted on a 0-100
+        # normalized scale.
+        # ------------------------------------------------------
+        # --------------------------------------------------
+        # Step 8: Check whether a follow-up is required
+        # --------------------------------------------------
+
         if (
             normalized_score is not None
             and normalized_score >= FOLLOW_UP_THRESHOLD
@@ -295,8 +383,93 @@ class PolicyEngine:
             "reason": (
                 f"{target_dimension} is the highest-priority "
                 f"unresolved gap."
-            )
+            ),
+            "candidate_state": candidate_state,
+            "current_reference_solution":
+                current_reference_solution,
+            "target_reference_solution":
+                target_reference_solution,
+            "missing_concepts":
+                missing_concepts or []
         }
+
+    # ==========================================================
+    # SCORE HELPERS
+    # ==========================================================
+
+    def _get_score(
+        self,
+        scores: dict,
+        dimension: str
+    ) -> float | None:
+
+        if dimension == "data_structure":
+            dimension = "data_structure"
+
+        value = scores.get(
+            dimension
+        )
+
+        # ------------------------------------------------------
+        # Scores normally arrive as:
+        #
+        # {
+        #     "score": 10,
+        #     "assessment_status": "ASSESSED"
+        # }
+        #
+        # Be tolerant of a plain numeric score as well.
+        # ------------------------------------------------------
+
+        if isinstance(value, dict):
+
+            value = value.get(
+                "score"
+            )
+
+        if value is None:
+            return None
+
+        try:
+            return float(value)
+
+        except (
+            TypeError,
+            ValueError
+        ):
+            return None
+
+    def _normalize_score(
+        self,
+        dimension: str,
+        score: float | None
+    ) -> float | None:
+
+        if score is None:
+            return None
+
+        weight = self.DIMENSION_WEIGHTS.get(
+            dimension
+        )
+
+        if weight is None or weight <= 0:
+            return None
+
+        normalized = (
+            score / weight
+        ) * 100
+
+        return max(
+            0.0,
+            min(
+                100.0,
+                normalized
+            )
+        )
+
+    # ==========================================================
+    # GAP RESOLUTION
+    # ==========================================================
 
     def _is_gap_resolved(
         self,
@@ -321,23 +494,21 @@ class PolicyEngine:
         if latest_score is None:
             return False
 
-        return latest_score >= FOLLOW_UP_THRESHOLD
+        return (
+            latest_score >= FOLLOW_UP_THRESHOLD
+        )
 
-    def _get_score(
-        self,
-        scores: dict[str, float],
-        dimension: str
-    ) -> float | None:
-        """
-        Get the score for a normalized dimension name.
-        """
+        if normalized_score is None:
+            return False
 
-        if dimension == "data_structure":
-            return scores.get(
-                "data_structure_usage"
-            )
+        return (
+            normalized_score
+            >= FOLLOW_UP_THRESHOLD
+        )
 
-        return scores.get(dimension)
+    # ==========================================================
+    # TIME POLICY
+    # ==========================================================
 
     def _get_time_policy(
         self,
