@@ -6,6 +6,7 @@ from adaptive.config import (
     MORE_THAN_5_MINUTES,
     TWO_MINUTES,
     THIRTY_SECONDS,
+    REFERENCE_CONFIDENCE_THRESHOLD,
 )
 
 from adaptive.gap_analyzer import analyze_gaps
@@ -34,6 +35,25 @@ class PolicyEngine:
 
     This keeps adaptive thresholds independent of the dimension's
     individual weight.
+    Decides what the system should do next.
+
+    Uses:
+    - gap analysis
+    - progress tracking
+    - repetition prevention
+    - score thresholds
+    - candidate level
+    - remaining interview time
+
+    Updated reference-progression inputs:
+    - candidate state
+    - current matched reference solution
+    - reference match confidence
+    - target/optimal reference solution
+    - possible next reference solutions
+    - missing concepts
+    - hints already given
+    - remaining turns
     """
 
     DIMENSION_WEIGHTS = {
@@ -61,8 +81,36 @@ class PolicyEngine:
         self,
         scores: dict,
         time_remaining: int,
-        candidate_level: str = "medium"
+        candidate_level: str = "medium",
+        candidate_state: str | None = None,
+        current_reference_solution: str | None = None,
+        reference_match_confidence: float | None = None,
+        target_reference_solution: str | None = None,
+        possible_next_reference_solutions: list[str] | None = None,
+        missing_concepts: list[str] | None = None,
+        hints_given: list[str] | None = None,
+        turns_remaining: int | None = None
     ) -> dict:
+
+        """
+        Generate the next adaptive policy decision.
+
+        The policy first checks stopping conditions.
+
+        Then it determines whether the candidate's current
+        approach can be confidently identified.
+
+        If the current approach is valid but not yet optimal,
+        the policy asks a discovery question targeting the
+        next useful improvement.
+
+        Otherwise, normal gap analysis is used to identify
+        the weakest evaluation dimension.
+        """
+
+        # --------------------------------------------------
+        # Rule 1: Interview time is over
+        # --------------------------------------------------
 
         if time_remaining <= 0:
             return self._stop_decision(
@@ -80,6 +128,146 @@ class PolicyEngine:
             )
             or []
         )
+        # --------------------------------------------------
+        # Rule 2: No turns remaining
+        # --------------------------------------------------
+
+        if (
+            turns_remaining is not None
+            and turns_remaining <= 0
+        ):
+            return self._stop_decision(
+                "No interview turns remain."
+            )
+
+        # --------------------------------------------------
+        # Step 1: Record current scores for progress tracking
+        # --------------------------------------------------
+
+        self.progress_tracker.record(scores)
+
+        # --------------------------------------------------
+        # Step 2: Check whether the current approach has
+        # been identified confidently.
+        #
+        # Low confidence means the system should not assume
+        # what the candidate is trying to do.
+        # --------------------------------------------------
+
+        if (
+            reference_match_confidence is not None
+            and reference_match_confidence
+            < REFERENCE_CONFIDENCE_THRESHOLD
+        ):
+            return {
+                "action": "ASK_CLARIFICATION",
+                "target_dimension": None,
+                "difficulty": "easy",
+                "goal": "clarify_current_approach",
+                "hint_level": len(hints_given or []),
+                "do_not_reveal_solution": True,
+                "time_policy": self._get_time_policy(
+                    time_remaining
+                ),
+                "reason": (
+                    "The candidate's current approach could "
+                    "not be identified with sufficient confidence."
+                ),
+                "candidate_state": candidate_state,
+                "current_reference_solution":
+                    current_reference_solution,
+                "target_reference_solution":
+                    target_reference_solution,
+                "missing_concepts":
+                    missing_concepts or []
+            }
+
+        # --------------------------------------------------
+        # Step 3: Check whether the current reference
+        # approach is valid but not yet optimal.
+        #
+        # If so, guide the candidate toward the next useful
+        # improvement without directly revealing the answer.
+        # --------------------------------------------------
+
+        if (
+            current_reference_solution is not None
+            and target_reference_solution is not None
+            and current_reference_solution
+            != target_reference_solution
+        ):
+
+            next_reference = None
+
+            if possible_next_reference_solutions:
+                next_reference = (
+                    possible_next_reference_solutions[0]
+                )
+
+            # If missing concepts are available, target the
+            # first missing concept. Otherwise use concept
+            # coverage as the general improvement dimension.
+
+            target_dimension = (
+                missing_concepts[0]
+                if missing_concepts
+                else "concept_coverage"
+            )
+
+            target_score = self._get_score(
+                scores,
+                target_dimension
+            )
+
+            difficulty = self._determine_difficulty(
+                candidate_level,
+                target_score
+            )
+
+            return {
+                "action": "ASK_DISCOVERY",
+                "target_dimension": target_dimension,
+                "difficulty": difficulty,
+                "goal": (
+                    f"discover_{target_dimension}"
+                ),
+                "hint_level": len(hints_given or []),
+                "do_not_reveal_solution": True,
+                "time_policy": self._get_time_policy(
+                    time_remaining
+                ),
+                "reason": (
+                    "The candidate's current approach is valid "
+                    "but has not yet reached the target approach."
+                ),
+                "candidate_state": candidate_state,
+                "current_reference_solution":
+                    current_reference_solution,
+                "next_reference_solution":
+                    next_reference,
+                "target_reference_solution":
+                    target_reference_solution,
+                "missing_concepts":
+                    missing_concepts or []
+            }
+
+        # --------------------------------------------------
+        # Step 4: Normal gap analysis
+        #
+        # Used when:
+        # - the current approach is already optimal, or
+        # - reference-progression information is not supplied.
+        # --------------------------------------------------
+
+        gap_analysis = analyze_gaps(scores)
+
+        prioritized_gaps = (
+            gap_analysis["prioritized_gaps"]
+        )
+
+        # --------------------------------------------------
+        # Step 5: Remove dimensions targeted too many times
+        # --------------------------------------------------
 
         available_gaps = (
             self.repetition_guard.filter_available(
@@ -87,6 +275,13 @@ class PolicyEngine:
             )
         )
 
+<<<<<<< feature-janvi
+=======
+        # --------------------------------------------------
+        # Step 6: Remove gaps that are now resolved
+        # --------------------------------------------------
+
+>>>>>>> main
         available_gaps = [
             dimension
             for dimension in available_gaps
@@ -98,11 +293,18 @@ class PolicyEngine:
         # terminate because the interviewer may still need to
         # probe unassessed dimensions.
         # ------------------------------------------------------
+        # --------------------------------------------------
+        # Rule 3: No unresolved gaps available
+        # --------------------------------------------------
 
         if not available_gaps:
             return self._stop_decision(
                 "No assessed weakness requires a targeted follow-up."
             )
+
+        # --------------------------------------------------
+        # Step 7: Select highest-priority gap
+        # --------------------------------------------------
 
         target_dimension = available_gaps[0]
 
@@ -122,6 +324,9 @@ class PolicyEngine:
         # FOLLOW_UP_THRESHOLD is interpreted on a 0-100
         # normalized scale.
         # ------------------------------------------------------
+        # --------------------------------------------------
+        # Step 8: Check whether a follow-up is required
+        # --------------------------------------------------
 
         if (
             normalized_score is not None
@@ -130,6 +335,10 @@ class PolicyEngine:
             return self._stop_decision(
                 "Selected gap is no longer below the follow-up threshold."
             )
+
+        # --------------------------------------------------
+        # Step 9: Time-aware decision
+        # --------------------------------------------------
 
         time_policy = self._get_time_policy(
             time_remaining
@@ -140,15 +349,27 @@ class PolicyEngine:
                 "Not enough time to start a new topic."
             )
 
+        # --------------------------------------------------
+        # Step 10: Determine difficulty
+        # --------------------------------------------------
+
         difficulty = self._determine_difficulty(
             candidate_level,
             normalized_score
         )
 
+        # --------------------------------------------------
+        # Step 11: Determine follow-up goal
+        # --------------------------------------------------
+
         goal = self._determine_goal(
             target_dimension,
             normalized_score
         )
+
+        # --------------------------------------------------
+        # Step 12: Record selected dimension
+        # --------------------------------------------------
 
         self.repetition_guard.record_dimension(
             target_dimension
@@ -159,13 +380,20 @@ class PolicyEngine:
             "target_dimension": target_dimension,
             "difficulty": difficulty,
             "goal": goal,
-            "hint_level": 0,
+            "hint_level": len(hints_given or []),
             "do_not_reveal_solution": True,
             "time_policy": time_policy,
             "reason": (
                 f"{target_dimension} is the highest-priority "
                 f"unresolved gap."
-            )
+            ),
+            "candidate_state": candidate_state,
+            "current_reference_solution":
+                current_reference_solution,
+            "target_reference_solution":
+                target_reference_solution,
+            "missing_concepts":
+                missing_concepts or []
         }
 
     # ==========================================================
@@ -266,6 +494,11 @@ class PolicyEngine:
         normalized_score = self._normalize_score(
             dimension,
             latest_score
+        if latest_score is None:
+            return False
+
+        return (
+            latest_score >= FOLLOW_UP_THRESHOLD
         )
 
         if normalized_score is None:
@@ -284,6 +517,10 @@ class PolicyEngine:
         self,
         time_remaining: int
     ) -> str:
+        """
+        Determine the adaptive strategy based on
+        remaining interview time.
+        """
 
         if time_remaining <= 0:
             return "STOP"
