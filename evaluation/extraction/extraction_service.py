@@ -2,12 +2,18 @@ from evaluation.preprocessing.cleaner import normalize_answer
 from evaluation.extraction.llm_extractor import extract_with_llm
 
 
+# ============================================================
+# EMPTY FEATURE STATE
+# ============================================================
+
 def _empty_feature_state(
-    original_answer: str,
-    normalized_answer: str
-) -> dict:
+    original_answer,
+    normalized_answer,
+):
     """
-    Return the canonical candidate NLP state.
+    Return the canonical empty extraction state.
+
+    This function does not perform semantic inference.
     """
 
     return {
@@ -23,91 +29,76 @@ def _empty_feature_state(
         "time_complexity": None,
         "space_complexity": None,
 
-        "reasoning": None,
+        "reasoning_summary": None,
 
         "edge_cases": [],
         "assumptions": [],
-
         "optimization": None,
 
-        "extraction_source": "empty"
+        "extraction_source": "empty",
     }
 
 
+# ============================================================
+# PUBLIC API
+# ============================================================
+
 def extract_candidate_features(
-    answer: str,
-    problem: dict | None = None
-) -> dict:
+    answer,
+    problem=None,
+):
     """
-    Extract the candidate's semantic NLP state.
+    Extract candidate NLP features.
 
     Pipeline:
 
-        Candidate answer
-              ↓
-        Mechanical normalization
-              ↓
+        raw answer
+            ↓
+        normalization
+            ↓
         LLM semantic extraction
-              ↓
-        Canonical NLP state
+            ↓
+        canonical feature dictionary
 
-    This layer performs no semantic interpretation.
-
-    It does not:
-        - use keyword dictionaries
-        - use regex semantic extraction
-        - infer algorithms
-        - infer data structures
-        - infer complexity
-        - infer edge cases
-        - infer assumptions
-        - infer reasoning
-        - evaluate correctness
+    Semantic interpretation is performed by the LLM.
+    This service only coordinates the pipeline and maps
+    the result into the canonical extraction contract.
     """
 
-    # --------------------------------------------------------
-    # Input validation
-    # --------------------------------------------------------
-
-    if answer is None:
-        answer = ""
-
-    if not isinstance(
-        answer,
-        str
-    ):
-
+    if not isinstance(answer, str):
         raise TypeError(
             "Candidate answer must be a string."
         )
 
     # --------------------------------------------------------
-    # Mechanical normalization
+    # Normalize candidate answer
     # --------------------------------------------------------
 
-    cleaned = normalize_answer(
-        answer
-    )
+    cleaned = normalize_answer(answer)
+
+    if not isinstance(cleaned, dict):
+        raise RuntimeError(
+            "Answer normalization must return a dictionary."
+        )
 
     original_answer = cleaned.get(
         "original_answer",
-        ""
+        "",
     )
 
     normalized_answer = cleaned.get(
         "normalized_answer",
-        ""
+        "",
     )
 
     # --------------------------------------------------------
-    # Empty answer
+    # Empty answer after normalization
     # --------------------------------------------------------
 
     if not normalized_answer:
-
         return _empty_feature_state(
-            original_answer,
-            normalized_answer
+            original_answer=original_answer,
+            normalized_answer=normalized_answer,
         )
 
     # --------------------------------------------------------
@@ -116,29 +107,20 @@ def extract_candidate_features(
 
     semantic = extract_with_llm(
         normalized_answer,
-        problem=problem
+        problem=problem,
     )
 
-    if not isinstance(
-        semantic,
-        dict
-    ):
-
+    if not isinstance(semantic, dict):
         raise RuntimeError(
-            "LLM extractor must return a dictionary."
+            "LLM semantic extraction must return a dictionary."
         )
 
     # --------------------------------------------------------
-    # Canonical feature state
-    #
-    # No aliases.
-    # No duplicated fields.
-    # No semantic transformation.
+    # Canonical extraction contract
     # --------------------------------------------------------
 
     return {
         "original_answer": original_answer,
-
         "normalized_answer": normalized_answer,
 
         "approach": semantic.get(
@@ -147,22 +129,22 @@ def extract_candidate_features(
 
         "algorithms": semantic.get(
             "algorithms",
-            []
+            [],
         ),
 
         "concepts": semantic.get(
             "concepts",
-            []
+            [],
         ),
 
         "operations": semantic.get(
             "operations",
-            []
+            [],
         ),
 
         "data_structures": semantic.get(
             "data_structures",
-            []
+            [],
         ),
 
         "time_complexity": semantic.get(
@@ -173,23 +155,23 @@ def extract_candidate_features(
             "space_complexity"
         ),
 
-        "reasoning": semantic.get(
-            "reasoning"
+        "reasoning_summary": semantic.get(
+            "reasoning_summary"
         ),
 
         "edge_cases": semantic.get(
             "edge_cases",
-            []
+            [],
         ),
 
         "assumptions": semantic.get(
             "assumptions",
-            []
+            [],
         ),
 
         "optimization": semantic.get(
             "optimization"
         ),
 
-        "extraction_source": "llm"
+        "extraction_source": "llm",
     }

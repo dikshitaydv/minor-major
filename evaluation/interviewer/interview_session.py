@@ -26,6 +26,88 @@ from evaluation.scoring.final_result import (
 )
 
 
+# ============================================================
+# DIAGNOSTIC HELPERS
+# ============================================================
+
+def _print_section(title: str):
+    print()
+    print(title)
+    print("-" * len(title))
+
+
+def _display(value):
+    if value is None:
+        return "Not identified"
+
+    if isinstance(value, list):
+
+        values = [
+            str(item).strip()
+            for item in value
+            if str(item).strip()
+        ]
+
+        return (
+            ", ".join(values)
+            if values
+            else "None identified"
+        )
+
+    value = str(value).strip()
+
+    return (
+        value
+        if value
+        else "Not identified"
+    )
+
+
+def _print_candidate_answer(
+    candidate_answer: str
+):
+    _print_section(
+        "CANDIDATE ANSWER"
+    )
+
+    print(
+        candidate_answer
+    )
+
+
+def _print_nlp_extraction(
+    candidate_features: dict
+):
+    _print_section(
+        "NLP EXTRACTION"
+    )
+
+    fields = [
+        ("Approach", "approach"),
+        ("Algorithms", "algorithms"),
+        ("Concepts", "concepts"),
+        ("Operations", "operations"),
+        ("Data Structures", "data_structures"),
+        ("Time Complexity", "time_complexity"),
+        ("Space Complexity", "space_complexity"),
+        ("Edge Cases", "edge_cases"),
+        ("Reasoning Summary", "reasoning_summary"),
+        ("Assumptions", "assumptions"),
+        ("Optimization", "optimization"),
+    ]
+
+    for label, key in fields:
+
+        print(
+            f"{label:<24}: "
+            f"{_display(candidate_features.get(key))}"
+        )
+
+
+# ============================================================
+# INTERVIEW SESSION
+# ============================================================
+
 class InterviewSession:
     """
     Controls one complete adaptive interview session.
@@ -83,7 +165,10 @@ class InterviewSession:
                 "question_id cannot be empty."
             )
 
-        if not isinstance(problem, dict):
+        if not isinstance(
+            problem,
+            dict
+        ):
             raise TypeError(
                 "problem must be a dictionary."
             )
@@ -105,17 +190,23 @@ class InterviewSession:
                 question_id
             )
         ):
-            self.state = self.state_store.load(
-                candidate_id,
-                question_id
+            self.state = (
+                self.state_store.load(
+                    candidate_id,
+                    question_id
+                )
             )
         else:
-            self.state = CandidateEvaluationState(
-                candidate_id=candidate_id,
-                question_id=question_id
+            self.state = (
+                CandidateEvaluationState(
+                    candidate_id=candidate_id,
+                    question_id=question_id
+                )
             )
 
-        self.policy_engine = PolicyEngine()
+        self.policy_engine = (
+            PolicyEngine()
+        )
 
         self.finished = False
 
@@ -146,43 +237,80 @@ class InterviewSession:
                 "Interview session has already finished."
             )
 
-        if not isinstance(candidate_answer, str):
+        if not isinstance(
+            candidate_answer,
+            str
+        ):
             raise TypeError(
                 "Candidate answer must be a string."
             )
 
-        candidate_answer = candidate_answer.strip()
+        candidate_answer = (
+            candidate_answer.strip()
+        )
 
         if not candidate_answer:
             raise ValueError(
                 "Candidate answer cannot be empty."
             )
 
+        current_turn = (
+            len(self.state.history) + 1
+        )
+
+        print()
+        print("=" * 60)
+        print(
+            f"TURN {current_turn}"
+            .center(60)
+        )
+        print("=" * 60)
+
         # ====================================================
-        # 1. LLM NLP EXTRACTION
+        # 1. CANDIDATE ANSWER
+        # ====================================================
+
+        _print_candidate_answer(
+            candidate_answer
+        )
+
+        # ====================================================
+        # 2. LLM NLP EXTRACTION
         # ====================================================
 
         if candidate_features is None:
-            candidate_features = extract_candidate_features(
-                candidate_answer,
-                self.problem
+
+            candidate_features = (
+                extract_candidate_features(
+                    candidate_answer,
+                    self.problem
+                )
             )
 
-        if not isinstance(candidate_features, dict):
+        if not isinstance(
+            candidate_features,
+            dict
+        ):
             raise TypeError(
                 "candidate_features must be a dictionary."
             )
 
-        # ====================================================
-        # 2. BUILD NLP STATE
-        # ====================================================
-
-        nlp_state = self._build_nlp_state(
+        _print_nlp_extraction(
             candidate_features
         )
 
         # ====================================================
-        # 3. MERGE INTO ACCUMULATED STATE
+        # 3. BUILD NLP STATE
+        # ====================================================
+
+        nlp_state = (
+            self._build_nlp_state(
+                candidate_features
+            )
+        )
+
+        # ====================================================
+        # 4. MERGE NLP STATE
         # ====================================================
 
         self.state.update_nlp_state(
@@ -190,60 +318,113 @@ class InterviewSession:
         )
 
         # ====================================================
-        # 4. SAVE NLP STATE
+        # 5. SAVE NLP STATE
         # ====================================================
 
-        nlp_path = self.state_store.save(
-            self.state
+        nlp_path = (
+            self.state_store.save(
+                self.state
+            )
         )
 
         print()
-        print("NLP Candidate State Saved:")
-        print(nlp_path)
-
-        # ====================================================
-        # 5. EVALUATION
-        # ====================================================
-
-        self.state = evaluate_candidate_turn(
-            state=self.state,
-            candidate_answer=candidate_answer,
-            problem=self.problem,
-            candidate_features=candidate_features
+        print(
+            f"NLP state saved: {nlp_path}"
         )
 
         # ====================================================
-        # 6. SAVE COMPLETE STATE
+        # 6. EVALUATION
         # ====================================================
 
-        evaluation_path = self.state_store.save(
-            self.state
+        self.state = (
+            evaluate_candidate_turn(
+                state=self.state,
+                candidate_answer=candidate_answer,
+                problem=self.problem,
+                candidate_features=candidate_features
+            )
         )
 
-        print()
-        print("Evaluation State Saved:")
-        print(evaluation_path)
-
         # ====================================================
-        # 7. ADAPTIVE POLICY
+        # 7. SAVE COMPLETE STATE
         # ====================================================
 
-        policy_decision = self.policy_engine.decide(
-            scores=self.state.scores,
-            time_remaining=self.time_remaining,
-            candidate_level=self.candidate_level
+        evaluation_path = (
+            self.state_store.save(
+                self.state
+            )
         )
 
         print()
-        print("Policy Decision:")
-        print(policy_decision)
+        print(
+            f"Evaluation state saved: "
+            f"{evaluation_path}"
+        )
 
         # ====================================================
-        # 8. FINISH / CONTINUE
+        # 8. ADAPTIVE POLICY
+        # ====================================================
+
+        policy_decision = (
+            self.policy_engine.decide(
+                scores=self.state.scores,
+                time_remaining=self.time_remaining,
+                candidate_level=self.candidate_level
+            )
+        )
+
+        # Keep policy execution intact.
+        # Only display its result cleanly.
+
+        if isinstance(
+            policy_decision,
+            dict
+        ):
+
+            decision = (
+                policy_decision.get(
+                    "decision"
+                )
+                or policy_decision.get(
+                    "action"
+                )
+            )
+
+            if decision:
+                print()
+                print(
+                    f"Policy: {decision}"
+                )
+
+        # ====================================================
+        # 9. FINISH / CONTINUE
         # ====================================================
 
         if not self.state.should_continue:
+
             self.finished = True
+
+            print()
+            print(
+                f"INTERVIEW FINISHED — TURN {current_turn}"
+            )
+
+        else:
+
+            print()
+            print(
+                f"TURN {current_turn} COMPLETE"
+            )
+
+            if self.state.current_interviewer_question:
+
+                print()
+                print(
+                    "NEXT QUESTION"
+                )
+                print(
+                    self.state.current_interviewer_question
+                )
 
         return self.state
 
@@ -264,88 +445,6 @@ class InterviewSession:
         This method performs only structural mapping.
         """
 
-        complexity = candidate_features.get(
-            "complexity_claim",
-            {}
-        )
-
-        if not isinstance(complexity, dict):
-            complexity = {}
-
-        time_complexity = complexity.get(
-            "time"
-        )
-
-        if time_complexity is None:
-            time_complexity = candidate_features.get(
-                "time_complexity"
-            )
-
-        space_complexity = complexity.get(
-            "space"
-        )
-
-        if space_complexity is None:
-            space_complexity = candidate_features.get(
-                "space_complexity"
-            )
-
-        # ----------------------------------------------------
-        # Confidence
-        #
-        # The new LLM extraction schema does not contain
-        # confidence. Preserve compatibility with the existing
-        # CandidateNLPState structure by defaulting to 0.0.
-        # ----------------------------------------------------
-
-        confidence = candidate_features.get(
-            "confidence",
-            0.0
-        )
-
-        try:
-            confidence = float(
-                confidence
-            )
-        except (
-            TypeError,
-            ValueError
-        ):
-            confidence = 0.0
-
-        confidence = max(
-            0.0,
-            min(
-                1.0,
-                confidence
-            )
-        )
-
-        # ----------------------------------------------------
-        # Reasoning
-        # ----------------------------------------------------
-
-        reasoning_summary = candidate_features.get(
-            "reasoning_summary"
-        )
-
-        if not reasoning_summary:
-            reasoning = candidate_features.get(
-                "reasoning",
-                []
-            )
-
-            if reasoning:
-                reasoning_summary = " ".join(
-                    str(item).strip()
-                    for item in reasoning
-                    if str(item).strip()
-                ) or None
-
-        # ----------------------------------------------------
-        # Build CandidateNLPState
-        # ----------------------------------------------------
-
         return CandidateNLPState(
             approach=candidate_features.get(
                 "approach"
@@ -353,43 +452,50 @@ class InterviewSession:
 
             algorithms=list(
                 candidate_features.get(
-                    "algorithms",
-                    []
+                    "algorithms"
                 ) or []
             ),
 
             concepts=list(
                 candidate_features.get(
-                    "concepts",
-                    []
+                    "concepts"
+                ) or []
+            ),
+
+            operations=list(
+                candidate_features.get(
+                    "operations"
                 ) or []
             ),
 
             data_structures=list(
                 candidate_features.get(
-                    "data_structures",
-                    []
+                    "data_structures"
                 ) or []
             ),
 
-            time_complexity=time_complexity,
+            time_complexity=candidate_features.get(
+                "time_complexity"
+            ),
 
-            space_complexity=space_complexity,
+            space_complexity=candidate_features.get(
+                "space_complexity"
+            ),
 
             edge_cases=list(
                 candidate_features.get(
-                    "edge_cases",
-                    []
+                    "edge_cases"
                 ) or []
             ),
 
-            reasoning_summary=reasoning_summary,
-
             assumptions=list(
                 candidate_features.get(
-                    "assumptions",
-                    []
+                    "assumptions"
                 ) or []
+            ),
+
+            reasoning_summary=candidate_features.get(
+                "reasoning_summary"
             ),
 
             optimization=candidate_features.get(
@@ -405,9 +511,11 @@ class InterviewSession:
         self
     ) -> CandidateEvaluationState:
 
-        self.state = self.state_store.load(
-            candidate_id=self.state.candidate_id,
-            question_id=self.state.question_id
+        self.state = (
+            self.state_store.load(
+                candidate_id=self.state.candidate_id,
+                question_id=self.state.question_id
+            )
         )
 
         return self.state
@@ -445,7 +553,9 @@ class InterviewSession:
         if self.finished:
             return None
 
-        return self.state.current_interviewer_question
+        return (
+            self.state.current_interviewer_question
+        )
 
     # ========================================================
     # FINISHED

@@ -165,9 +165,9 @@ def _prepare_candidate_features(
             )
         ),
 
-        "reasoning": _clean_string(
+        "reasoning_summary": _clean_string(
             candidate_features.get(
-                "reasoning"
+                "reasoning_summary"
             )
         ),
 
@@ -185,6 +185,12 @@ def _prepare_candidate_features(
 
         "optimization": candidate_features.get(
             "optimization"
+        ),
+
+        "implementation_details": _clean_list(
+            candidate_features.get(
+                "implementation_details"
+            )
         ),
     }
 
@@ -582,10 +588,11 @@ The extracted state has this structure:
 - data_structures
 - time_complexity
 - space_complexity
-- reasoning
+- reasoning_summary
 - edge_cases
 - assumptions
 - optimization
+- implementation_details
 
 These fields are semantic observations about what the
 candidate communicated.

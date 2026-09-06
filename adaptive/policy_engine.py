@@ -15,7 +15,7 @@ from adaptive.repetition_guard import RepetitionGuard
 
 class PolicyEngine:
     """
-    Decides what the system should do next.
+    Decides what the system should evaluate next.
 
     Uses:
     - gap analysis
@@ -24,16 +24,6 @@ class PolicyEngine:
     - score thresholds
     - candidate level
     - remaining interview time
-
-    Updated reference-progression inputs:
-    - candidate state
-    - current matched reference solution
-    - reference match confidence
-    - target/optimal reference solution
-    - possible next reference solutions
-    - missing concepts
-    - hints already given
-    - remaining turns
     """
 
     def __init__(self):
@@ -43,9 +33,13 @@ class PolicyEngine:
 
         self.progress_tracker = ProgressTracker()
 
+    # ==========================================================
+    # MAIN DECISION
+    # ==========================================================
+
     def decide(
         self,
-        scores: dict[str, float],
+        scores: dict,
         time_remaining: int,
         candidate_level: str = "medium",
         candidate_state: str | None = None,
@@ -57,6 +51,7 @@ class PolicyEngine:
         hints_given: list[str] | None = None,
         turns_remaining: int | None = None
     ) -> dict:
+
         """
         Generate the next adaptive policy decision.
 
@@ -82,22 +77,7 @@ class PolicyEngine:
                 "Interview time has ended."
             )
 
-        # --------------------------------------------------
-        # Rule 2: No turns remaining
-        # --------------------------------------------------
-
-        if (
-            turns_remaining is not None
-            and turns_remaining <= 0
-        ):
-            return self._stop_decision(
-                "No interview turns remain."
-            )
-
-        # --------------------------------------------------
-        # Step 1: Record current scores for progress tracking
-        # --------------------------------------------------
-
+        # Record scores for progress tracking.
         self.progress_tracker.record(scores)
 
         # --------------------------------------------------
@@ -239,13 +219,10 @@ class PolicyEngine:
             if not self._is_gap_resolved(dimension)
         ]
 
-        # --------------------------------------------------
-        # Rule 3: No unresolved gaps available
-        # --------------------------------------------------
-
+        # Rule 2: No unresolved gaps are available.
         if not available_gaps:
             return self._stop_decision(
-                "No unresolved gaps are available for follow-up."
+                "No assessed weakness requires a targeted follow-up."
             )
 
         # --------------------------------------------------
@@ -259,16 +236,13 @@ class PolicyEngine:
             target_dimension
         )
 
-        # --------------------------------------------------
-        # Step 8: Check whether a follow-up is required
-        # --------------------------------------------------
-
+        # Step 5: Decide whether a follow-up is needed.
         if (
-            target_score is not None
-            and target_score >= FOLLOW_UP_THRESHOLD
+            normalized_score is not None
+            and normalized_score >= FOLLOW_UP_THRESHOLD
         ):
             return self._stop_decision(
-                "No significant weakness requires a follow-up."
+                "Selected gap is no longer below the follow-up threshold."
             )
 
         # --------------------------------------------------
@@ -290,7 +264,7 @@ class PolicyEngine:
 
         difficulty = self._determine_difficulty(
             candidate_level,
-            target_score
+            normalized_score
         )
 
         # --------------------------------------------------
@@ -299,7 +273,7 @@ class PolicyEngine:
 
         goal = self._determine_goal(
             target_dimension,
-            target_score
+            normalized_score
         )
 
         # --------------------------------------------------
@@ -321,24 +295,13 @@ class PolicyEngine:
             "reason": (
                 f"{target_dimension} is the highest-priority "
                 f"unresolved gap."
-            ),
-            "candidate_state": candidate_state,
-            "current_reference_solution":
-                current_reference_solution,
-            "target_reference_solution":
-                target_reference_solution,
-            "missing_concepts":
-                missing_concepts or []
+            )
         }
 
     def _is_gap_resolved(
         self,
         dimension: str
     ) -> bool:
-        """
-        Check whether the latest score for a dimension
-        is high enough that it no longer needs follow-up.
-        """
 
         latest_scores = (
             self.progress_tracker.latest_scores()
@@ -352,12 +315,13 @@ class PolicyEngine:
             dimension
         )
 
+        normalized_score = self._normalize_score(
+            dimension,
+            latest_score)
         if latest_score is None:
             return False
 
-        return (
-            latest_score >= FOLLOW_UP_THRESHOLD
-        )
+        return latest_score >= FOLLOW_UP_THRESHOLD
 
     def _get_score(
         self,
@@ -398,14 +362,15 @@ class PolicyEngine:
 
         return "EXPLORE_MULTIPLE_GAPS"
 
+    # ==========================================================
+    # DIFFICULTY
+    # ==========================================================
+
     def _determine_difficulty(
         self,
         candidate_level: str,
-        score: float | None
+        normalized_score: float | None
     ) -> str:
-        """
-        Choose follow-up difficulty.
-        """
 
         if candidate_level == "beginner":
             return "easy"
@@ -414,37 +379,39 @@ class PolicyEngine:
             return "hard"
 
         if (
-            score is not None
-            and score < LOW_SCORE_THRESHOLD
+            normalized_score is not None
+            and normalized_score < LOW_SCORE_THRESHOLD
         ):
             return "easy"
 
         return "medium"
 
+    # ==========================================================
+    # GOAL
+    # ==========================================================
+
     def _determine_goal(
         self,
         dimension: str,
-        score: float | None
+        normalized_score: float | None
     ) -> str:
-        """
-        Determine what the follow-up should achieve.
-        """
 
         if (
-            score is not None
-            and score < LOW_SCORE_THRESHOLD
+            normalized_score is not None
+            and normalized_score < LOW_SCORE_THRESHOLD
         ):
             return f"clarify_{dimension}"
 
         return f"probe_{dimension}"
 
+    # ==========================================================
+    # STOP
+    # ==========================================================
+
     def _stop_decision(
         self,
         reason: str
     ) -> dict:
-        """
-        Return a consistent stop decision.
-        """
 
         return {
             "action": "STOP",

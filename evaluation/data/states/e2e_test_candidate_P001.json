@@ -1,0 +1,107 @@
+{
+  "candidate_id": "e2e_test_candidate",
+  "question_id": "P001",
+  "reference_answer_id": "P001-R3",
+  "reference_match_confidence": 0.9,
+  "target_reference_id": null,
+  "candidate_answer": "I would use a HashMap to store previously seen values.\nFor each number, I would calculate its complement and check\nwhether that complement already exists in the HashMap.\nIf it exists, I return the two indices. Otherwise, I store\nthe current number and continue iterating through the array.\nThis gives O(n) time and O(n) space.",
+  "nlp_state": {
+    "approach": "hash map",
+    "algorithms": [
+      "complement lookup"
+    ],
+    "concepts": [
+      "complement lookup"
+    ],
+    "operations": [
+      "calculate complement for each number",
+      "check if complement exists in hash map",
+      "store current number in hash map"
+    ],
+    "data_structures": [
+      "hash map"
+    ],
+    "time_complexity": "O(n)",
+    "space_complexity": "O(n)",
+    "edge_cases": [],
+    "reasoning_summary": null,
+    "assumptions": [],
+    "optimization": null
+  },
+  "scores": {
+    "algorithm_correctness": 100.0,
+    "logical_reasoning": 100.0,
+    "concept_coverage": 100.0,
+    "completeness": 100.0,
+    "data_structure": 100.0,
+    "complexity": 100.0,
+    "edge_cases": 100.0
+  },
+  "primary_classification": "Correct",
+  "secondary_classification": null,
+  "adaptive_classifications": [],
+  "primary_adaptive_gap": null,
+  "evidence": {
+    "algorithm_correctness": "The candidate correctly solves the Two Sum problem using a hash map approach, which ensures O(n) time complexity and O(n) space complexity. The algorithm handles all required cases, including duplicate values, negative values, and no solution.",
+    "logical_reasoning": "The candidate explains the reasoning clearly, showing how the algorithm works by calculating the complement and checking for its presence in the hash map. The logic is valid and connects the steps to the required output.",
+    "concept_coverage": "The candidate communicates all relevant concepts needed for the solution, including hash map usage, complement calculation, and index tracking. These concepts are essential for solving the problem effectively.",
+    "completeness": "The candidate addresses all essential parts of a solution, including the core approach, necessary processing steps, and relevant complexity discussion. The solution is complete and covers all required conditions.",
+    "data_structure": "The candidate explicitly mentions the use of a hash map, which is the appropriate data structure for this problem. The choice is correct and aligns with the problem requirements.",
+    "complexity": "The candidate explicitly states the time complexity as O(n) and space complexity as O(n), which matches the expected solution. The complexity analysis is accurate and appropriate.",
+    "edge_cases": "The candidate addresses all relevant edge cases, including duplicate values, negative values, zero, and no solution. The solution handles these cases correctly and explicitly."
+  },
+  "history": [
+    {
+      "turn_number": 1,
+      "candidate_answer": "I would use a HashMap to store previously seen values.\nFor each number, I would calculate its complement and check\nwhether that complement already exists in the HashMap.\nIf it exists, I return the two indices. Otherwise, I store\nthe current number and continue iterating through the array.\nThis gives O(n) time and O(n) space.",
+      "scores": {
+        "algorithm_correctness": 100.0,
+        "logical_reasoning": 100.0,
+        "concept_coverage": 100.0,
+        "completeness": 100.0,
+        "data_structure": 100.0,
+        "complexity": 100.0,
+        "edge_cases": 100.0
+      },
+      "primary_classification": "Correct",
+      "secondary_classification": null,
+      "adaptive_classifications": [],
+      "primary_adaptive_gap": null,
+      "evidence": {
+        "algorithm_correctness": "The candidate correctly solves the Two Sum problem using a hash map approach, which ensures O(n) time complexity and O(n) space complexity. The algorithm handles all required cases, including duplicate values, negative values, and no solution.",
+        "logical_reasoning": "The candidate explains the reasoning clearly, showing how the algorithm works by calculating the complement and checking for its presence in the hash map. The logic is valid and connects the steps to the required output.",
+        "concept_coverage": "The candidate communicates all relevant concepts needed for the solution, including hash map usage, complement calculation, and index tracking. These concepts are essential for solving the problem effectively.",
+        "completeness": "The candidate addresses all essential parts of a solution, including the core approach, necessary processing steps, and relevant complexity discussion. The solution is complete and covers all required conditions.",
+        "data_structure": "The candidate explicitly mentions the use of a hash map, which is the appropriate data structure for this problem. The choice is correct and aligns with the problem requirements.",
+        "complexity": "The candidate explicitly states the time complexity as O(n) and space complexity as O(n), which matches the expected solution. The complexity analysis is accurate and appropriate.",
+        "edge_cases": "The candidate addresses all relevant edge cases, including duplicate values, negative values, zero, and no solution. The solution handles these cases correctly and explicitly."
+      },
+      "current_interviewer_question": null,
+      "nlp_state": {
+        "approach": "hash map",
+        "algorithms": [
+          "complement lookup"
+        ],
+        "concepts": [
+          "complement lookup"
+        ],
+        "operations": [
+          "calculate complement for each number",
+          "check if complement exists in hash map",
+          "store current number in hash map"
+        ],
+        "data_structures": [
+          "hash map"
+        ],
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)",
+        "edge_cases": [],
+        "reasoning_summary": null,
+        "assumptions": [],
+        "optimization": null
+      }
+    }
+  ],
+  "current_interviewer_question": null,
+  "should_continue": false
+}

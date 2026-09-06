@@ -1,5 +1,5 @@
 {
-  "problem_id": "P004",
+  "problem_id": "P006",
   "rubric": {
     "weights": {
       "algorithm_correctness": 25,
@@ -14,7 +14,7 @@
     "dimensions": {
       "algorithm_correctness": {
         "weight": 25,
-        "evaluation": "Evaluate whether the proposed approach actually solves Median of Two Sorted Arrays.",
+        "evaluation": "Evaluate whether the proposed approach actually solves Zigzag Conversion.",
         "full_credit": "The algorithm correctly solves the problem.",
         "partial_credit": "The overall idea is correct but contains a small logical issue.",
         "low_credit": "The candidate recognizes part of the problem but the proposed algorithm is substantially flawed.",
@@ -27,10 +27,10 @@
       "concept_coverage": {
         "weight": 15,
         "expected_concepts": [
-          "binary-search",
-          "partitioning",
-          "sorted-arrays",
-          "median-calculation",
+          "simulation",
+          "row-tracking",
+          "direction-change",
+          "string-building",
           "boundary-handling"
         ]
       },
@@ -40,21 +40,20 @@
       },
       "data_structure_selection": {
         "weight": 10,
-        "expected": "arrays"
+        "expected": "array-of-strings"
       },
       "complexity_analysis": {
         "weight": 10,
-        "expected_time": "O(log(min(m,n)))",
-        "expected_space": "O(1)"
+        "expected_time": "O(n)",
+        "expected_space": "O(n)"
       },
       "edge_case_handling": {
         "weight": 10,
         "expected_cases": [
-          "One array empty",
-          "Unequal lengths",
-          "Even total length",
-          "Odd total length",
-          "Boundary values"
+          "numRows = 1",
+          "numRows >= string length",
+          "Two rows",
+          "Empty string"
         ]
       }
     }
