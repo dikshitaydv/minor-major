@@ -275,13 +275,10 @@ class PolicyEngine:
             )
         )
 
-<<<<<<< feature-janvi
-=======
         # --------------------------------------------------
         # Step 6: Remove gaps that are now resolved
         # --------------------------------------------------
 
->>>>>>> main
         available_gaps = [
             dimension
             for dimension in available_gaps
@@ -493,7 +490,7 @@ class PolicyEngine:
 
         normalized_score = self._normalize_score(
             dimension,
-            latest_score
+            latest_score)
         if latest_score is None:
             return False
 
