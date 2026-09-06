@@ -334,6 +334,7 @@ class CandidateEvaluationState:
     ) -> "CandidateEvaluationState":
         """Create evaluation state from a dictionary."""
 
+        #marker
         return cls(
             candidate_id=data["candidate_id"],
             question_id=data["question_id"],
