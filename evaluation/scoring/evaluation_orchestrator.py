@@ -15,24 +15,14 @@ from evaluation.scoring.adaptive_probe import (
 )
 
 from evaluation.scoring.candidate_state import (
-    CandidateEvaluationState
+    CandidateEvaluationState,
+    CandidateNLPState
 )
 
 from evaluation.scoring.reference_matcher import (
     match_reference_solution_with_confidence
 )
 
-from evaluation.interviewer.followup_strategy import (
-    get_followup_strategy
-)
-
-from evaluation.interviewer.followup_generator import (
-    generate_followup_question
-)
-
-from evaluation.interviewer.interview_controller import (
-    should_continue_interview
-)
 
 from evaluation.dataset_loader import (
     load_evaluation_context
@@ -335,6 +325,98 @@ def evaluate_candidate_turn(
     # ==================================================
     # 1. CANDIDATE NLP STATE
     # ==================================================
+
+    new_nlp_state = CandidateNLPState(
+        approach=candidate_features.get(
+            "approach"
+        ),
+
+        algorithms=list(
+            candidate_features.get(
+                "algorithms"
+            ) or []
+        ),
+
+        concepts=list(
+            candidate_features.get(
+                "concepts"
+            )
+            or candidate_features.get(
+                "concepts_detected"
+            )
+            or []
+        ),
+
+        operations=list(
+            candidate_features.get(
+                "operations"
+            ) or []
+        ),
+
+        data_structures=list(
+            candidate_features.get(
+                "data_structures"
+            ) or []
+        ),
+
+        time_complexity=(
+            candidate_features.get(
+                "time_complexity"
+            )
+            or (
+                candidate_features.get(
+                    "complexity_claim"
+                ) or {}
+            ).get("time")
+        ),
+
+        space_complexity=(
+            candidate_features.get(
+                "space_complexity"
+            )
+            or (
+                candidate_features.get(
+                    "complexity_claim"
+                ) or {}
+            ).get("space")
+        ),
+
+        edge_cases=list(
+            candidate_features.get(
+                "edge_cases"
+            ) or []
+        ),
+
+        reasoning_summary=(
+            candidate_features.get(
+                "reasoning_summary"
+            )
+            or " ".join(
+                candidate_features.get(
+                    "reasoning"
+                ) or []
+            )
+            or None
+        ),
+
+        assumptions=list(
+            candidate_features.get(
+                "assumptions"
+            ) or []
+        ),
+
+        optimization=(
+            candidate_features.get(
+                "optimization"
+            )
+        ),
+    )
+
+    # Merge this turn's newly extracted NLP
+    # information into the persistent candidate state.
+    state.update_nlp_state(
+        new_nlp_state
+    )
 
     candidate_state = (
         state.nlp_state.to_dict()
@@ -726,121 +808,5 @@ def evaluate_candidate_turn(
             "primary_adaptive_gap"
         ] = primary_adaptive_gap
 
-    # ==================================================
-    # 11. CONTINUE / STOP
-    # ==================================================
-
-    should_continue = (
-        should_continue_interview(
-            state=state,
-            llm_evaluation=llm_evaluation,
-            adaptive_classifications=(
-                adaptive_classifications
-            ),
-            adaptive_probe=adaptive_probe
-        )
-    )
-
-    state.should_continue = bool(
-        should_continue
-    )
-
-    _print_adaptive(
-        should_continue=state.should_continue,
-        primary_adaptive_gap=primary_adaptive_gap,
-        adaptive_probe=adaptive_probe
-    )
-
-    if not state.should_continue:
-        return state
-
-    # ==================================================
-    # 12. FOLLOW-UP TARGET
-    # ==================================================
-
-    followup_target = (
-        primary_adaptive_gap
-        if primary_adaptive_gap
-        else adaptive_probe
-    )
-
-    if not followup_target:
-        return state
-
-    # ==================================================
-    # 13. FOLLOW-UP STRATEGY
-    # ==================================================
-
-    followup_strategy = (
-        get_followup_strategy(
-            followup_target
-        )
-    )
-
-    if not followup_strategy:
-        return state
-
-    # ==================================================
-    # 14. FOLLOW-UP QUESTION
-    # ==================================================
-
-    state_dict = state.to_dict()
-
-    state_dict[
-        "adaptive_probe"
-    ] = adaptive_probe
-
-    state_dict[
-        "should_continue"
-    ] = state.should_continue
-
-    followup_question = (
-        generate_followup_question(
-            problem=problem,
-            candidate_answer=candidate_answer,
-            candidate_state=state_dict,
-            followup_strategy=(
-                followup_strategy
-            )
-        )
-    )
-
-    if isinstance(
-        followup_question,
-        dict
-    ):
-        followup_question = (
-            followup_question.get(
-                "question"
-            )
-        )
-
-    if not isinstance(
-        followup_question,
-        str
-    ):
-        raise RuntimeError(
-            "Follow-up generator did not "
-            "return a valid question string."
-        )
-
-    followup_question = (
-        followup_question.strip()
-    )
-
-    if not followup_question:
-        raise RuntimeError(
-            "Follow-up generator returned "
-            "an empty question."
-        )
-
-    state.set_interviewer_question(
-        followup_question
-    )
-
-    _print_followup(
-        followup_strategy=followup_strategy,
-        followup_question=followup_question
-    )
 
     return state

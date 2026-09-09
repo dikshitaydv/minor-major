@@ -68,8 +68,10 @@ def test_strong_scores_stop():
     engine = PolicyEngine()
 
     result = engine.decide(
-        scores=strong_scores(),
-        time_remaining=180
+    scores=strong_scores(),
+    time_remaining=180,
+    current_reference_id="P001-R3",
+    target_reference_id="P001-R3"
     )
 
     assert result["action"] == "STOP"
@@ -203,7 +205,9 @@ def test_non_optimal_reference_asks_discovery():
         ],
         missing_concepts=[
             "concept_coverage"
-        ]
+        ],
+        current_reference_id="P001-R1",
+        target_reference_id="P001-R3"
     )
 
     assert result["action"] == "ASK_DISCOVERY"

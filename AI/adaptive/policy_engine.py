@@ -1,3 +1,4 @@
+import re
 from AI.adaptive.progress_tracker import ProgressTracker
 from AI.adaptive.config import (
     LOW_SCORE_THRESHOLD,
@@ -17,24 +18,14 @@ class PolicyEngine:
     """
     Decides what the adaptive interviewer should do next.
 
-    Dimension scores are weighted contributions out of 100.
+    Dimension scores are raw 0-100 scores produced by the
+    evaluation engine. Adaptive thresholds are therefore applied
+    directly to those scores.
 
-    Therefore the policy normalizes each dimension score against
-    its maximum possible weighted contribution before applying
-    generic thresholds.
+    Dimension weights remain available for overall scoring and
+    prioritization, but they must not be used to reinterpret an
+    individual dimension's 0-100 evaluation score.
 
-    Example:
-
-        algorithm_correctness weight = 25
-
-        score = 10
-
-        normalized score =
-            10 / 25 * 100
-            = 40%
-
-    This keeps adaptive thresholds independent of the dimension's
-    individual weight.
     Decides what the system should do next.
 
     Uses:
@@ -74,6 +65,242 @@ class PolicyEngine:
         self.progress_tracker = ProgressTracker()
 
     # ==========================================================
+    # TARGET REFERENCE SELECTION
+    # ==========================================================
+
+    def select_target_reference(
+        self,
+        references: list[dict]
+    ) -> str | None:
+        """
+        Select one canonical target reference for a problem.
+
+        References are ranked using the metadata available in
+        the dataset.
+
+        Priority:
+        1. Validity/correctness metadata, if available
+        2. Better time complexity
+        3. Better space complexity
+        4. Quality/preference metadata, if available
+        5. Deterministic Reference ID ordering
+        """
+
+        if not references:
+            return None
+
+        ranked_references = sorted(
+            references,
+            key=self._reference_rank_key
+        )
+
+        target = ranked_references[0]
+
+        reference_id = target.get(
+            "Reference ID"
+        )
+
+        if reference_id is None:
+            return None
+
+        return str(
+            reference_id
+        ).strip()
+
+
+    def _reference_rank_key(
+        self,
+        reference: dict
+    ) -> tuple:
+        """
+        Build a deterministic ranking key for a reference.
+
+        Lower values are better.
+        """
+
+        validity_rank = self._get_validity_rank(
+            reference
+        )
+
+        time_rank = self._complexity_rank(
+            reference.get(
+                "Time Complexity"
+            )
+        )
+
+        space_rank = self._complexity_rank(
+            reference.get(
+                "Space Complexity"
+            )
+        )
+
+        quality_rank = self._get_quality_rank(
+            reference
+        )
+
+        reference_id = str(
+            reference.get(
+                "Reference ID",
+                ""
+            )
+        ).strip()
+
+        return (
+            validity_rank,
+            time_rank,
+            space_rank,
+            quality_rank,
+            reference_id
+        )
+
+
+    def _get_validity_rank(
+        self,
+        reference: dict
+    ) -> int:
+        """
+        Return a ranking based on validity/correctness metadata
+        when such metadata exists.
+
+        Lower is better.
+        """
+
+        for key in (
+            "Validity",
+            "Correctness",
+            "Is Valid",
+            "Is Correct"
+        ):
+
+            value = reference.get(key)
+
+            if value is None:
+                continue
+
+            normalized = str(
+                value
+            ).strip().lower()
+
+            if normalized in (
+                "true",
+                "yes",
+                "valid",
+                "correct"
+            ):
+                return 0
+
+            if normalized in (
+                "false",
+                "no",
+                "invalid",
+                "incorrect"
+            ):
+                return 1
+
+        # No explicit validity metadata.
+        return 0
+
+
+    def _get_quality_rank(
+        self,
+        reference: dict
+    ) -> float:
+        """
+        Use preference/quality metadata if the dataset provides it.
+
+        Lower is better.
+
+        If no such metadata exists, all references remain tied
+        on this criterion.
+        """
+
+        for key in (
+            "Quality Score",
+            "Solution Quality",
+            "Reference Priority",
+            "Priority"
+        ):
+
+            value = reference.get(key)
+
+            if value is None:
+                continue
+
+            try:
+                return float(value)
+
+            except (
+                TypeError,
+                ValueError
+            ):
+                continue
+
+        return 0.0
+
+
+    def _complexity_rank(
+        self,
+        complexity: object
+    ) -> tuple:
+        """
+        Convert common Big-O complexity strings into a ranking.
+
+        Lower rank means better asymptotic complexity.
+
+        Unknown complexities are ranked after recognized ones.
+        """
+
+        if complexity is None:
+            return (
+                99,
+                ""
+            )
+
+        normalized = str(
+            complexity
+        ).lower()
+
+        normalized = re.sub(
+            r"\s+",
+            "",
+            normalized
+        )
+
+        normalized = normalized.replace(
+            "average",
+            ""
+        )
+
+        rankings = [
+            ("o(1)", 0),
+            ("o(logn)", 1),
+            ("o(log(m+n))", 1),
+            ("o(log(min(m,n)))", 1),
+            ("o(n)", 2),
+            ("o(m+n)", 2),
+            ("o(max(m,n))", 2),
+            ("o(nlogn)", 3),
+            ("o(nlog(m+n))", 3),
+            ("o(n^2)", 4),
+            ("o(mn)", 4),
+            ("o(n^3)", 5),
+            ("exponential", 6),
+        ]
+
+        for pattern, rank in rankings:
+
+            if pattern == normalized:
+                return (
+                    rank,
+                    normalized
+                )
+
+        return (
+            99,
+            normalized
+        )
+
+    # ==========================================================
     # MAIN DECISION
     # ==========================================================
 
@@ -89,7 +316,9 @@ class PolicyEngine:
         possible_next_reference_solutions: list[str] | None = None,
         missing_concepts: list[str] | None = None,
         hints_given: list[str] | None = None,
-        turns_remaining: int | None = None
+        turns_remaining: int | None = None,
+        current_reference_id: str | None = None,
+        target_reference_id: str | None = None
     ) -> dict:
 
         """
@@ -147,7 +376,91 @@ class PolicyEngine:
         self.progress_tracker.record(scores)
 
         # --------------------------------------------------
-        # Step 2: Check whether the current approach has
+        # Step 2: Compare the candidate's current reference
+        # with the canonical target reference.
+        #
+        # Same reference ID means the candidate has reached
+        # the target approach.
+        # --------------------------------------------------
+        
+        if (
+            current_reference_id is not None
+            and target_reference_id is not None
+            and current_reference_id
+            == target_reference_id
+        ):
+            return self._stop_decision(
+                "Candidate has reached the target reference solution."
+            )
+        
+        # --------------------------------------------------
+        # Candidate is on a different reference approach.
+        # Guide them toward the target.
+        # --------------------------------------------------
+        
+        if (
+            current_reference_id is not None
+            and target_reference_id is not None
+            and current_reference_id
+            != target_reference_id
+        ):
+        
+            next_reference = None
+        
+            if possible_next_reference_solutions:
+                next_reference = (
+                    possible_next_reference_solutions[0]
+                )
+        
+        # If missing concepts are available, target the
+        # first missing concept. Otherwise use concept
+        # coverage as the general improvement dimension.
+        
+            target_dimension = (
+                missing_concepts[0]
+                if missing_concepts
+                else "concept_coverage"
+            )
+        
+            target_score = self._get_score(
+                scores,
+                target_dimension
+            )
+        
+            difficulty = self._determine_difficulty(
+                candidate_level,
+                target_score
+            )
+        
+            return {
+                "action": "ASK_DISCOVERY",
+                "target_dimension": target_dimension,
+                "difficulty": difficulty,
+                "goal": (
+                    f"discover_{target_dimension}"
+                ),
+                "hint_level": len(hints_given or []),
+                "do_not_reveal_solution": True,
+                "time_policy": self._get_time_policy(
+                    time_remaining
+                ),
+                "reason": (
+                    "The candidate's current approach is valid "
+                    "but has not yet reached the target approach."
+                ),
+                "candidate_state": candidate_state,
+                "current_reference_solution":
+                    current_reference_solution,
+                "next_reference_solution":
+                    next_reference,
+                "target_reference_solution":
+                    target_reference_solution,
+                "missing_concepts":
+                    missing_concepts or []
+            }
+
+        # --------------------------------------------------
+        # Step 3: Check whether the current approach has
         # been identified confidently.
         #
         # Low confidence means the system should not assume
@@ -182,74 +495,7 @@ class PolicyEngine:
                     missing_concepts or []
             }
 
-        # --------------------------------------------------
-        # Step 3: Check whether the current reference
-        # approach is valid but not yet optimal.
-        #
-        # If so, guide the candidate toward the next useful
-        # improvement without directly revealing the answer.
-        # --------------------------------------------------
-
-        if (
-            current_reference_solution is not None
-            and target_reference_solution is not None
-            and current_reference_solution
-            != target_reference_solution
-        ):
-
-            next_reference = None
-
-            if possible_next_reference_solutions:
-                next_reference = (
-                    possible_next_reference_solutions[0]
-                )
-
-            # If missing concepts are available, target the
-            # first missing concept. Otherwise use concept
-            # coverage as the general improvement dimension.
-
-            target_dimension = (
-                missing_concepts[0]
-                if missing_concepts
-                else "concept_coverage"
-            )
-
-            target_score = self._get_score(
-                scores,
-                target_dimension
-            )
-
-            difficulty = self._determine_difficulty(
-                candidate_level,
-                target_score
-            )
-
-            return {
-                "action": "ASK_DISCOVERY",
-                "target_dimension": target_dimension,
-                "difficulty": difficulty,
-                "goal": (
-                    f"discover_{target_dimension}"
-                ),
-                "hint_level": len(hints_given or []),
-                "do_not_reveal_solution": True,
-                "time_policy": self._get_time_policy(
-                    time_remaining
-                ),
-                "reason": (
-                    "The candidate's current approach is valid "
-                    "but has not yet reached the target approach."
-                ),
-                "candidate_state": candidate_state,
-                "current_reference_solution":
-                    current_reference_solution,
-                "next_reference_solution":
-                    next_reference,
-                "target_reference_solution":
-                    target_reference_solution,
-                "missing_concepts":
-                    missing_concepts or []
-            }
+        
 
         # --------------------------------------------------
         # Step 4: Normal gap analysis
@@ -444,26 +690,21 @@ class PolicyEngine:
         dimension: str,
         score: float | None
     ) -> float | None:
+        """Return the evaluator's raw 0-100 dimension score.
+
+        Dimension weights are used elsewhere for overall scoring and
+        prioritization. They must not rescale an individual dimension
+        score before adaptive thresholds are applied.
+        """
 
         if score is None:
             return None
-
-        weight = self.DIMENSION_WEIGHTS.get(
-            dimension
-        )
-
-        if weight is None or weight <= 0:
-            return None
-
-        normalized = (
-            score / weight
-        ) * 100
 
         return max(
             0.0,
             min(
                 100.0,
-                normalized
+                float(score)
             )
         )
 
@@ -495,15 +736,8 @@ class PolicyEngine:
             return False
 
         return (
-            latest_score >= FOLLOW_UP_THRESHOLD
-        )
-
-        if normalized_score is None:
-            return False
-
-        return (
-            normalized_score
-            >= FOLLOW_UP_THRESHOLD
+            normalized_score is not None
+            and normalized_score >= FOLLOW_UP_THRESHOLD
         )
 
     # ==========================================================
