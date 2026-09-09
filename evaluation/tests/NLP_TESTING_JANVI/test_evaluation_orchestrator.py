@@ -97,10 +97,7 @@ def test_orchestrator_matches_reference_and_passes_it_to_evaluator():
     ) as mock_evaluator, patch(
         "evaluation.scoring.evaluation_orchestrator."
         "classify_answer"
-    ) as mock_classify, patch(
-        "evaluation.scoring.evaluation_orchestrator."
-        "should_continue_interview"
-    ) as mock_should_continue:
+    ) as mock_classify:
 
         mock_context.return_value = (
             REFERENCES,
@@ -119,8 +116,6 @@ def test_orchestrator_matches_reference_and_passes_it_to_evaluator():
             "secondary_classification": None,
             "adaptive_classifications": [],
         }
-
-        mock_should_continue.return_value = False
 
         result = evaluate_candidate_turn(
             state=state,

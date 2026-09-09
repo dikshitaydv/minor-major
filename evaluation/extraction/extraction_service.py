@@ -107,7 +107,6 @@ def extract_candidate_features(
 
     semantic = extract_with_llm(
         normalized_answer,
-        problem=problem,
     )
 
     if not isinstance(semantic, dict):

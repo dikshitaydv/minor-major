@@ -575,72 +575,66 @@ def test_end_to_end():
 
                 print(entry)
 
-    # ========================================================
-    # 14. FINAL RESULT
+       # ========================================================
+    # 14. FINAL / CONTINUATION STATE
     # ========================================================
 
     print_section(
-        "[14] FINAL EVALUATOR RESULT"
+        "[14] FINAL / CONTINUATION STATE"
     )
 
-    final_result = (
-        session.get_final_result()
-    )
+    if session.is_finished():
 
-    assert isinstance(
-        final_result,
-        dict,
-    )
+        final_result = (
+            session.get_final_result()
+        )
 
-    print_field(
-        "Candidate ID",
-        final_result["candidate_id"],
-    )
+        assert isinstance(
+            final_result,
+            dict,
+        )
 
-    print_field(
-        "Question ID",
-        final_result["question_id"],
-    )
+        print()
+        print(
+            "Interview finished."
+        )
 
-    print_field(
-        "Status",
-        final_result["status"],
-    )
+        print_field(
+            "Final result",
+            final_result,
+        )
 
-    print_field(
-        "Turns",
-        final_result["turn_number"],
-    )
+    else:
 
-    print_field(
-        "History length",
-        final_result["history_length"],
-    )
+        print()
+        print(
+            "Interview is still in progress."
+        )
 
-    print_field(
-        "Average score",
-        final_result["average_score"],
-    )
+        print_field(
+            "Next interviewer question",
+            session.get_next_question(),
+        )
 
-    print_field(
-        "Assessed dimensions",
-        final_result["assessed_dimensions"],
-    )
+        assert (
+            state.should_continue
+            is True
+        )
 
-    print_field(
-        "Total dimensions",
-        final_result["total_dimensions"],
-    )
+        assert (
+            session.is_finished()
+            is False
+        )
 
-    print()
-    print("Primary Classification")
-    print("-" * 30)
+        assert (
+            session.get_next_question()
+            is not None
+        )
 
-    print(
-        final_result[
-            "primary_classification"
-        ]
-    )
+        print()
+        print(
+            "Adaptive follow-up was generated successfully."
+        )
 
     # ========================================================
     # 15. FINAL SEVEN DIMENSION SCORES

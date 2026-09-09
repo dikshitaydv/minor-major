@@ -3,19 +3,12 @@ from typing import Optional
 from evaluation.extraction.extraction_service import (
     extract_candidate_features
 )
-<<<<<<< Updated upstream
-
 from evaluation.persistence.candidate_state_store import (
     CandidateStateStore
 )
 
-from adaptive.policy_engine import (
-    PolicyEngine
-)
-
-=======
 from AI.adaptive.policy_engine import PolicyEngine
->>>>>>> Stashed changes
+
 from evaluation.scoring.candidate_state import (
     CandidateEvaluationState,
     CandidateNLPState
@@ -33,11 +26,10 @@ from evaluation.interviewer.followup_generator import (
     generate_followup_question
 )
 
-from conversation.timer_service import TimerService
+from AI.conversation.timer_service import TimerService
 
-from evaluation.dataset_loader import (
-    load_evaluation_context
-)
+from evaluation.problem_provider import ProblemProvider
+
 
 
 # ============================================================
@@ -162,8 +154,8 @@ class InterviewSession:
     def __init__(
     self,
     candidate_id: str,
-    question_id: str,
-    problem: dict,
+    question_id: Optional[str] = None,
+    problem: Optional[dict] = None,
     time_remaining: int = 600,
     candidate_level: str = "medium",
     state_store: Optional[CandidateStateStore] = None,
@@ -175,10 +167,21 @@ class InterviewSession:
                 "candidate_id cannot be empty."
             )
 
-        if not question_id:
-            raise ValueError(
-                "question_id cannot be empty."
-            )
+        # ==================================================
+        # LOAD LIVE PROBLEM WHEN ONE IS NOT PROVIDED
+        # ==================================================
+        #
+        # LeetCode GraphQL is the source of the problem
+        # statement. ProblemProvider itself restricts random
+        # selection to problems that have reference solutions
+        # in the canonical Excel repository.
+        #
+        # Existing callers may still provide both `problem`
+        # and `question_id`; those callers remain unchanged.
+
+        if problem is None:
+            with ProblemProvider() as provider:
+                problem = provider.get_random_problem()
 
         if not isinstance(
             problem,
@@ -186,6 +189,24 @@ class InterviewSession:
         ):
             raise TypeError(
                 "problem must be a dictionary."
+            )
+
+        if question_id is None:
+            question_id = (
+                problem.get("question_id")
+                or problem.get("id")
+            )
+
+        if question_id is None:
+            raise ValueError(
+                "question_id cannot be determined from the problem."
+            )
+
+        question_id = str(question_id).strip()
+
+        if not question_id:
+            raise ValueError(
+                "question_id cannot be empty."
             )
 
         self.problem = problem
@@ -233,54 +254,6 @@ class InterviewSession:
 
         self.policy_engine = (
             PolicyEngine()
-        )
-
-        # ==================================================
-        # SELECT CANONICAL TARGET REFERENCE
-        # ==================================================
-        #
-        # Target selection is performed only when the
-        # problem contains an identifier that can be used
-        # by the reference-solution dataset.
-        #
-        # This keeps lightweight Conversation/Timer tests
-        # independent of the reference dataset.
-
-        if self.state.target_reference_id is None:
-
-            problem_id = (
-                self.problem.get("problem_id")
-                or self.problem.get("id")
-            )
-
-            if problem_id:
-
-                reference_solutions, _ = (
-                    load_evaluation_context(
-                        self.problem
-                    )
-                )
-
-                self.state.target_reference_id = (
-                    self.policy_engine.select_target_reference(
-                        reference_solutions
-                    )
-                )
-
-                if self.state.target_reference_id is None:
-                    raise RuntimeError(
-                        "Unable to select a target reference "
-                        "solution for this problem."
-                    )
-
-                self.state_store.save(
-                    self.state
-                )
-
-        print()
-        print(
-            f"Target Reference: "
-            f"{self.state.target_reference_id}"
         )
 
         self.finished = False
