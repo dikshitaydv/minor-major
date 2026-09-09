@@ -1,5 +1,6 @@
 import json
 
+from evaluation.dataset_loader import load_reference_solution
 from evaluation.llm.ollama_client import (
     generate_structured_json
 )
@@ -371,3 +372,101 @@ def match_reference_solution(
     )
 
     return reference_id
+
+# ============================================================
+# PROBLEM-AWARE MATCHING API
+# ============================================================
+
+def match_problem_reference_solution_with_confidence(
+    candidate_state: dict,
+    problem,
+) -> tuple[str | None, float | None]:
+    """
+    Load all reference solutions for the given problem from the
+    canonical reference repository and identify the candidate's
+    current reference.
+
+    This function only identifies the CURRENT reference.
+
+    It does NOT:
+    - select the optimal/target reference
+    - determine the next reference
+    - perform candidate evaluation
+    - perform gap analysis
+    """
+
+    reference_solutions = load_reference_solution(problem)
+
+    if not reference_solutions:
+        raise ValueError(
+            f"No reference solutions found for problem: {problem}"
+        )
+
+    return match_reference_solution_with_confidence(
+        candidate_state=candidate_state,
+        reference_solutions=reference_solutions,
+    )
+    
+def build_current_reference_context(
+    problem,
+    reference_id,
+    match_confidence,
+):
+    """
+    Build the structured current-reference contract.
+
+    This represents what the candidate currently matches.
+
+    This function does NOT:
+    - select the target reference
+    - decide whether the candidate should continue
+    - perform gap analysis
+    """
+
+    if not reference_id:
+        return None
+
+    reference_solutions = load_reference_solution(problem)
+
+    for reference in reference_solutions:
+        if reference.get("Reference ID") == reference_id:
+            return {
+                "reference_id": reference_id,
+                "match_confidence": match_confidence,
+
+                "solution_type": reference.get("Solution Type"),
+                "expected_approach": reference.get("Expected Approach"),
+
+                "data_structures": reference.get(
+                    "Expected Data Structures"
+                ),
+
+                "time_complexity": reference.get(
+                    "Time Complexity"
+                ),
+
+                "space_complexity": reference.get(
+                    "Space Complexity"
+                ),
+
+                "reasoning_steps": reference.get(
+                    "Reasoning Steps"
+                ),
+
+                "edge_cases": reference.get(
+                    "Edge Cases"
+                ),
+
+                "optimization_goal": reference.get(
+                    "Optimization Goal"
+                ),
+
+                "next_better_reference_id": reference.get(
+                    "Next Better Reference ID"
+                ),
+            }
+
+    raise ValueError(
+        f"Reference ID '{reference_id}' was not found "
+        f"for problem '{problem}'."
+    )

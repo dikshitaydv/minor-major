@@ -1,34 +1,55 @@
+"""
+Reference and rubric dataset loading.
+
+Responsibilities:
+- Load reference solutions from the canonical Excel repository.
+- Load evaluation rubrics from JSON.
+- Preserve backward-compatible helper functions used by
+  evaluation/interviewer and evaluation/scoring.
+
+Important architecture rule:
+- Excel is the source of truth for reference solutions.
+- This module does NOT select the target reference.
+- This module does NOT use `Is Optimal Target`.
+- Target selection/progression belongs to the adaptive-policy layer.
+"""
+
+from __future__ import annotations
+
 import json
 from pathlib import Path
+from typing import Any
 
-from openpyxl import load_workbook
 
-
-# ==========================================================
-# DATASET ROOT
-# ==========================================================
+# ============================================================
+# PROJECT PATHS
+# ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DATASET_ROOT = PROJECT_ROOT / "dataset"
+# The current repository keeps shared dataset assets under AI/.
+AI_ROOT = PROJECT_ROOT / "AI"
+
+DATASET_ROOT = AI_ROOT / "dataset"
 
 REFERENCES_DIR = DATASET_ROOT / "references"
 
-REFERENCE_DATASET = (
-    REFERENCES_DIR
-    / "leetcode_1_to_10_reference_dataset_minimal.xlsx"
-)
-
 RUBRICS_DIR = DATASET_ROOT / "rubrics"
 
+# Canonical reference-answer workbook.
+REFERENCE_DATASET = (
+    REFERENCES_DIR
+    / "leetcode_1_to_10_reference_dataset_updated.xlsx"
+)
 
-# ==========================================================
-# HELPERS
-# ==========================================================
 
-def _load_json(path: Path) -> dict:
+# ============================================================
+# JSON HELPERS
+# ============================================================
+
+def _load_json(path: Path) -> dict[str, Any]:
     """
-    Load a JSON file and return its contents.
+    Load a JSON object from disk.
     """
 
     if not path.exists():
@@ -39,14 +60,14 @@ def _load_json(path: Path) -> dict:
     try:
         with path.open(
             "r",
-            encoding="utf-8"
+            encoding="utf-8",
         ) as file:
             data = json.load(file)
 
-    except json.JSONDecodeError as error:
+    except json.JSONDecodeError as exc:
         raise ValueError(
             f"Invalid JSON in dataset file: {path}"
-        ) from error
+        ) from exc
 
     if not isinstance(data, dict):
         raise TypeError(
@@ -56,9 +77,21 @@ def _load_json(path: Path) -> dict:
     return data
 
 
-def _get_problem_id(problem: dict) -> str:
+# ============================================================
+# PROBLEM ID
+# ============================================================
+
+def _get_problem_id(problem: dict[str, Any]) -> str:
     """
-    Extract the dataset problem ID from the problem object.
+    Extract the problem ID from a problem object.
+
+    The problem object may come from:
+    - GraphQL/API problem provider
+    - existing tests
+    - legacy callers
+
+    The reference repository only needs Problem ID as the
+    join key.
     """
 
     if not isinstance(problem, dict):
@@ -71,59 +104,73 @@ def _get_problem_id(problem: dict) -> str:
         or problem.get("id")
     )
 
-    if problem_id:
-        return str(
-            problem_id
-        ).strip()
+    if problem_id is None:
+        raise ValueError(
+            "Problem does not contain 'id' or 'problem_id'."
+        )
 
-    raise ValueError(
-        "Problem does not contain 'id' or 'problem_id'."
-    )
+    problem_id = str(problem_id).strip()
+
+    if not problem_id:
+        raise ValueError(
+            "Problem ID cannot be empty."
+        )
+
+    return problem_id
 
 
-# ==========================================================
+# ============================================================
 # REFERENCE DATASET
-# ==========================================================
+# ============================================================
 
-def load_reference_dataset() -> dict:
+def load_reference_dataset() -> dict[str, dict[str, Any]]:
     """
-    Load all reference solutions from the Excel dataset.
+    Load the complete reference repository from Excel.
 
     Returns:
 
         {
             "P001": {
                 "problem_id": "P001",
-                "problem_title": "...",
-                "reference_solutions": [...]
+                "reference_solutions": [
+                    {...},
+                    {...},
+                    ...
+                ]
             },
             ...
         }
+
+    Important:
+    - Problem ID is used only as the join key.
+    - Reference-specific information comes from Excel.
+    - No target/optimal decision is made here.
     """
 
     if not REFERENCE_DATASET.exists():
         raise FileNotFoundError(
-            f"Reference dataset not found: "
+            "Reference dataset not found at: "
             f"{REFERENCE_DATASET}"
         )
+
+    # Import locally so importing this module does not require
+    # openpyxl unless the Excel repository is actually used.
+    from openpyxl import load_workbook
 
     workbook = load_workbook(
         REFERENCE_DATASET,
         read_only=True,
-        data_only=True
+        data_only=True,
     )
 
     try:
-
         if "Reference Solutions" not in workbook.sheetnames:
             raise ValueError(
                 "Excel dataset does not contain the "
                 "'Reference Solutions' sheet."
             )
 
-        sheet = workbook[
-            "Reference Solutions"
-        ]
+        sheet = workbook["Reference Solutions"]
 
         rows = sheet.iter_rows(
             values_only=True
@@ -131,7 +178,7 @@ def load_reference_dataset() -> dict:
 
         headers = next(
             rows,
-            None
+            None,
         )
 
         if not headers:
@@ -146,7 +193,34 @@ def load_reference_dataset() -> dict:
             for header in headers
         ]
 
-        dataset = {}
+        required_columns = {
+            "Problem ID",
+            "Reference ID",
+            "Expected Approach",
+            "Detailed Explanation",
+            "Pseudocode",
+            "Expected Data Structures",
+            "Time Complexity",
+            "Space Complexity",
+            "Reasoning Steps",
+            "Edge Cases",
+            "Solution Type",
+            "Next Better Reference ID",
+            "Optimization Goal",
+        }
+
+        missing_columns = (
+            required_columns
+            - set(headers)
+        )
+
+        if missing_columns:
+            raise ValueError(
+                "Reference dataset is missing required "
+                f"columns: {sorted(missing_columns)}"
+            )
+
+        dataset: dict[str, dict[str, Any]] = {}
 
         for row in rows:
 
@@ -156,7 +230,7 @@ def load_reference_dataset() -> dict:
             ):
                 continue
 
-            reference = {}
+            reference: dict[str, Any] = {}
 
             for index, header in enumerate(headers):
 
@@ -169,42 +243,99 @@ def load_reference_dataset() -> dict:
                     else None
                 )
 
-                reference[
-                    header
-                ] = value
+                reference[header] = value
 
-            problem_id = reference.get(
+            # ------------------------------------------------
+            # Problem ID
+            # ------------------------------------------------
+
+            raw_problem_id = reference.get(
                 "Problem ID"
             )
 
-            if problem_id is None:
+            if raw_problem_id is None:
                 continue
 
             problem_id = str(
-                problem_id
+                raw_problem_id
             ).strip()
 
-            reference_id = reference.get(
+            if not problem_id:
+                continue
+
+            reference["Problem ID"] = problem_id
+
+            # ------------------------------------------------
+            # Reference ID
+            # ------------------------------------------------
+
+            raw_reference_id = reference.get(
                 "Reference ID"
             )
 
-            if reference_id is not None:
-                reference[
-                    "Reference ID"
-                ] = str(
-                    reference_id
+            if raw_reference_id is None:
+                raise ValueError(
+                    f"Reference for {problem_id} is missing "
+                    "'Reference ID'."
+                )
+
+            reference_id = str(
+                raw_reference_id
+            ).strip()
+
+            if not reference_id:
+                raise ValueError(
+                    f"Reference for {problem_id} has an "
+                    "empty 'Reference ID'."
+                )
+
+            reference["Reference ID"] = reference_id
+
+            # ------------------------------------------------
+            # Solution Type
+            # ------------------------------------------------
+
+            solution_type = reference.get(
+                "Solution Type"
+            )
+
+            if solution_type is not None:
+                reference["Solution Type"] = str(
+                    solution_type
                 ).strip()
 
-            if problem_id not in dataset:
+            # ------------------------------------------------
+            # Next Better Reference ID
+            #
+            # This is metadata for the adaptive layer.
+            # We load it but DO NOT use it to select a target.
+            # ------------------------------------------------
 
-                dataset[
-                    problem_id
-                ] = {
+            next_reference = reference.get(
+                "Next Better Reference ID"
+            )
+
+            if next_reference is not None:
+                next_reference = str(
+                    next_reference
+                ).strip()
+
+                reference[
+                    "Next Better Reference ID"
+                ] = (
+                    next_reference
+                    if next_reference
+                    else None
+                )
+
+            # ------------------------------------------------
+            # Create problem entry
+            # ------------------------------------------------
+
+            if problem_id not in dataset:
+                dataset[problem_id] = {
                     "problem_id": problem_id,
-                    "problem_title": reference.get(
-                        "Problem Title"
-                    ),
-                    "reference_solutions": []
+                    "reference_solutions": [],
                 }
 
             dataset[
@@ -215,26 +346,37 @@ def load_reference_dataset() -> dict:
                 reference
             )
 
+        if not dataset:
+            raise ValueError(
+                "Reference dataset contains no valid "
+                "reference solutions."
+            )
+
         return dataset
 
     finally:
-
         workbook.close()
 
 
-# ==========================================================
+# ============================================================
 # REFERENCE SOLUTIONS
-# ==========================================================
+# ============================================================
 
 def load_reference_solution(
-    problem: dict
-) -> list[dict]:
+    problem: dict[str, Any],
+) -> list[dict[str, Any]]:
     """
-    Load all reference solutions for a problem.
+    Load every reference solution associated with a problem.
 
-    A problem may have multiple reference solutions.
+    This function intentionally returns ALL references.
 
-    Returns a list containing all references for that problem.
+    It does NOT:
+    - choose an optimal reference
+    - choose a target
+    - choose a next reference
+    - inspect Is Optimal Target
+
+    Those decisions belong to the adaptive-policy layer.
     """
 
     problem_id = _get_problem_id(
@@ -249,7 +391,7 @@ def load_reference_solution(
 
     if problem_data is None:
         raise FileNotFoundError(
-            f"No reference solutions found for "
+            "No reference solutions found for "
             f"problem: {problem_id}"
         )
 
@@ -266,15 +408,17 @@ def load_reference_solution(
     return references
 
 
-# ==========================================================
+# ============================================================
 # RUBRIC
-# ==========================================================
+# ============================================================
 
 def load_rubric(
-    problem: dict
-) -> dict:
+    problem: dict[str, Any],
+) -> dict[str, Any]:
     """
     Load the evaluation rubric for a problem.
+
+    Rubrics remain separate from the reference repository.
     """
 
     problem_id = _get_problem_id(
@@ -291,16 +435,19 @@ def load_rubric(
     )
 
 
-# ==========================================================
+# ============================================================
 # EVALUATION CONTEXT
-# ==========================================================
+# ============================================================
 
 def load_evaluation_context(
-    problem: dict
-) -> tuple[list[dict], dict]:
+    problem: dict[str, Any],
+) -> tuple[
+    list[dict[str, Any]],
+    dict[str, Any],
+]:
     """
-    Load all reference solutions and the rubric
-    for the given problem.
+    Backward-compatible helper used by the existing evaluation
+    and interviewer code.
 
     Returns:
 
@@ -322,5 +469,5 @@ def load_evaluation_context(
 
     return (
         reference_solutions,
-        rubric
+        rubric,
     )
