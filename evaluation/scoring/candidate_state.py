@@ -98,8 +98,7 @@ class CandidateNLPState:
         """
 
         if new_state.approach:
-            if not self.approach:
-                self.approach = new_state.approach
+            self.approach = new_state.approach
 
         self.algorithms = _merge_unique(
             self.algorithms,
@@ -179,7 +178,7 @@ class CandidateEvaluationState:
     # Target reference selected by the adaptive/policy logic.
     target_reference_id: Optional[str] = None
 
-    candidate_answer: Optional[str] = None
+    current_answer: Optional[str] = None
 
     nlp_state: CandidateNLPState = field(
         default_factory=CandidateNLPState
@@ -265,7 +264,7 @@ class CandidateEvaluationState:
         """Update evaluation state and record a history snapshot."""
 
         if candidate_answer is not None:
-            self.candidate_answer = candidate_answer
+            self.current_answer = candidate_answer
 
         if scores is not None:
             self.scores = scores
@@ -301,7 +300,19 @@ class CandidateEvaluationState:
         self.history.append(
             {
                 "turn_number": self.turn_number,
-                "candidate_answer": self.candidate_answer,
+                "candidate_answer": self.current_answer,
+
+                "reference_answer_id": (
+                    self.reference_answer_id
+                ),
+
+                "reference_match_confidence": (
+                    self.reference_match_confidence
+                ),
+
+                "target_reference_id": (
+                    self.target_reference_id
+                ),
                 "scores": dict(self.scores),
                 "primary_classification": (
                     self.primary_classification
@@ -347,8 +358,9 @@ class CandidateEvaluationState:
             target_reference_id=data.get(
                 "target_reference_id"
             ),
-            candidate_answer=data.get(
-                "candidate_answer"
+            current_answer=data.get(
+                "current_answer",
+                data.get("candidate_answer")
             ),
             nlp_state=CandidateNLPState.from_dict(
                 data.get("nlp_state")

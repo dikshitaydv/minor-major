@@ -1,0 +1,118 @@
+// InterviewAI Database Schema
+// Prisma 7
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  RECRUITER
+  CANDIDATE
+}
+
+
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+
+  firstName    String
+  lastName     String
+
+  email        String   @unique
+  passwordHash String
+
+  role         Role     @default(CANDIDATE)
+
+  emailVerified Boolean @default(false)
+  isActive      Boolean @default(true)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens          RefreshToken[]
+  passwordResetTokens    PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+
+  @@index([role])
+  @@index([isActive])
+}
+
+
+// ─────────────────────────────────────────────
+// REFRESH TOKEN
+// ─────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+
+  tokenHash String   @unique
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+
+// ─────────────────────────────────────────────
+// PASSWORD RESET TOKEN
+// ─────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+
+  tokenHash String   @unique
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+
+// ─────────────────────────────────────────────
+// EMAIL VERIFICATION TOKEN
+// ─────────────────────────────────────────────
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+
+  tokenHash String   @unique
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}

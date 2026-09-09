@@ -6,6 +6,10 @@ from evaluation.configs.ai_config import (
     FOLLOWUP_MODEL
 )
 
+from evaluation.dataset_loader import (
+    load_evaluation_context
+)
+
 
 def generate_followup_question(
     problem: dict,
@@ -38,6 +42,14 @@ def generate_followup_question(
         ""
     )
 
+    current_reference_id = followup_strategy.get(
+        "current_reference_id"
+    )
+
+    target_reference_id = followup_strategy.get(
+        "target_reference_id"
+    )
+
     # ==================================================
     # EXTRACT PROBLEM
     # ==================================================
@@ -51,6 +63,29 @@ def generate_followup_question(
         "description",
         ""
     )
+
+    current_reference = None
+    target_reference = None
+
+    if current_reference_id or target_reference_id:
+
+        reference_solutions, _ = (
+            load_evaluation_context(
+                problem
+            )
+        )
+
+        for reference in reference_solutions:
+
+            reference_id = reference.get(
+                "Reference ID"
+            )
+
+            if reference_id == current_reference_id:
+                current_reference = reference
+
+            if reference_id == target_reference_id:
+                target_reference = reference
 
     # ==================================================
     # EXTRACT STATE
@@ -86,13 +121,8 @@ def generate_followup_question(
             continue
 
         question = previous_turn.get(
-            "interviewer_question"
+            "current_interviewer_question"
         )
-
-        if not question:
-            question = previous_turn.get(
-                "followup_question"
-            )
 
         if (
             isinstance(question, str)
@@ -176,6 +206,23 @@ Instruction:
 {instruction}
 
 ==================================================
+REFERENCE-SOLUTION PROGRESSION
+==================================================
+
+Current Reference ID:
+{current_reference_id}
+
+Current Reference:
+{json.dumps(current_reference, indent=2)}
+
+Target Reference ID:
+{target_reference_id}
+
+Target Reference:
+{json.dumps(target_reference, indent=2)}
+
+
+==================================================
 RULES
 ==================================================
 
@@ -202,6 +249,24 @@ RULES
 10. Do not give the candidate a solution.
 
 11. Keep the question concise.
+
+12. When a target reference solution is provided, use it
+    only as internal guidance for deciding what concept
+    or improvement the candidate should be asked to explore.
+
+13. The question should help move the candidate from
+    the current approach toward the target approach.
+
+14. Do NOT reveal the target reference solution.
+
+15. Do NOT directly state the target algorithm,
+    data structure, complexity, or solution.
+
+16. Instead, ask a question that naturally leads the
+    candidate to discover the improvement themselves.
+
+17. The candidate should still have to explain or derive
+    the improved approach.
 
 Return ONLY valid JSON.
 

@@ -3,6 +3,7 @@ from typing import Optional
 from evaluation.extraction.extraction_service import (
     extract_candidate_features
 )
+<<<<<<< Updated upstream
 
 from evaluation.persistence.candidate_state_store import (
     CandidateStateStore
@@ -12,6 +13,9 @@ from adaptive.policy_engine import (
     PolicyEngine
 )
 
+=======
+from AI.adaptive.policy_engine import PolicyEngine
+>>>>>>> Stashed changes
 from evaluation.scoring.candidate_state import (
     CandidateEvaluationState,
     CandidateNLPState
@@ -23,6 +27,16 @@ from evaluation.scoring.evaluation_orchestrator import (
 
 from evaluation.scoring.final_result import (
     build_final_result
+)
+
+from evaluation.interviewer.followup_generator import (
+    generate_followup_question
+)
+
+from conversation.timer_service import TimerService
+
+from evaluation.dataset_loader import (
+    load_evaluation_context
 )
 
 
@@ -146,14 +160,15 @@ class InterviewSession:
     """
 
     def __init__(
-        self,
-        candidate_id: str,
-        question_id: str,
-        problem: dict,
-        time_remaining: int = 600,
-        candidate_level: str = "medium",
-        state_store: Optional[CandidateStateStore] = None,
-        resume_existing: bool = True
+    self,
+    candidate_id: str,
+    question_id: str,
+    problem: dict,
+    time_remaining: int = 600,
+    candidate_level: str = "medium",
+    state_store: Optional[CandidateStateStore] = None,
+    resume_existing: bool = True,
+    max_turns: Optional[int] = None
     ):
         if not candidate_id:
             raise ValueError(
@@ -176,6 +191,18 @@ class InterviewSession:
         self.problem = problem
         self.time_remaining = time_remaining
         self.candidate_level = candidate_level
+
+        if max_turns is not None and max_turns <= 0:
+            raise ValueError(
+                "max_turns must be greater than 0."
+            )
+
+        self.max_turns = max_turns
+
+        self.timer_service = TimerService(
+            duration_seconds=time_remaining
+        )
+        self.timer_service.start()
 
         self.state_store = (
             state_store
@@ -208,7 +235,144 @@ class InterviewSession:
             PolicyEngine()
         )
 
+        # ==================================================
+        # SELECT CANONICAL TARGET REFERENCE
+        # ==================================================
+        #
+        # Target selection is performed only when the
+        # problem contains an identifier that can be used
+        # by the reference-solution dataset.
+        #
+        # This keeps lightweight Conversation/Timer tests
+        # independent of the reference dataset.
+
+        if self.state.target_reference_id is None:
+
+            problem_id = (
+                self.problem.get("problem_id")
+                or self.problem.get("id")
+            )
+
+            if problem_id:
+
+                reference_solutions, _ = (
+                    load_evaluation_context(
+                        self.problem
+                    )
+                )
+
+                self.state.target_reference_id = (
+                    self.policy_engine.select_target_reference(
+                        reference_solutions
+                    )
+                )
+
+                if self.state.target_reference_id is None:
+                    raise RuntimeError(
+                        "Unable to select a target reference "
+                        "solution for this problem."
+                    )
+
+                self.state_store.save(
+                    self.state
+                )
+
+        print()
+        print(
+            f"Target Reference: "
+            f"{self.state.target_reference_id}"
+        )
+
         self.finished = False
+
+    # ========================================================
+    # POLICY FOLLOW-UP GENERATION
+    # ========================================================
+
+    def _generate_policy_followup(
+        self,
+        policy_decision: dict,
+        candidate_answer: str
+    ) -> Optional[str]:
+        """
+        Convert the PolicyEngine decision into the
+        follow-up strategy format expected by the
+        existing follow-up generator.
+
+        PolicyEngine remains responsible for deciding
+        WHAT should be asked.
+
+        Follow-up generator is responsible only for
+        converting that decision into natural language.
+        """
+
+        if not isinstance(
+            policy_decision,
+            dict
+        ):
+            return None
+
+        action = policy_decision.get(
+            "action"
+        )
+
+        if action == "STOP":
+            return None
+
+        strategy = {
+            "adaptive_gap": policy_decision.get(
+                "target_dimension",
+                ""
+            ),
+
+            "objective": policy_decision.get(
+                "goal",
+                ""
+            ),
+
+            "focus": [
+                policy_decision.get(
+                    "target_dimension"
+                )
+            ]
+            if policy_decision.get(
+                "target_dimension"
+            )
+            else [],
+
+            "instruction": policy_decision.get(
+                "reason",
+                ""
+            ),
+
+            "current_reference_id": (
+                self.state.reference_answer_id
+            ),
+
+            "target_reference_id": (
+                self.state.target_reference_id
+            )
+        }
+
+        # CandidateEvaluationState is converted
+        # into the dictionary format expected by
+        # generate_followup_question().
+        if hasattr(
+            self.state,
+            "to_dict"
+        ):
+            candidate_state = (
+                self.state.to_dict()
+            )
+        else:
+            candidate_state = self.state
+
+        return generate_followup_question(
+            problem=self.problem,
+            candidate_answer=candidate_answer,
+            candidate_state=candidate_state,
+            followup_strategy=strategy
+        )
 
     # ========================================================
     # SUBMIT ANSWER
@@ -258,6 +422,13 @@ class InterviewSession:
             len(self.state.history) + 1
         )
 
+        turns_remaining = None
+
+        if self.max_turns is not None:
+            turns_remaining = (
+                self.max_turns - current_turn
+            )
+
         print()
         print("=" * 60)
         print(
@@ -300,26 +471,16 @@ class InterviewSession:
         )
 
         # ====================================================
-        # 3. BUILD NLP STATE
+        # 3. BUILD AND SAVE NLP STATE
         # ====================================================
 
-        nlp_state = (
-            self._build_nlp_state(
-                candidate_features
-            )
+        nlp_state = self._build_nlp_state(
+            candidate_features
         )
-
-        # ====================================================
-        # 4. MERGE NLP STATE
-        # ====================================================
 
         self.state.update_nlp_state(
             nlp_state
         )
-
-        # ====================================================
-        # 5. SAVE NLP STATE
-        # ====================================================
 
         nlp_path = (
             self.state_store.save(
@@ -333,7 +494,7 @@ class InterviewSession:
         )
 
         # ====================================================
-        # 6. EVALUATION
+        # 4. EVALUATION
         # ====================================================
 
         self.state = (
@@ -346,7 +507,7 @@ class InterviewSession:
         )
 
         # ====================================================
-        # 7. SAVE COMPLETE STATE
+        # 5. SAVE COMPLETE STATE
         # ====================================================
 
         evaluation_path = (
@@ -362,42 +523,67 @@ class InterviewSession:
         )
 
         # ====================================================
-        # 8. ADAPTIVE POLICY
+        # 6. ADAPTIVE POLICY
         # ====================================================
+
+        self.time_remaining = (
+            self.timer_service.get_time_remaining()
+        )
 
         policy_decision = (
             self.policy_engine.decide(
                 scores=self.state.scores,
                 time_remaining=self.time_remaining,
-                candidate_level=self.candidate_level
+                candidate_level=self.candidate_level,
+                candidate_state=self.state,
+                turns_remaining=turns_remaining,
+                current_reference_id=(
+                    self.state.reference_answer_id
+                ),
+                target_reference_id=(
+                    self.state.target_reference_id
+                )
             )
         )
 
-        # Keep policy execution intact.
-        # Only display its result cleanly.
+        print()
+        print("Policy Decision:")
+        print(policy_decision)
 
-        if isinstance(
-            policy_decision,
-            dict
-        ):
+        # PolicyEngine is the authoritative continuation
+        # decision for the conversation layer.
 
-            decision = (
-                policy_decision.get(
-                    "decision"
-                )
-                or policy_decision.get(
-                    "action"
-                )
+        if policy_decision.get("action") == "STOP":
+
+            self.state.should_continue = False
+            self.finished = True
+
+        else:
+
+            self.state.should_continue = True
+
+            next_question = self._generate_policy_followup(
+                policy_decision=policy_decision,
+                candidate_answer=candidate_answer
             )
 
-            if decision:
+            if next_question:
+
+                self.state.set_interviewer_question(
+                    next_question
+            )
+
                 print()
-                print(
-                    f"Policy: {decision}"
-                )
+                print("Next Interviewer Question:")
+                print(next_question)
+
+            else:
+
+                self.state.should_continue = False
+                self.finished = True
 
         # ====================================================
-        # 9. FINISH / CONTINUE
+        # 7. FINISH / CONTINUE
         # ====================================================
 
         if not self.state.should_continue:
