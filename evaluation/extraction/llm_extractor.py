@@ -1,57 +1,73 @@
+"""
+LLM-based candidate answer extraction.
+
+This module converts a candidate's natural-language answer into a
+structured NLP state used by the evaluation pipeline.
+
+Important design rule:
+- The extractor describes what the candidate communicated.
+- It must NOT solve the problem, evaluate correctness, or infer
+  unstated details from common algorithm knowledge.
+"""
+
+from __future__ import annotations
+
 import json
+import urllib.error
 import urllib.request
+from typing import Any, Dict, List, Optional
 
 from evaluation.configs.ai_config import (
-    OLLAMA_BASE_URL,
     EXTRACTOR_MODEL,
+    OLLAMA_BASE_URL,
 )
 
 
 # ============================================================
-# OUTPUT SCHEMA
+# Structured output schema
 # ============================================================
 
-EXTRACTION_SCHEMA = {
+EXTRACTION_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "properties": {
         "approach": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
         },
         "algorithms": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {"type": "string"},
         },
         "concepts": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {"type": "string"},
         },
         "operations": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {"type": "string"},
         },
         "data_structures": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {"type": "string"},
         },
         "time_complexity": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
         },
         "space_complexity": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
         },
         "reasoning_summary": {
-            "type": ["string", "null"]
+            "type": ["string", "null"],
         },
         "edge_cases": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {"type": "string"},
         },
         "assumptions": {
             "type": "array",
-            "items": {"type": "string"}
+            "items": {"type": "string"},
         },
         "optimization": {
-            "type": ["boolean", "null"]
+            "type": ["boolean", "null"],
         },
     },
     "required": [
@@ -72,23 +88,16 @@ EXTRACTION_SCHEMA = {
 
 
 # ============================================================
-# STRUCTURAL CLEANING
+# Structural cleanup helpers
 # ============================================================
 
-def _clean_string(value):
+def _clean_string(value: Any) -> Optional[str]:
     """
-    Structural cleanup only.
+    Normalize an optional string field.
 
-    This function must remain domain-agnostic.
-
-    It does not:
-        - infer algorithms
-        - infer data structures
-        - rewrite technical terminology
-        - add missing information
-        - apply problem-specific rules
+    This function performs only structural cleanup.
+    It does not add, infer, or reinterpret information.
     """
-
     if value is None:
         return None
 
@@ -100,152 +109,162 @@ def _clean_string(value):
     return value if value else None
 
 
-def _clean_list(value):
+def _clean_list(value: Any) -> List[str]:
     """
-    Structural cleanup only.
+    Normalize a list of strings.
 
-    Semantic interpretation and canonical terminology
-    are handled by the LLM.
+    Only structural cleanup is performed:
+    - non-list values become an empty list
+    - non-string items are stringified
+    - whitespace is stripped
+    - empty values are removed
+    - duplicates are removed while preserving order
+
+    No domain-specific normalization is performed here.
     """
-
-    if not isinstance(value, list):
+    if value is None:
         return []
 
-    result = []
+    if not isinstance(value, list):
+        value = [value]
+
+    cleaned: List[str] = []
+    seen = set()
 
     for item in value:
-        if not isinstance(item, str):
+        if item is None:
             continue
+
+        if not isinstance(item, str):
+            item = str(item)
 
         item = item.strip()
 
         if not item:
             continue
 
-        if item not in result:
-            result.append(item)
+        key = item.casefold()
 
-    return result
+        if key in seen:
+            continue
+
+        seen.add(key)
+        cleaned.append(item)
+
+    return cleaned
 
 
-def _clean_complexity(value):
+def _clean_complexity(value: Any) -> Optional[str]:
     """
-    Complexity is extracted, not calculated.
+    Normalize a complexity field.
 
-    No correctness judgment is performed here.
+    No complexity is calculated or inferred here.
     """
+    value = _clean_string(value)
 
     if value is None:
         return None
 
-    if not isinstance(value, str):
-        value = str(value)
-
-    value = value.strip()
-
-    return value if value else None
+    return value
 
 
-def _clean_optimization(value):
+def _clean_optimization(value: Any) -> Optional[bool]:
     """
-    Keep optimization tri-state:
+    Normalize the optional optimization flag.
 
-        True  = explicitly discussed optimization
-        False = explicitly said unnecessary/already optimal
-        None  = not communicated
+    Only explicit boolean-like representations are accepted.
     """
+    if value is None:
+        return None
 
-    if value is True:
-        return True
+    if isinstance(value, bool):
+        return value
 
-    if value is False:
-        return False
+    if isinstance(value, str):
+        normalized = value.strip().casefold()
+
+        if normalized == "true":
+            return True
+
+        if normalized == "false":
+            return False
 
     return None
 
 
 # ============================================================
-# OLLAMA CALL
+# Ollama call
 # ============================================================
 
-def _call_ollama(prompt: str) -> dict:
+def _call_ollama(prompt: str) -> Dict[str, Any]:
     """
-    Send the extraction prompt to Ollama.
-
-    Python is responsible for:
-        - HTTP communication
-        - JSON parsing
-        - structural validation
-
-    The LLM is responsible for:
-        - semantic interpretation
-        - canonical terminology
-        - deciding what the candidate communicated
+    Send the extraction prompt to Ollama and parse the structured
+    JSON response.
     """
+    url = f"{OLLAMA_BASE_URL.rstrip('/')}/api/generate"
 
     payload = {
         "model": EXTRACTOR_MODEL,
         "prompt": prompt,
         "stream": False,
-
-        # Use the actual JSON schema instead of unconstrained
-        # JSON output.
         "format": EXTRACTION_SCHEMA,
-
         "think": False,
-
         "options": {
             "temperature": 0,
             "seed": 42,
         },
     }
 
-    data = json.dumps(payload).encode("utf-8")
-
-    ollama_url = (
-        f"{OLLAMA_BASE_URL.rstrip('/')}"
-        "/api/generate"
-    )
+    request_body = json.dumps(payload).encode("utf-8")
 
     request = urllib.request.Request(
-        ollama_url,
-        data=data,
+        url,
+        data=request_body,
         headers={
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         },
         method="POST",
     )
 
     try:
-        with urllib.request.urlopen(
-            request,
-            timeout=300,
-        ) as response:
+        with urllib.request.urlopen(request, timeout=300) as response:
             raw_response = response.read().decode("utf-8")
 
-    except Exception as exc:
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+
         raise RuntimeError(
-            f"Ollama extraction request failed: {exc}"
+            f"Ollama extraction request failed with HTTP "
+            f"{exc.code}: {error_body}"
         ) from exc
 
-    # --------------------------------------------------------
-    # Parse Ollama HTTP response
-    # --------------------------------------------------------
+    except urllib.error.URLError as exc:
+        raise RuntimeError(
+            f"Could not connect to Ollama at {url}: {exc}"
+        ) from exc
+
+    except TimeoutError as exc:
+        raise RuntimeError(
+            "Ollama extraction request timed out."
+        ) from exc
 
     try:
-        outer = json.loads(raw_response)
-
+        outer_response = json.loads(raw_response)
     except json.JSONDecodeError as exc:
         raise RuntimeError(
-            "Ollama returned invalid JSON."
+            "Ollama returned invalid outer JSON."
         ) from exc
 
-    response_text = outer.get("response")
+    if not isinstance(outer_response, dict):
+        raise RuntimeError(
+            "Ollama response must be a JSON object."
+        )
+
+    response_text = outer_response.get("response")
 
     if not isinstance(response_text, str):
         raise RuntimeError(
-            "Ollama response did not contain "
-            "a valid 'response' field."
+            "Ollama response does not contain a valid 'response' field."
         )
 
     response_text = response_text.strip()
@@ -255,938 +274,309 @@ def _call_ollama(prompt: str) -> dict:
             "Ollama returned an empty extraction response."
         )
 
-    # --------------------------------------------------------
-    # Parse model-generated JSON
-    # --------------------------------------------------------
-
+    # Primary parsing path.
     try:
-        result = json.loads(response_text)
-
+        parsed = json.loads(response_text)
     except json.JSONDecodeError:
+        parsed = None
+
+    # Defensive fallback for models that occasionally wrap JSON
+    # with additional text despite structured-output mode.
+    if parsed is None:
         start = response_text.find("{")
         end = response_text.rfind("}")
 
-        if (
-            start == -1
-            or end == -1
-            or end <= start
-        ):
+        if start == -1 or end == -1 or end <= start:
             raise RuntimeError(
-                "Ollama extraction response "
-                "contained invalid JSON."
+                "Could not find a JSON object in the Ollama response."
             )
 
-        candidate = response_text[start:end + 1]
+        json_candidate = response_text[start:end + 1]
 
         try:
-            result = json.loads(candidate)
-
+            parsed = json.loads(json_candidate)
         except json.JSONDecodeError as exc:
             raise RuntimeError(
-                "Ollama extraction response "
-                "contained invalid JSON."
+                "Ollama returned malformed extraction JSON."
             ) from exc
 
-    if not isinstance(result, dict):
+    if not isinstance(parsed, dict):
         raise RuntimeError(
-            "Semantic extraction result "
-            "must be a JSON object."
+            "Extraction result must be a JSON object."
         )
 
-    return result
+    return parsed
 
 
 # ============================================================
-# PROMPT
+# Prompt construction
 # ============================================================
 
-def _build_user_prompt(
-    answer: str,
-    problem: dict | None = None,
-) -> str:
+def _build_user_prompt(candidate_answer: str) -> str:
+    """
+    Build a compact extraction prompt.
 
-    problem_context = ""
+    The prompt intentionally contains no concrete algorithm examples,
+    problem-specific examples, regex examples, or expected solutions.
 
-    if isinstance(problem, dict):
-        title = problem.get("title")
-        description = problem.get("description")
-
-        if title:
-            problem_context += f"\nProblem: {title}"
-
-        if description:
-            problem_context += f"\nDescription: {description}"
+    The goal is to extract only candidate-supported information while
+    minimizing the chance of the model importing unrelated knowledge.
+    """
 
     return f"""
-You are a technical interview NLP extraction system.
+You are a structured information extractor.
 
-Extract only the technical information communicated by the
-candidate.
+Extract ONLY information communicated by the candidate.
 
-You are NOT an evaluator.
+Do NOT solve the problem.
+Do NOT evaluate the answer.
+Do NOT complete missing details.
+Do NOT use standard algorithm knowledge to fill gaps.
+Do NOT guess.
+When information is missing or ambiguous, leave the field empty/null.
 
-You are NOT a solution generator.
+Candidate answer:
+--- BEGIN ---
+{candidate_answer}
+--- END ---
 
-You must NOT replace the candidate's answer with the standard
-or expected solution.
-
-You must NOT invent information.
-
-Semantic interpretation is allowed when the candidate's
-wording provides sufficient evidence for that interpretation.
-
-
-============================================================
-CORE RULES
-============================================================
-
-1. Extract what the candidate communicated.
-
-2. Do not solve the problem.
-
-3. Do not evaluate correctness.
-
-4. Do not assume the standard solution.
-
-5. Do not calculate complexity.
-
-6. Do not infer information merely because it is normally
-   associated with a particular problem.
-
-7. Generic actions are not automatically an approach.
-
-8. When a candidate explicitly names a strategy, algorithm,
-   technique, or data structure as their solution strategy,
-   that named item MUST appear in "approach".
-
-9. When semantic wording is sufficiently specific to identify
-   a technical concept, extract that concept.
-
-10. When semantic evidence is ambiguous, do not guess.
-
-11. Use the most specific canonical technical terminology
-    supported by the candidate.
-
-12. Canonicalization must be generic and apply consistently
-    across all algorithms, data structures, concepts, and
-    technical terms.
-
-13. Preserve the meaning of the candidate's statement.
-
-14. Do not add information just because it would normally be
-    present in the solution.
-
-
-============================================================
-CANONICAL TERMINOLOGY
-============================================================
-
-Normalize equivalent technical expressions to a consistent
-canonical technical name.
-
-Use:
-
-- lowercase technical names where appropriate
-- conventional terminology
-- concise phrases
-- consistent terminology across fields
-
-Do not create Python-side special cases for individual
-algorithms, data structures, or problems.
-
-Examples of the GENERAL principle:
-
-"Binary Search"
-"binary-search"
-"binary search"
--> "binary search"
-
-"HashMap"
-"Hash Map"
-"hash-map"
--> "hash map"
-
-"Two Pointer"
-"two-pointers"
--> "two pointers"
-
-These are examples of the canonicalization principle.
-
-
-============================================================
-OUTPUT
-============================================================
-
-Return ONLY one JSON object.
-
-Use exactly these fields:
+Return exactly this JSON structure:
 
 {{
-  "approach": null,
-  "algorithms": [],
-  "concepts": [],
-  "operations": [],
-  "data_structures": [],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": null,
-  "edge_cases": [],
-  "assumptions": [],
-  "optimization": null
+  "approach": string or null,
+  "algorithms": array of strings,
+  "concepts": array of strings,
+  "operations": array of strings,
+  "data_structures": array of strings,
+  "time_complexity": string or null,
+  "space_complexity": string or null,
+  "reasoning_summary": string or null,
+  "edge_cases": array of strings,
+  "assumptions": array of strings,
+  "optimization": boolean or null
 }}
 
-
-============================================================
-APPROACH
-============================================================
-
-The "approach" field represents the candidate's meaningful
-problem-solving strategy.
-
-If the candidate explicitly states:
-
-"I'll use a HashMap."
-
-then:
-
-"approach": "hash map"
-
-If the candidate explicitly states:
-
-"I'll use a stack."
-
-then:
-
-"approach": "stack"
-
-If the candidate explicitly states:
-
-"I'll use binary search."
-
-then:
-
-"approach": "binary search"
-
-If the candidate explicitly states:
-
-"I'll use two pointers."
-
-then:
-
-"approach": "two pointers"
-
-This rule applies GENERICALLY to all explicitly named
-strategies, algorithms, techniques, and data structures.
-
-Do NOT omit an explicitly stated approach merely because the
-same item also appears in "algorithms" or "data_structures".
-
-
-Generic actions alone are NOT approaches.
-
-For example:
-
-"I'll iterate through the array."
-
--> "approach": null
-
-"I'll check every element."
-
--> "approach": null
-
-"I'll remember what I have seen."
-
--> "approach": null
-
-"I'll iterate through the array and remember what I have
-seen so far."
-
--> "approach": null
-
-These statements do not uniquely identify a meaningful
-algorithmic strategy.
-
-A technical item can belong to more than one field.
-
-If a candidate names a data structure as the mechanism they
-intend to use to solve the problem, that data structure is
-also the approach.
-
-For example:
-
-"I would use a HashMap to store previously seen values."
--> "approach": "hash map"
--> "data_structures": ["hash map"]
-
-"I would use a stack to store opening brackets."
--> "approach": "stack"
--> "data_structures": ["stack"]
-
-Do NOT treat "approach" and "data_structures" as mutually
-exclusive fields.
-
-The fact that a named technique is also a data structure
-must NOT prevent it from being extracted as the approach.
-
-============================================================
-ALGORITHMS
-============================================================
-
-Extract an algorithm or algorithmic strategy actually
-communicated by the candidate.
-
-Examples:
-
-"I'll use binary search."
--> ["binary search"]
-
-"I'll sort the input first."
--> ["sorting"]
-
-"I'll recursively divide the input and combine the results."
--> ["divide and conquer"]
-
-Do not infer an algorithm merely because it is a standard
-solution to the problem.
-
-
-============================================================
-CONCEPTS
-============================================================
-
-Extract technical concepts communicated by the candidate.
-
-Use the MOST SPECIFIC canonical technical phrase supported
-by the candidate's wording.
-
-Do not reduce a specific technical concept to a weaker,
-generic fragment.
-
-For example:
-
-"find the value that completes the target"
-
-communicates:
-
-"complement lookup"
-
-Therefore:
-
--> ["complement lookup"]
-
-rather than:
-
--> ["complement"]
-
-or:
-
--> ["lookup"]
-
-More generally, when several words together describe one
-specific technical concept, represent the complete concept
-as one canonical phrase.
-
-Examples:
-
-"constant time lookup"
--> "constant-time lookup"
-
-"matching opening and closing brackets"
--> "bracket matching"
-
-"divide the problem into smaller pieces"
--> "divide and conquer"
-
-Apply this principle generically.
-
-
-============================================================
-OPERATIONS
-============================================================
-
-Extract concrete actions described by the candidate.
-
-Examples:
-
-"push opening brackets onto the stack"
--> ["push opening brackets onto stack"]
-
-"check every possible pair"
--> ["check every possible pair"]
-
-"scan the array from left to right"
--> ["scan the array from left to right"]
-
-Operations describe actions.
-
-They should not simply repeat the overall approach.
-
-
-============================================================
-DATA STRUCTURES
-============================================================
-
-Extract data structures explicitly named by the candidate.
-
-Semantic identification is allowed when the candidate's
-description is sufficiently specific to uniquely identify
-the data structure.
-
-For example:
-
-"I'll remember what I have seen."
-
--> []
-
-This is ambiguous.
-
-But:
-
-"I'll keep track of numbers I've already seen and find the
-value that completes the target."
-
-strongly communicates a hash-based lookup structure.
-
-Therefore:
-
--> ["hash map"]
-
-Do not apply that inference to vague memory statements.
-
-Use the same semantic-evidence principle for all data
-structures, not only hash-based structures.
-
-
-============================================================
-TIME COMPLEXITY
-============================================================
-
-Extract only complexity explicitly communicated by the
+RULES
+
+APPROACH:
+Extract the candidate's overall method.
+You may make the wording concise, but do not add a technique the
+candidate did not communicate.
+
+ALGORITHMS:
+Extract an algorithm or named algorithmic technique ONLY when the
+candidate explicitly names it or clearly uses unambiguous
+algorithm-specific terminology.
+Do NOT invent an algorithm name from a described procedure.
+Do NOT infer an algorithm from a data structure, operation, or
+complexity.
+
+CONCEPTS:
+Extract important technical concepts actually communicated by the
 candidate.
+Do not add concepts merely because they are normally related to the
+problem.
 
-Examples:
+OPERATIONS:
+Extract technically meaningful solution actions that the candidate
+actually communicates.
+Preserve enough context to identify what the operation acts on.
+Do not reduce an operation to a generic verb.
+Do not extract generic verbs such as "use", "solve", "handle",
+"process", or "apply" unless they describe a specific technical
+operation.
+Do not add steps that were not stated.
 
-"O(n) time"
--> "O(n)"
+DATA STRUCTURES:
+Extract data structures explicitly stated or uniquely identified by
+the candidate's wording.
+Do not infer one merely from storage, lookup, memory, or efficiency
+language.
 
-"quadratic time"
--> "quadratic time"
+TIME COMPLEXITY:
+If the candidate explicitly states a time complexity, COPY it.
+Do not omit it.
+Do not calculate or infer a time complexity when the candidate does
+not state one.
 
-Never calculate complexity.
+SPACE COMPLEXITY:
+If the candidate explicitly states a space complexity, COPY it.
+Do not omit it.
+Do not calculate or infer a space complexity when the candidate does
+not state one.
 
-Never infer complexity from the algorithm.
-
-
-============================================================
-SPACE COMPLEXITY
-============================================================
-
-Extract only complexity explicitly communicated by the
-candidate.
-
-Examples:
-
-"O(1) extra space"
--> "O(1)"
-
-"linear additional space"
--> "linear additional space"
-
-Never calculate complexity.
-
-
-============================================================
-REASONING SUMMARY
-============================================================
-
-Use exactly the field:
-
-"reasoning_summary"
-
-Extract the candidate's actual reasoning, justification,
-rationale, or cause/effect explanation.
-
-Example:
-
-"I use a HashMap because lookup is constant time on average."
-
-A valid result is:
-
-"uses a hash map because lookup is constant time on average"
-
-The reasoning must come from the candidate.
-
+REASONING SUMMARY:
+Extract only actual rationale, justification, purpose, or
+cause-and-effect reasoning stated by the candidate.
+A complexity statement by itself is NOT reasoning.
+Do not turn a procedure into reasoning.
 Do not invent reasoning.
+Do not simply repeat the approach.
 
+EDGE CASES:
+Extract only edge cases explicitly mentioned by the candidate.
+Do not generate common or expected edge cases.
 
-============================================================
-EDGE CASES
-============================================================
+ASSUMPTIONS:
+Extract only assumptions explicitly stated by the candidate.
+Do not create reasonable-sounding assumptions.
 
-Extract explicitly communicated edge cases.
+OPTIMIZATION:
+Return true only when the candidate explicitly communicates an
+optimization.
+Return false only when the candidate explicitly communicates that
+the approach is intentionally not optimized.
+Otherwise return null.
 
-Normalize equivalent wording into concise canonical
-descriptions.
-
-Examples:
-
-"duplicates"
--> "duplicate values"
-
-"duplicate elements"
--> "duplicate values"
-
-"an empty array"
--> "empty array"
-
-"empty input"
--> "empty input"
-
-Example:
-
-"I'll handle duplicates and an empty array."
-
--> [
-     "duplicate values",
-     "empty array"
-   ]
-
+FINAL CHECK:
+Every extracted item must be supported by the candidate answer.
+Do not add information from standard problem-solving knowledge.
+Do not infer an algorithm.
+Do not infer complexity.
+Do not invent operations.
+Do not invent concepts.
 Do not invent edge cases.
-
-
-============================================================
-ASSUMPTIONS
-============================================================
-
-Extract assumptions explicitly stated by the candidate.
-
-Example:
-
-"I assume the input contains at least two elements."
-
--> [
-     "input contains at least two elements"
-   ]
-
-Example:
-
-"I assume all values are positive."
-
--> [
-     "all values are positive"
-   ]
-
-Do not infer assumptions from the problem statement.
-
-
-============================================================
-OPTIMIZATION
-============================================================
-
-This field is tri-state.
-
-true:
-The candidate explicitly discusses optimization, improving
-the approach, reducing time/space usage, or replacing a less
-efficient approach with a better one.
-
-false:
-The candidate explicitly says optimization is unnecessary,
-impossible, or the current solution is already optimal.
-
-null:
-The candidate does not communicate optimization.
-
-Examples:
-
-"We can optimize this approach by reducing the space usage."
-
--> true
-
-"I'll optimize the brute force approach by using a better
-lookup strategy."
-
--> true
-
-"This solution is already optimal."
-
--> false
-
-"I'll use a hash map."
-
--> null
-
-
-============================================================
-SEMANTIC EVIDENCE RULE
-============================================================
-
-For every extracted item, use this process:
-
-STEP 1:
-Is it explicitly stated?
-
-If yes, extract it.
-
-STEP 2:
-If not explicitly stated, does the wording strongly and
-uniquely communicate the technical concept?
-
-If yes, extract it.
-
-STEP 3:
-Could multiple technical interpretations reasonably fit?
-
-If yes, do not guess.
-
-STEP 4:
-Is the information only something normally used in the
-standard solution?
-
-If yes, do not extract it.
-
-
-============================================================
-EXAMPLE: EXPLICIT APPROACH
-============================================================
-
-Candidate:
-
-"I'll use a HashMap."
-
-Output:
-
-{{
-  "approach": "hash map",
-  "algorithms": [],
-  "concepts": [],
-  "operations": [],
-  "data_structures": ["hash map"],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": null,
-  "edge_cases": [],
-  "assumptions": [],
-  "optimization": null
-}}
-
-
-============================================================
-EXAMPLE: AMBIGUOUS ACTION
-============================================================
-
-Candidate:
-
-"I'll iterate through the array and remember what I have
-seen so far."
-
-Output:
-
-{{
-  "approach": null,
-  "algorithms": [],
-  "concepts": [],
-  "operations": ["iterate through the array"],
-  "data_structures": [],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": null,
-  "edge_cases": [],
-  "assumptions": [],
-  "optimization": null
-}}
-
-
-============================================================
-EXAMPLE: SEMANTIC COMPLEMENT LOOKUP
-============================================================
-
-Candidate:
-
-"I'll keep track of numbers I've already seen and find the
-value that completes the target."
-
-Output:
-
-{{
-  "approach": "track previously seen values and search for the required complement",
-  "algorithms": [],
-  "concepts": [
-    "previously seen values",
-    "complement lookup"
-  ],
-  "operations": [
-    "track previously seen numbers",
-    "search for the required complement"
-  ],
-  "data_structures": ["hash map"],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": null,
-  "edge_cases": [],
-  "assumptions": [],
-  "optimization": null
-}}
-
-
-============================================================
-EXAMPLE: REASONING
-============================================================
-
-Candidate:
-
-"I use a HashMap because lookup is constant time on average."
-
-Output:
-
-{{
-  "approach": "hash map",
-  "algorithms": [],
-  "concepts": ["constant-time lookup"],
-  "operations": [],
-  "data_structures": ["hash map"],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": "uses a hash map because lookup is constant time on average",
-  "edge_cases": [],
-  "assumptions": [],
-  "optimization": null
-}}
-
-
-============================================================
-EXAMPLE: EDGE CASES
-============================================================
-
-Candidate:
-
-"I'll handle duplicates and an empty array."
-
-Output:
-
-{{
-  "approach": null,
-  "algorithms": [],
-  "concepts": [],
-  "operations": [],
-  "data_structures": [],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": null,
-  "edge_cases": [
-    "duplicate values",
-    "empty array"
-  ],
-  "assumptions": [],
-  "optimization": null
-}}
-
-
-============================================================
-EXAMPLE: ASSUMPTION
-============================================================
-
-Candidate:
-
-"I assume the input contains at least two elements."
-
-Output:
-
-{{
-  "approach": null,
-  "algorithms": [],
-  "concepts": [],
-  "operations": [],
-  "data_structures": [],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": null,
-  "edge_cases": [],
-  "assumptions": [
-    "input contains at least two elements"
-  ],
-  "optimization": null
-}}
-
-
-============================================================
-EXAMPLE: OPTIMIZATION
-============================================================
-
-Candidate:
-
-"We can optimize this approach by reducing the space usage."
-
-Output:
-
-{{
-  "approach": null,
-  "algorithms": [],
-  "concepts": [],
-  "operations": [],
-  "data_structures": [],
-  "time_complexity": null,
-  "space_complexity": null,
-  "reasoning_summary": null,
-  "edge_cases": [],
-  "assumptions": [],
-  "optimization": true
-}}
-
-
-============================================================
-EXAMPLE: COMPLEXITY
-============================================================
-
-Candidate:
-
-"The solution takes O(n) time and O(n) space."
-
-Output:
-
-{{
-  "approach": null,
-  "algorithms": [],
-  "concepts": [],
-  "operations": [],
-  "data_structures": [],
-  "time_complexity": "O(n)",
-  "space_complexity": "O(n)",
-  "reasoning_summary": null,
-  "edge_cases": [],
-  "assumptions": [],
-  "optimization": null
-}}
-
-
-============================================================
-EXAMPLE: STACK
-============================================================
-
-Candidate:
-
-"I'll push every opening bracket onto a stack and compare
-each closing bracket with the top of the stack."
-
-Extract:
-
-- stack as the data structure
-- bracket matching as the concept
-- pushing and comparison as operations
-
-Do not add unrelated information.
-
-
-============================================================
-FINAL TASK
-============================================================
-
-Apply all rules above to the candidate answer.
+Do not invent assumptions.
+Do not invent reasoning.
+If unsure, OMIT rather than GUESS.
 
 Return ONLY valid JSON.
-
-CANDIDATE ANSWER:
-
-{answer}
-
-{problem_context}
 """.strip()
 
 
 # ============================================================
-# VALIDATION
+# Result validation
 # ============================================================
 
-def _validate_result(
-    result: dict,
-) -> dict:
+def _validate_result(result: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Convert the raw LLM response into the canonical extraction
-    contract.
+    Validate and structurally normalize the extractor result.
 
-    No domain-specific semantic rules are applied here.
+    This function intentionally does not perform domain-specific
+    corrections or semantic additions.
     """
 
     if not isinstance(result, dict):
-        raise RuntimeError(
-            "Semantic extraction result must be an object."
+        raise ValueError(
+            "Extractor result must be a dictionary."
         )
 
-    return {
-        "approach": _clean_string(
-            result.get("approach")
-        ),
+    required_fields = [
+        "approach",
+        "algorithms",
+        "concepts",
+        "operations",
+        "data_structures",
+        "time_complexity",
+        "space_complexity",
+        "reasoning_summary",
+        "edge_cases",
+        "assumptions",
+        "optimization",
+    ]
 
-        "algorithms": _clean_list(
-            result.get("algorithms", [])
-        ),
+    for field in required_fields:
+        if field not in result:
+            raise ValueError(
+                f"Extractor result is missing required field: {field}"
+            )
 
-        "concepts": _clean_list(
-            result.get("concepts", [])
-        ),
-
-        "operations": _clean_list(
-            result.get("operations", [])
-        ),
-
+    cleaned = {
+        "approach": _clean_string(result.get("approach")),
+        "algorithms": _clean_list(result.get("algorithms")),
+        "concepts": _clean_list(result.get("concepts")),
+        "operations": _clean_list(result.get("operations")),
         "data_structures": _clean_list(
-            result.get("data_structures", [])
+            result.get("data_structures")
         ),
-
         "time_complexity": _clean_complexity(
             result.get("time_complexity")
         ),
-
         "space_complexity": _clean_complexity(
             result.get("space_complexity")
         ),
-
         "reasoning_summary": _clean_string(
             result.get("reasoning_summary")
         ),
-
         "edge_cases": _clean_list(
-            result.get("edge_cases", [])
+            result.get("edge_cases")
         ),
-
         "assumptions": _clean_list(
-            result.get("assumptions", [])
+            result.get("assumptions")
         ),
-
         "optimization": _clean_optimization(
             result.get("optimization")
         ),
     }
 
+    return cleaned
+
 
 # ============================================================
-# PUBLIC API
+# Public extraction API
 # ============================================================
 
 def extract_with_llm(
-    answer: str,
-    problem: dict | None = None,
-) -> dict:
+    candidate_answer: str,
+) -> Dict[str, Any]:
     """
-    Extract candidate NLP features using the configured
-    Ollama extraction model.
+    Extract structured NLP information from a candidate answer.
+
+    Parameters
+    ----------
+    candidate_answer:
+        Raw natural-language candidate response.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Validated structured extraction state.
+
+    Raises
+    ------
+    ValueError
+        If the candidate answer is invalid or empty.
+
+    RuntimeError
+        If the Ollama request or model response is invalid.
     """
 
-    if not isinstance(answer, str):
-        raise TypeError(
-            "Candidate answer must be a string."
-        )
-
-    if not answer.strip():
+    if not isinstance(candidate_answer, str):
         raise ValueError(
-            "Candidate answer cannot be empty."
+            "candidate_answer must be a string."
         )
 
-    prompt = _build_user_prompt(
-        answer=answer,
-        problem=problem,
-    )
+    candidate_answer = candidate_answer.strip()
 
-    result = _call_ollama(prompt)
+    if not candidate_answer:
+        raise ValueError(
+            "candidate_answer cannot be empty."
+        )
 
-    return _validate_result(result)
+    prompt = _build_user_prompt(candidate_answer)
+
+    raw_result = _call_ollama(prompt)
+
+    return _validate_result(raw_result)
+
+
+# ============================================================
+# Backward-compatible aliases
+# ============================================================
+
+def extract_candidate_state(
+    candidate_answer: str,
+) -> Dict[str, Any]:
+    """
+    Backward-compatible wrapper around extract_with_llm().
+    """
+    return extract_with_llm(candidate_answer)
+
+
+def extract_candidate_answer(
+    candidate_answer: str,
+) -> Dict[str, Any]:
+    """
+    Backward-compatible wrapper around extract_with_llm().
+    """
+    return extract_with_llm(candidate_answer)
