@@ -3,6 +3,7 @@ from typing import Optional
 from evaluation.extraction.extraction_service import (
     extract_candidate_features
 )
+<<<<<<< Updated upstream
 
 from evaluation.persistence.candidate_state_store import (
     CandidateStateStore
@@ -12,6 +13,9 @@ from adaptive.policy_engine import (
     PolicyEngine
 )
 
+=======
+from AI.adaptive.policy_engine import PolicyEngine
+>>>>>>> Stashed changes
 from evaluation.scoring.candidate_state import (
     CandidateEvaluationState,
     CandidateNLPState
