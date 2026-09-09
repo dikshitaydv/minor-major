@@ -1,3 +1,35 @@
+# ============================================================
+# DEPRECATED - DO NOT RE-ENABLE AS-IS
+# ============================================================
+#
+# Moved out of evaluation/tests/ on 2026-09-10 (Janvi's NLP
+# cleanup pass, reference-solution feature).
+#
+# This file tested the PRE-refactor, keyword/regex-based
+# extraction contract:
+#   - result["concepts_detected"]  (list)
+#   - result["reasoning"]          (list)
+#   - result["complexity_claim"]   ({"time": ..., "space": ...})
+#
+# The current extraction_service.py / llm_extractor.py use the
+# LLM-based "Updated Adaptive Reference-Solution" contract:
+#   - result["concepts"]
+#   - result["reasoning_summary"]
+#   - result["time_complexity"] / result["space_complexity"]
+#
+# These are two different, incompatible field contracts. Every
+# test in this file will fail permanently against current code,
+# not because of a bug, but because it is asserting a contract
+# that no longer exists. It was superseded by:
+#   - evaluation/tests/test_nlp_contract.py        (real-LLM check)
+#   - evaluation/tests/NLP_TESTING_JANVI/test_extraction_contract.py (mocked)
+#
+# Renamed to .py.bak so pytest does not collect it and does not
+# report false failures under Janvi's name. Kept for history/
+# reference only. Safe to delete once the team confirms nobody
+# needs the old regex-based extraction behavior documented here.
+# ============================================================
+
 from evaluation.extraction.extraction_service import extract_candidate_features
 
 
