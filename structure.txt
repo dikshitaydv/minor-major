@@ -250,6 +250,8 @@ evaluation\scoring\evaluation_orchestrator.py
 evaluation\scoring\final_result.py
 evaluation\scoring\reference_matcher.py
 evaluation\tests/
+evaluation\tests\_deprecated_legacy_tests/
+evaluation\tests\_deprecated_legacy_tests\test_extraction_pre_llm_contract.py
 evaluation\tests\NLP_TESTING_DOCS_Anjali/
 evaluation\tests\NLP_TESTING_DOCS_Anjali\__init__.py
 evaluation\tests\NLP_TESTING_DOCS_Anjali\test_adaptive_probe.py
@@ -274,7 +276,6 @@ evaluation\tests\NLP_TESTING_JANVI\test_multiturn_reference_flow.py
 evaluation\tests\NLP_TESTING_JANVI\test_multiturn_reference_identification.py
 evaluation\tests\NLP_TESTING_JANVI\test_reference_matcher.py
 evaluation\tests\NLP_TESTING_JANVI\test_reference_repository_matching.py
-evaluation\tests\test_extraction.py
 evaluation\tests\test_integration.py
 evaluation\tests\test_llm.py
 evaluation\tests\test_nlp_contract.py
