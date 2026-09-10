@@ -1,12 +1,10 @@
 {
   "candidate_id": "e2e_test_candidate",
   "question_id": "P001",
-  "reference_answer_id": null,
-  "reference_match_confidence": null,
+  "reference_answer_id": "P001-R3",
+  "reference_match_confidence": 0.9,
   "target_reference_id": null,
-  "initial_reference_id": null,
-  "references_visited": [],
-  "current_reference_context": null,
+  "current_answer": "I would use a HashMap to store previously seen values.\nFor each number, I would calculate its complement and check\nwhether that complement already exists in the HashMap.\nIf it exists, I return the two indices. Otherwise, I store\nthe current number and continue iterating through the array.\nThis gives O(n) time and O(n) space.",
   "nlp_state": {
     "approach": "Use a HashMap to store previously seen values. For each number, calculate its complement and check if it exists in the HashMap. If it exists, return the two indices. Otherwise, store the current number and continue.",
     "algorithms": [],
@@ -29,9 +27,82 @@
     "assumptions": [],
     "optimization": null
   },
-  "scores": {},
-  "evaluations": [],
-  "conversation_history": [],
-  "should_continue": true,
-  "turn_count": 0
+  "scores": {
+    "algorithm_correctness": 100.0,
+    "logical_reasoning": 100.0,
+    "concept_coverage": 100.0,
+    "completeness": 100.0,
+    "data_structure": 100.0,
+    "complexity": 100.0,
+    "edge_cases": 100.0
+  },
+  "primary_classification": "Correct",
+  "secondary_classification": null,
+  "adaptive_classifications": [],
+  "primary_adaptive_gap": null,
+  "evidence": {
+    "algorithm_correctness": "The candidate's approach correctly solves the Two Sum problem by using a hash map to achieve O(n) time complexity and O(n) space complexity, which is optimal for the problem.",
+    "logical_reasoning": "The candidate explains the reasoning clearly, showing how the algorithm works by calculating the complement and checking for its presence in the hash map, which logically solves the problem.",
+    "concept_coverage": "The candidate communicates key concepts such as complement calculation, hash map usage, and index tracking, which are essential for solving the problem.",
+    "completeness": "The candidate addresses all essential parts of the solution, including the use of a hash map, time complexity analysis, and edge case handling (e.g., duplicate values, zero, no solution).",
+    "data_structure": "The candidate explicitly mentions the use of a hash map, which is the appropriate data structure for this problem.",
+    "complexity": "The candidate explicitly states the time complexity as O(n) and space complexity as O(n), which is correct for the problem.",
+    "edge_cases": "The candidate addresses important edge cases such as duplicate values, zero, and no solution, which are critical for the problem's correctness."
+  },
+  "history": [
+    {
+      "turn_number": 1,
+      "candidate_answer": "I would use a HashMap to store previously seen values.\nFor each number, I would calculate its complement and check\nwhether that complement already exists in the HashMap.\nIf it exists, I return the two indices. Otherwise, I store\nthe current number and continue iterating through the array.\nThis gives O(n) time and O(n) space.",
+      "reference_answer_id": "P001-R3",
+      "reference_match_confidence": 0.9,
+      "target_reference_id": null,
+      "scores": {
+        "algorithm_correctness": 100.0,
+        "logical_reasoning": 100.0,
+        "concept_coverage": 100.0,
+        "completeness": 100.0,
+        "data_structure": 100.0,
+        "complexity": 100.0,
+        "edge_cases": 100.0
+      },
+      "primary_classification": "Correct",
+      "secondary_classification": null,
+      "adaptive_classifications": [],
+      "primary_adaptive_gap": null,
+      "evidence": {
+        "algorithm_correctness": "The candidate's approach correctly solves the Two Sum problem by using a hash map to achieve O(n) time complexity and O(n) space complexity, which is optimal for the problem.",
+        "logical_reasoning": "The candidate explains the reasoning clearly, showing how the algorithm works by calculating the complement and checking for its presence in the hash map, which logically solves the problem.",
+        "concept_coverage": "The candidate communicates key concepts such as complement calculation, hash map usage, and index tracking, which are essential for solving the problem.",
+        "completeness": "The candidate addresses all essential parts of the solution, including the use of a hash map, time complexity analysis, and edge case handling (e.g., duplicate values, zero, no solution).",
+        "data_structure": "The candidate explicitly mentions the use of a hash map, which is the appropriate data structure for this problem.",
+        "complexity": "The candidate explicitly states the time complexity as O(n) and space complexity as O(n), which is correct for the problem.",
+        "edge_cases": "The candidate addresses important edge cases such as duplicate values, zero, and no solution, which are critical for the problem's correctness."
+      },
+      "current_interviewer_question": null,
+      "nlp_state": {
+        "approach": "Use a HashMap to store previously seen values. For each number, calculate its complement and check if it exists in the HashMap. If it exists, return the two indices. Otherwise, store the current number and continue.",
+        "algorithms": [],
+        "concepts": [
+          "complement",
+          "indices"
+        ],
+        "operations": [
+          "calculate complement",
+          "check existence",
+          "store current number"
+        ],
+        "data_structures": [
+          "HashMap"
+        ],
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)",
+        "edge_cases": [],
+        "reasoning_summary": null,
+        "assumptions": [],
+        "optimization": null
+      }
+    }
+  ],
+  "current_interviewer_question": null,
+  "should_continue": false
 }

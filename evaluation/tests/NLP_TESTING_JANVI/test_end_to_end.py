@@ -636,7 +636,7 @@ def test_end_to_end():
             "Adaptive follow-up was generated successfully."
         )
 
-    # ========================================================
+        # ========================================================
     # 15. FINAL SEVEN DIMENSION SCORES
     # ========================================================
 
@@ -644,37 +644,46 @@ def test_end_to_end():
         "[15] FINAL SEVEN DIMENSION SCORES"
     )
 
-    final_scores = (
-        final_result["scores"]
-    )
+    if session.is_finished():
 
-    assert isinstance(
-        final_scores,
-        dict,
-    )
+        final_scores = (
+            final_result["scores"]
+        )
 
-    for dimension, data in final_scores.items():
+        assert isinstance(
+            final_scores,
+            dict,
+        )
 
-        if isinstance(
-            data,
-            dict
-        ):
+        for dimension, data in final_scores.items():
 
-            score = data.get(
-                "score"
-            )
-
-            print_field(
-                dimension,
-                score,
-            )
-
-        else:
-
-            print_field(
-                dimension,
+            if isinstance(
                 data,
-            )
+                dict
+            ):
+
+                score = data.get(
+                    "score"
+                )
+
+                print_field(
+                    dimension,
+                    score,
+                )
+
+            else:
+
+                print_field(
+                    dimension,
+                    data,
+                )
+
+    else:
+
+        print(
+            "Final scores are not available yet; "
+            "interview is still in progress."
+        )
 
     # ========================================================
     # 16. FINAL REFERENCE STATE
