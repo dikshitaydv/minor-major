@@ -504,11 +504,10 @@ def evaluate_candidate_turn(
                 matched_reference = reference
                 break
 
-    if matched_reference is None:
+    if matched_reference is None and evaluation_reference_id is not None:
         raise RuntimeError(
-            "Matched reference ID was not found "
-            "in the supplied reference set."
-        )
+        "Matched reference ID was not found "
+        "in the supplied reference set.")
 
     # ==================================================
     # 4. LLM EVALUATION

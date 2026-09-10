@@ -49,6 +49,12 @@ EXTRACTOR_MODEL = os.getenv(
     "qwen3:4b"
 )
 
+# Reference solution matching model
+REFERENCE_MATCHER_MODEL = os.getenv(
+    "REFERENCE_MATCHER_MODEL",
+    "qwen3:1.7b"
+)
+
 # Candidate evaluation model
 EVALUATOR_MODEL = os.getenv(
     "EVALUATOR_MODEL",
