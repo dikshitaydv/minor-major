@@ -987,6 +987,10 @@ def evaluate_with_llm(
 
     This evaluator does NOT perform rule-based semantic
     extraction.
+
+    A dimension must be scored only from evidence explicitly present in
+    the candidate response. Do not infer edge cases, complexity, or
+    concepts that the candidate did not mention.
     """
 
     # --------------------------------------------------

@@ -1,15 +1,18 @@
-import prisma from '../lib/prisma.js'
-import type { SessionStatus, QuestionStatus } from '../generated/prisma/enums.js'
+import prisma from "../lib/prisma.js";
+import type {
+  SessionStatus,
+  QuestionStatus,
+} from "../generated/prisma/enums.js";
 
 export const createSession = async (data: {
-  interviewId: string
-  candidateId: string
-  currentQuestionId: string | null
+  interviewId: string;
+  candidateId: string;
+  currentQuestionId: string | null;
 }) => {
   return prisma.interviewSession.create({
     data,
-  })
-}
+  });
+};
 
 export const findSessionById = async (sessionId: string) => {
   return prisma.interviewSession.findUnique({
@@ -24,22 +27,29 @@ export const findSessionById = async (sessionId: string) => {
               question: true,
             },
             orderBy: {
-              order: 'asc',
+              order: "asc",
             },
           },
         },
       },
     },
-  })
-}
+  });
+};
 
 export const findSessionByInterviewId = async (interviewId: string) => {
   return prisma.interviewSession.findUnique({
     where: {
       interviewId,
     },
-  })
-}
+    include: {
+      messages: {
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+  });
+};
 
 export const updateSessionCurrentQuestion = async (
   sessionId: string,
@@ -52,15 +62,15 @@ export const updateSessionCurrentQuestion = async (
     data: {
       currentQuestionId,
     },
-  })
-}
+  });
+};
 
 export const endSession = async (
   sessionId: string,
   data: {
-    status: SessionStatus
-    endedAt: Date
-    durationSeconds: number
+    status: SessionStatus;
+    endedAt: Date;
+    durationSeconds: number;
   },
 ) => {
   return prisma.interviewSession.update({
@@ -68,14 +78,14 @@ export const endSession = async (
       id: sessionId,
     },
     data,
-  })
-}
+  });
+};
 
 export const upsertQuestionAttempt = async (data: {
-  sessionId: string
-  questionId: string
-  candidateId: string
-  status: QuestionStatus
+  sessionId: string;
+  questionId: string;
+  candidateId: string;
+  status: QuestionStatus;
 }) => {
   return prisma.questionAttempt.upsert({
     where: {
@@ -86,7 +96,7 @@ export const upsertQuestionAttempt = async (data: {
     },
     update: {
       status: data.status,
-      ...(data.status === 'COMPLETED' ? { completedAt: new Date() } : {}),
+      ...(data.status === "COMPLETED" ? { completedAt: new Date() } : {}),
     },
     create: {
       sessionId: data.sessionId,
@@ -94,8 +104,8 @@ export const upsertQuestionAttempt = async (data: {
       candidateId: data.candidateId,
       status: data.status,
     },
-  })
-}
+  });
+};
 
 export const updateInterviewQuestionStatus = async (
   interviewId: string,
@@ -112,8 +122,8 @@ export const updateInterviewQuestionStatus = async (
     data: {
       status,
     },
-  })
-}
+  });
+};
 
 export const countMessagesForQuestion = async (
   sessionId: string,
@@ -123,16 +133,18 @@ export const countMessagesForQuestion = async (
     where: {
       sessionId,
       questionId,
-      sender: 'CANDIDATE',
+      sender: "CANDIDATE",
     },
-  })
-}
+  });
+};
 
-export const countCompletedAttemptsByCandidate = async (candidateId: string) => {
+export const countCompletedAttemptsByCandidate = async (
+  candidateId: string,
+) => {
   return prisma.questionAttempt.count({
     where: {
       candidateId,
-      status: 'COMPLETED',
+      status: "COMPLETED",
     },
-  })
-}
+  });
+};

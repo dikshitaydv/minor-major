@@ -46,7 +46,7 @@ OLLAMA_BASE_URL = os.getenv(
 # NLP extraction model
 EXTRACTOR_MODEL = os.getenv(
     "EXTRACTOR_MODEL",
-    "qwen3:4b"
+    "qwen3:1.7b"
 )
 
 # Reference solution matching model

@@ -107,6 +107,18 @@ function CandidateResultDetail() {
 
       </div>
 
+      <div className="mt-6 border border-slate-200 bg-white p-6">
+
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Questions Solved
+        </p>
+
+        <p className="mt-2 text-3xl font-bold text-[#17324f]">
+          {detail.questionsSolved} / {detail.totalQuestions}
+        </p>
+
+      </div>
+
 
       <div className="mt-6 border border-slate-200 bg-white">
 
@@ -143,6 +155,75 @@ function CandidateResultDetail() {
         ))}
 
       </div>
+
+      <section className="mt-6 border border-slate-200 bg-white">
+
+        <div className="border-b border-slate-200 px-6 py-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Question-by-question analysis
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            Based on the candidate and AI messages recorded during the interview.
+          </p>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {detail.questionAnalysis.map((question) => (
+            <article key={question.questionId} className="p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">
+                    {question.order + 1}. {question.title}
+                  </p>
+                  <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-400">
+                    {question.difficulty} · {question.candidateResponseCount} candidate responses · {question.aiResponseCount} AI responses
+                  </p>
+                </div>
+
+                <span
+                  className={`px-2 py-1 text-[10px] font-semibold ${question.solved
+                      ? 'bg-emerald-50 text-emerald-600'
+                      : 'bg-amber-50 text-amber-600'
+                    }`}
+                >
+                  {question.solved ? 'Solved' : 'Not solved'}
+                </span>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {question.candidateResponses.map((message, index) => (
+                  <div key={`${question.questionId}-candidate-${index}`} className="border-l-2 border-[#6fa9dc] pl-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3972a7]">
+                      Candidate
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      {message}
+                    </p>
+                  </div>
+                ))}
+
+                {question.aiResponses.map((message, index) => (
+                  <div key={`${question.questionId}-ai-${index}`} className="border-l-2 border-slate-300 pl-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      AI interviewer
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      {message}
+                    </p>
+                  </div>
+                ))}
+
+                {question.candidateResponses.length === 0 && (
+                  <p className="text-xs text-slate-400">
+                    No candidate response was recorded for this question.
+                  </p>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+
+      </section>
 
 
       <div className="mt-6 grid gap-6 md:grid-cols-2">

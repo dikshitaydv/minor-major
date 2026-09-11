@@ -203,6 +203,7 @@ export type QuestionWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   interviewQuestions?: Prisma.InterviewQuestionListRelationFilter
+  jobQuestions?: Prisma.JobQuestionListRelationFilter
   messages?: Prisma.MessageListRelationFilter
   attempts?: Prisma.QuestionAttemptListRelationFilter
 }
@@ -218,6 +219,7 @@ export type QuestionOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   interviewQuestions?: Prisma.InterviewQuestionOrderByRelationAggregateInput
+  jobQuestions?: Prisma.JobQuestionOrderByRelationAggregateInput
   messages?: Prisma.MessageOrderByRelationAggregateInput
   attempts?: Prisma.QuestionAttemptOrderByRelationAggregateInput
 }
@@ -236,6 +238,7 @@ export type QuestionWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   interviewQuestions?: Prisma.InterviewQuestionListRelationFilter
+  jobQuestions?: Prisma.JobQuestionListRelationFilter
   messages?: Prisma.MessageListRelationFilter
   attempts?: Prisma.QuestionAttemptListRelationFilter
 }, "id">
@@ -281,6 +284,7 @@ export type QuestionCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   interviewQuestions?: Prisma.InterviewQuestionCreateNestedManyWithoutQuestionInput
+  jobQuestions?: Prisma.JobQuestionCreateNestedManyWithoutQuestionInput
   messages?: Prisma.MessageCreateNestedManyWithoutQuestionInput
   attempts?: Prisma.QuestionAttemptCreateNestedManyWithoutQuestionInput
 }
@@ -296,6 +300,7 @@ export type QuestionUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   interviewQuestions?: Prisma.InterviewQuestionUncheckedCreateNestedManyWithoutQuestionInput
+  jobQuestions?: Prisma.JobQuestionUncheckedCreateNestedManyWithoutQuestionInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutQuestionInput
   attempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutQuestionInput
 }
@@ -311,6 +316,7 @@ export type QuestionUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviewQuestions?: Prisma.InterviewQuestionUpdateManyWithoutQuestionNestedInput
+  jobQuestions?: Prisma.JobQuestionUpdateManyWithoutQuestionNestedInput
   messages?: Prisma.MessageUpdateManyWithoutQuestionNestedInput
   attempts?: Prisma.QuestionAttemptUpdateManyWithoutQuestionNestedInput
 }
@@ -326,6 +332,7 @@ export type QuestionUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviewQuestions?: Prisma.InterviewQuestionUncheckedUpdateManyWithoutQuestionNestedInput
+  jobQuestions?: Prisma.JobQuestionUncheckedUpdateManyWithoutQuestionNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutQuestionNestedInput
   attempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutQuestionNestedInput
 }
@@ -436,6 +443,20 @@ export type QuestionUpdateconstraintsInput = {
   push?: string | string[]
 }
 
+export type QuestionCreateNestedOneWithoutJobQuestionsInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutJobQuestionsInput, Prisma.QuestionUncheckedCreateWithoutJobQuestionsInput>
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutJobQuestionsInput
+  connect?: Prisma.QuestionWhereUniqueInput
+}
+
+export type QuestionUpdateOneRequiredWithoutJobQuestionsNestedInput = {
+  create?: Prisma.XOR<Prisma.QuestionCreateWithoutJobQuestionsInput, Prisma.QuestionUncheckedCreateWithoutJobQuestionsInput>
+  connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutJobQuestionsInput
+  upsert?: Prisma.QuestionUpsertWithoutJobQuestionsInput
+  connect?: Prisma.QuestionWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionUpdateToOneWithWhereWithoutJobQuestionsInput, Prisma.QuestionUpdateWithoutJobQuestionsInput>, Prisma.QuestionUncheckedUpdateWithoutJobQuestionsInput>
+}
+
 export type QuestionCreateNestedOneWithoutInterviewQuestionsInput = {
   create?: Prisma.XOR<Prisma.QuestionCreateWithoutInterviewQuestionsInput, Prisma.QuestionUncheckedCreateWithoutInterviewQuestionsInput>
   connectOrCreate?: Prisma.QuestionCreateOrConnectWithoutInterviewQuestionsInput
@@ -480,6 +501,82 @@ export type QuestionUpdateOneRequiredWithoutAttemptsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionUpdateToOneWithWhereWithoutAttemptsInput, Prisma.QuestionUpdateWithoutAttemptsInput>, Prisma.QuestionUncheckedUpdateWithoutAttemptsInput>
 }
 
+export type QuestionCreateWithoutJobQuestionsInput = {
+  id?: string
+  title: string
+  difficulty?: $Enums.Difficulty
+  topics?: Prisma.QuestionCreatetopicsInput | string[]
+  description: string
+  examples?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  constraints?: Prisma.QuestionCreateconstraintsInput | string[]
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  interviewQuestions?: Prisma.InterviewQuestionCreateNestedManyWithoutQuestionInput
+  messages?: Prisma.MessageCreateNestedManyWithoutQuestionInput
+  attempts?: Prisma.QuestionAttemptCreateNestedManyWithoutQuestionInput
+}
+
+export type QuestionUncheckedCreateWithoutJobQuestionsInput = {
+  id?: string
+  title: string
+  difficulty?: $Enums.Difficulty
+  topics?: Prisma.QuestionCreatetopicsInput | string[]
+  description: string
+  examples?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  constraints?: Prisma.QuestionCreateconstraintsInput | string[]
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  interviewQuestions?: Prisma.InterviewQuestionUncheckedCreateNestedManyWithoutQuestionInput
+  messages?: Prisma.MessageUncheckedCreateNestedManyWithoutQuestionInput
+  attempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutQuestionInput
+}
+
+export type QuestionCreateOrConnectWithoutJobQuestionsInput = {
+  where: Prisma.QuestionWhereUniqueInput
+  create: Prisma.XOR<Prisma.QuestionCreateWithoutJobQuestionsInput, Prisma.QuestionUncheckedCreateWithoutJobQuestionsInput>
+}
+
+export type QuestionUpsertWithoutJobQuestionsInput = {
+  update: Prisma.XOR<Prisma.QuestionUpdateWithoutJobQuestionsInput, Prisma.QuestionUncheckedUpdateWithoutJobQuestionsInput>
+  create: Prisma.XOR<Prisma.QuestionCreateWithoutJobQuestionsInput, Prisma.QuestionUncheckedCreateWithoutJobQuestionsInput>
+  where?: Prisma.QuestionWhereInput
+}
+
+export type QuestionUpdateToOneWithWhereWithoutJobQuestionsInput = {
+  where?: Prisma.QuestionWhereInput
+  data: Prisma.XOR<Prisma.QuestionUpdateWithoutJobQuestionsInput, Prisma.QuestionUncheckedUpdateWithoutJobQuestionsInput>
+}
+
+export type QuestionUpdateWithoutJobQuestionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
+  topics?: Prisma.QuestionUpdatetopicsInput | string[]
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  examples?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  constraints?: Prisma.QuestionUpdateconstraintsInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  interviewQuestions?: Prisma.InterviewQuestionUpdateManyWithoutQuestionNestedInput
+  messages?: Prisma.MessageUpdateManyWithoutQuestionNestedInput
+  attempts?: Prisma.QuestionAttemptUpdateManyWithoutQuestionNestedInput
+}
+
+export type QuestionUncheckedUpdateWithoutJobQuestionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
+  topics?: Prisma.QuestionUpdatetopicsInput | string[]
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  examples?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  constraints?: Prisma.QuestionUpdateconstraintsInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  interviewQuestions?: Prisma.InterviewQuestionUncheckedUpdateManyWithoutQuestionNestedInput
+  messages?: Prisma.MessageUncheckedUpdateManyWithoutQuestionNestedInput
+  attempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutQuestionNestedInput
+}
+
 export type QuestionCreateWithoutInterviewQuestionsInput = {
   id?: string
   title: string
@@ -490,6 +587,7 @@ export type QuestionCreateWithoutInterviewQuestionsInput = {
   constraints?: Prisma.QuestionCreateconstraintsInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
+  jobQuestions?: Prisma.JobQuestionCreateNestedManyWithoutQuestionInput
   messages?: Prisma.MessageCreateNestedManyWithoutQuestionInput
   attempts?: Prisma.QuestionAttemptCreateNestedManyWithoutQuestionInput
 }
@@ -504,6 +602,7 @@ export type QuestionUncheckedCreateWithoutInterviewQuestionsInput = {
   constraints?: Prisma.QuestionCreateconstraintsInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
+  jobQuestions?: Prisma.JobQuestionUncheckedCreateNestedManyWithoutQuestionInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutQuestionInput
   attempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutQuestionInput
 }
@@ -534,6 +633,7 @@ export type QuestionUpdateWithoutInterviewQuestionsInput = {
   constraints?: Prisma.QuestionUpdateconstraintsInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  jobQuestions?: Prisma.JobQuestionUpdateManyWithoutQuestionNestedInput
   messages?: Prisma.MessageUpdateManyWithoutQuestionNestedInput
   attempts?: Prisma.QuestionAttemptUpdateManyWithoutQuestionNestedInput
 }
@@ -548,6 +648,7 @@ export type QuestionUncheckedUpdateWithoutInterviewQuestionsInput = {
   constraints?: Prisma.QuestionUpdateconstraintsInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  jobQuestions?: Prisma.JobQuestionUncheckedUpdateManyWithoutQuestionNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutQuestionNestedInput
   attempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutQuestionNestedInput
 }
@@ -563,6 +664,7 @@ export type QuestionCreateWithoutMessagesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   interviewQuestions?: Prisma.InterviewQuestionCreateNestedManyWithoutQuestionInput
+  jobQuestions?: Prisma.JobQuestionCreateNestedManyWithoutQuestionInput
   attempts?: Prisma.QuestionAttemptCreateNestedManyWithoutQuestionInput
 }
 
@@ -577,6 +679,7 @@ export type QuestionUncheckedCreateWithoutMessagesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   interviewQuestions?: Prisma.InterviewQuestionUncheckedCreateNestedManyWithoutQuestionInput
+  jobQuestions?: Prisma.JobQuestionUncheckedCreateNestedManyWithoutQuestionInput
   attempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutQuestionInput
 }
 
@@ -607,6 +710,7 @@ export type QuestionUpdateWithoutMessagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviewQuestions?: Prisma.InterviewQuestionUpdateManyWithoutQuestionNestedInput
+  jobQuestions?: Prisma.JobQuestionUpdateManyWithoutQuestionNestedInput
   attempts?: Prisma.QuestionAttemptUpdateManyWithoutQuestionNestedInput
 }
 
@@ -621,6 +725,7 @@ export type QuestionUncheckedUpdateWithoutMessagesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviewQuestions?: Prisma.InterviewQuestionUncheckedUpdateManyWithoutQuestionNestedInput
+  jobQuestions?: Prisma.JobQuestionUncheckedUpdateManyWithoutQuestionNestedInput
   attempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutQuestionNestedInput
 }
 
@@ -635,6 +740,7 @@ export type QuestionCreateWithoutAttemptsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   interviewQuestions?: Prisma.InterviewQuestionCreateNestedManyWithoutQuestionInput
+  jobQuestions?: Prisma.JobQuestionCreateNestedManyWithoutQuestionInput
   messages?: Prisma.MessageCreateNestedManyWithoutQuestionInput
 }
 
@@ -649,6 +755,7 @@ export type QuestionUncheckedCreateWithoutAttemptsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   interviewQuestions?: Prisma.InterviewQuestionUncheckedCreateNestedManyWithoutQuestionInput
+  jobQuestions?: Prisma.JobQuestionUncheckedCreateNestedManyWithoutQuestionInput
   messages?: Prisma.MessageUncheckedCreateNestedManyWithoutQuestionInput
 }
 
@@ -679,6 +786,7 @@ export type QuestionUpdateWithoutAttemptsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviewQuestions?: Prisma.InterviewQuestionUpdateManyWithoutQuestionNestedInput
+  jobQuestions?: Prisma.JobQuestionUpdateManyWithoutQuestionNestedInput
   messages?: Prisma.MessageUpdateManyWithoutQuestionNestedInput
 }
 
@@ -693,6 +801,7 @@ export type QuestionUncheckedUpdateWithoutAttemptsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interviewQuestions?: Prisma.InterviewQuestionUncheckedUpdateManyWithoutQuestionNestedInput
+  jobQuestions?: Prisma.JobQuestionUncheckedUpdateManyWithoutQuestionNestedInput
   messages?: Prisma.MessageUncheckedUpdateManyWithoutQuestionNestedInput
 }
 
@@ -703,12 +812,14 @@ export type QuestionUncheckedUpdateWithoutAttemptsInput = {
 
 export type QuestionCountOutputType = {
   interviewQuestions: number
+  jobQuestions: number
   messages: number
   attempts: number
 }
 
 export type QuestionCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   interviewQuestions?: boolean | QuestionCountOutputTypeCountInterviewQuestionsArgs
+  jobQuestions?: boolean | QuestionCountOutputTypeCountJobQuestionsArgs
   messages?: boolean | QuestionCountOutputTypeCountMessagesArgs
   attempts?: boolean | QuestionCountOutputTypeCountAttemptsArgs
 }
@@ -728,6 +839,13 @@ export type QuestionCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Ext
  */
 export type QuestionCountOutputTypeCountInterviewQuestionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.InterviewQuestionWhereInput
+}
+
+/**
+ * QuestionCountOutputType without action
+ */
+export type QuestionCountOutputTypeCountJobQuestionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.JobQuestionWhereInput
 }
 
 /**
@@ -756,6 +874,7 @@ export type QuestionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   createdAt?: boolean
   updatedAt?: boolean
   interviewQuestions?: boolean | Prisma.Question$interviewQuestionsArgs<ExtArgs>
+  jobQuestions?: boolean | Prisma.Question$jobQuestionsArgs<ExtArgs>
   messages?: boolean | Prisma.Question$messagesArgs<ExtArgs>
   attempts?: boolean | Prisma.Question$attemptsArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionCountOutputTypeDefaultArgs<ExtArgs>
@@ -800,6 +919,7 @@ export type QuestionSelectScalar = {
 export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "difficulty" | "topics" | "description" | "examples" | "constraints" | "createdAt" | "updatedAt", ExtArgs["result"]["question"]>
 export type QuestionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   interviewQuestions?: boolean | Prisma.Question$interviewQuestionsArgs<ExtArgs>
+  jobQuestions?: boolean | Prisma.Question$jobQuestionsArgs<ExtArgs>
   messages?: boolean | Prisma.Question$messagesArgs<ExtArgs>
   attempts?: boolean | Prisma.Question$attemptsArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionCountOutputTypeDefaultArgs<ExtArgs>
@@ -811,6 +931,7 @@ export type $QuestionPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   name: "Question"
   objects: {
     interviewQuestions: Prisma.$InterviewQuestionPayload<ExtArgs>[]
+    jobQuestions: Prisma.$JobQuestionPayload<ExtArgs>[]
     messages: Prisma.$MessagePayload<ExtArgs>[]
     attempts: Prisma.$QuestionAttemptPayload<ExtArgs>[]
   }
@@ -1219,6 +1340,7 @@ readonly fields: QuestionFieldRefs;
 export interface Prisma__QuestionClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   interviewQuestions<T extends Prisma.Question$interviewQuestionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$interviewQuestionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InterviewQuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  jobQuestions<T extends Prisma.Question$jobQuestionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$jobQuestionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JobQuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   messages<T extends Prisma.Question$messagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   attempts<T extends Prisma.Question$attemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Question$attemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1673,6 +1795,30 @@ export type Question$interviewQuestionsArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.InterviewQuestionScalarFieldEnum | Prisma.InterviewQuestionScalarFieldEnum[]
+}
+
+/**
+ * Question.jobQuestions
+ */
+export type Question$jobQuestionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the JobQuestion
+   */
+  select?: Prisma.JobQuestionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the JobQuestion
+   */
+  omit?: Prisma.JobQuestionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.JobQuestionInclude<ExtArgs> | null
+  where?: Prisma.JobQuestionWhereInput
+  orderBy?: Prisma.JobQuestionOrderByWithRelationInput | Prisma.JobQuestionOrderByWithRelationInput[]
+  cursor?: Prisma.JobQuestionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.JobQuestionScalarFieldEnum | Prisma.JobQuestionScalarFieldEnum[]
 }
 
 /**

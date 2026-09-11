@@ -225,10 +225,12 @@ export type UserWhereInput = {
   refreshTokens?: Prisma.RefreshTokenListRelationFilter
   passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
   emailVerificationTokens?: Prisma.EmailVerificationTokenListRelationFilter
-  interviews?: Prisma.InterviewListRelationFilter
+  candidateInterviews?: Prisma.InterviewListRelationFilter
+  recruiterInterviews?: Prisma.InterviewListRelationFilter
   interviewSessions?: Prisma.InterviewSessionListRelationFilter
   questionAttempts?: Prisma.QuestionAttemptListRelationFilter
   evaluations?: Prisma.EvaluationListRelationFilter
+  jobs?: Prisma.JobListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -245,10 +247,12 @@ export type UserOrderByWithRelationInput = {
   refreshTokens?: Prisma.RefreshTokenOrderByRelationAggregateInput
   passwordResetTokens?: Prisma.PasswordResetTokenOrderByRelationAggregateInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenOrderByRelationAggregateInput
-  interviews?: Prisma.InterviewOrderByRelationAggregateInput
+  candidateInterviews?: Prisma.InterviewOrderByRelationAggregateInput
+  recruiterInterviews?: Prisma.InterviewOrderByRelationAggregateInput
   interviewSessions?: Prisma.InterviewSessionOrderByRelationAggregateInput
   questionAttempts?: Prisma.QuestionAttemptOrderByRelationAggregateInput
   evaluations?: Prisma.EvaluationOrderByRelationAggregateInput
+  jobs?: Prisma.JobOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -268,10 +272,12 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   refreshTokens?: Prisma.RefreshTokenListRelationFilter
   passwordResetTokens?: Prisma.PasswordResetTokenListRelationFilter
   emailVerificationTokens?: Prisma.EmailVerificationTokenListRelationFilter
-  interviews?: Prisma.InterviewListRelationFilter
+  candidateInterviews?: Prisma.InterviewListRelationFilter
+  recruiterInterviews?: Prisma.InterviewListRelationFilter
   interviewSessions?: Prisma.InterviewSessionListRelationFilter
   questionAttempts?: Prisma.QuestionAttemptListRelationFilter
   evaluations?: Prisma.EvaluationListRelationFilter
+  jobs?: Prisma.JobListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -320,10 +326,12 @@ export type UserCreateInput = {
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -340,10 +348,12 @@ export type UserUncheckedCreateInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUpdateInput = {
@@ -360,10 +370,12 @@ export type UserUpdateInput = {
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -380,10 +392,12 @@ export type UserUncheckedUpdateInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -527,18 +541,46 @@ export type UserUpdateOneRequiredWithoutEmailVerificationTokensNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutEmailVerificationTokensInput, Prisma.UserUpdateWithoutEmailVerificationTokensInput>, Prisma.UserUncheckedUpdateWithoutEmailVerificationTokensInput>
 }
 
-export type UserCreateNestedOneWithoutInterviewsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutInterviewsInput, Prisma.UserUncheckedCreateWithoutInterviewsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutInterviewsInput
+export type UserCreateNestedOneWithoutJobsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutJobsInput
   connect?: Prisma.UserWhereUniqueInput
 }
 
-export type UserUpdateOneRequiredWithoutInterviewsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutInterviewsInput, Prisma.UserUncheckedCreateWithoutInterviewsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutInterviewsInput
-  upsert?: Prisma.UserUpsertWithoutInterviewsInput
+export type UserUpdateOneRequiredWithoutJobsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutJobsInput
+  upsert?: Prisma.UserUpsertWithoutJobsInput
   connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutInterviewsInput, Prisma.UserUpdateWithoutInterviewsInput>, Prisma.UserUncheckedUpdateWithoutInterviewsInput>
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutJobsInput, Prisma.UserUpdateWithoutJobsInput>, Prisma.UserUncheckedUpdateWithoutJobsInput>
+}
+
+export type UserCreateNestedOneWithoutCandidateInterviewsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCandidateInterviewsInput, Prisma.UserUncheckedCreateWithoutCandidateInterviewsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCandidateInterviewsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserCreateNestedOneWithoutRecruiterInterviewsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRecruiterInterviewsInput, Prisma.UserUncheckedCreateWithoutRecruiterInterviewsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecruiterInterviewsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutCandidateInterviewsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutCandidateInterviewsInput, Prisma.UserUncheckedCreateWithoutCandidateInterviewsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutCandidateInterviewsInput
+  upsert?: Prisma.UserUpsertWithoutCandidateInterviewsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutCandidateInterviewsInput, Prisma.UserUpdateWithoutCandidateInterviewsInput>, Prisma.UserUncheckedUpdateWithoutCandidateInterviewsInput>
+}
+
+export type UserUpdateOneRequiredWithoutRecruiterInterviewsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutRecruiterInterviewsInput, Prisma.UserUncheckedCreateWithoutRecruiterInterviewsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutRecruiterInterviewsInput
+  upsert?: Prisma.UserUpsertWithoutRecruiterInterviewsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRecruiterInterviewsInput, Prisma.UserUpdateWithoutRecruiterInterviewsInput>, Prisma.UserUncheckedUpdateWithoutRecruiterInterviewsInput>
 }
 
 export type UserCreateNestedOneWithoutInterviewSessionsInput = {
@@ -596,10 +638,12 @@ export type UserCreateWithoutRefreshTokensInput = {
   updatedAt?: Date | string
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUncheckedCreateWithoutRefreshTokensInput = {
@@ -615,10 +659,12 @@ export type UserUncheckedCreateWithoutRefreshTokensInput = {
   updatedAt?: Date | string
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserCreateOrConnectWithoutRefreshTokensInput = {
@@ -650,10 +696,12 @@ export type UserUpdateWithoutRefreshTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRefreshTokensInput = {
@@ -669,10 +717,12 @@ export type UserUncheckedUpdateWithoutRefreshTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserCreateWithoutPasswordResetTokensInput = {
@@ -688,10 +738,12 @@ export type UserCreateWithoutPasswordResetTokensInput = {
   updatedAt?: Date | string
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
@@ -707,10 +759,12 @@ export type UserUncheckedCreateWithoutPasswordResetTokensInput = {
   updatedAt?: Date | string
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserCreateOrConnectWithoutPasswordResetTokensInput = {
@@ -742,10 +796,12 @@ export type UserUpdateWithoutPasswordResetTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
@@ -761,10 +817,12 @@ export type UserUncheckedUpdateWithoutPasswordResetTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserCreateWithoutEmailVerificationTokensInput = {
@@ -780,10 +838,12 @@ export type UserCreateWithoutEmailVerificationTokensInput = {
   updatedAt?: Date | string
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUncheckedCreateWithoutEmailVerificationTokensInput = {
@@ -799,10 +859,12 @@ export type UserUncheckedCreateWithoutEmailVerificationTokensInput = {
   updatedAt?: Date | string
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserCreateOrConnectWithoutEmailVerificationTokensInput = {
@@ -834,10 +896,12 @@ export type UserUpdateWithoutEmailVerificationTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEmailVerificationTokensInput = {
@@ -853,13 +917,15 @@ export type UserUncheckedUpdateWithoutEmailVerificationTokensInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
-export type UserCreateWithoutInterviewsInput = {
+export type UserCreateWithoutJobsInput = {
   id?: string
   firstName: string
   lastName: string
@@ -873,12 +939,14 @@ export type UserCreateWithoutInterviewsInput = {
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
 }
 
-export type UserUncheckedCreateWithoutInterviewsInput = {
+export type UserUncheckedCreateWithoutJobsInput = {
   id?: string
   firstName: string
   lastName: string
@@ -892,28 +960,30 @@ export type UserUncheckedCreateWithoutInterviewsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
 }
 
-export type UserCreateOrConnectWithoutInterviewsInput = {
+export type UserCreateOrConnectWithoutJobsInput = {
   where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutInterviewsInput, Prisma.UserUncheckedCreateWithoutInterviewsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
 }
 
-export type UserUpsertWithoutInterviewsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutInterviewsInput, Prisma.UserUncheckedUpdateWithoutInterviewsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutInterviewsInput, Prisma.UserUncheckedCreateWithoutInterviewsInput>
+export type UserUpsertWithoutJobsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutJobsInput, Prisma.UserUncheckedUpdateWithoutJobsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutJobsInput, Prisma.UserUncheckedCreateWithoutJobsInput>
   where?: Prisma.UserWhereInput
 }
 
-export type UserUpdateToOneWithWhereWithoutInterviewsInput = {
+export type UserUpdateToOneWithWhereWithoutJobsInput = {
   where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutInterviewsInput, Prisma.UserUncheckedUpdateWithoutInterviewsInput>
+  data: Prisma.XOR<Prisma.UserUpdateWithoutJobsInput, Prisma.UserUncheckedUpdateWithoutJobsInput>
 }
 
-export type UserUpdateWithoutInterviewsInput = {
+export type UserUpdateWithoutJobsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   firstName?: Prisma.StringFieldUpdateOperationsInput | string
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -927,12 +997,14 @@ export type UserUpdateWithoutInterviewsInput = {
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
 }
 
-export type UserUncheckedUpdateWithoutInterviewsInput = {
+export type UserUncheckedUpdateWithoutJobsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   firstName?: Prisma.StringFieldUpdateOperationsInput | string
   lastName?: Prisma.StringFieldUpdateOperationsInput | string
@@ -946,9 +1018,211 @@ export type UserUncheckedUpdateWithoutInterviewsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+}
+
+export type UserCreateWithoutCandidateInterviewsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  role?: $Enums.Role
+  emailVerified?: boolean
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
+  interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
+  questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
+  evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
+}
+
+export type UserUncheckedCreateWithoutCandidateInterviewsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  role?: $Enums.Role
+  emailVerified?: boolean
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
+  questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
+  evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
+}
+
+export type UserCreateOrConnectWithoutCandidateInterviewsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutCandidateInterviewsInput, Prisma.UserUncheckedCreateWithoutCandidateInterviewsInput>
+}
+
+export type UserCreateWithoutRecruiterInterviewsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  role?: $Enums.Role
+  emailVerified?: boolean
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
+  questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
+  evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
+}
+
+export type UserUncheckedCreateWithoutRecruiterInterviewsInput = {
+  id?: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  role?: $Enums.Role
+  emailVerified?: boolean
+  isActive?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
+  questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
+  evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
+}
+
+export type UserCreateOrConnectWithoutRecruiterInterviewsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutRecruiterInterviewsInput, Prisma.UserUncheckedCreateWithoutRecruiterInterviewsInput>
+}
+
+export type UserUpsertWithoutCandidateInterviewsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutCandidateInterviewsInput, Prisma.UserUncheckedUpdateWithoutCandidateInterviewsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutCandidateInterviewsInput, Prisma.UserUncheckedCreateWithoutCandidateInterviewsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutCandidateInterviewsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutCandidateInterviewsInput, Prisma.UserUncheckedUpdateWithoutCandidateInterviewsInput>
+}
+
+export type UserUpdateWithoutCandidateInterviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
+  interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
+  questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
+  evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
+}
+
+export type UserUncheckedUpdateWithoutCandidateInterviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
+  questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
+  evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
+}
+
+export type UserUpsertWithoutRecruiterInterviewsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutRecruiterInterviewsInput, Prisma.UserUncheckedUpdateWithoutRecruiterInterviewsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutRecruiterInterviewsInput, Prisma.UserUncheckedCreateWithoutRecruiterInterviewsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutRecruiterInterviewsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutRecruiterInterviewsInput, Prisma.UserUncheckedUpdateWithoutRecruiterInterviewsInput>
+}
+
+export type UserUpdateWithoutRecruiterInterviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
+  questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
+  evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
+}
+
+export type UserUncheckedUpdateWithoutRecruiterInterviewsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
+  passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
+  emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
+  questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
+  evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserCreateWithoutInterviewSessionsInput = {
@@ -965,9 +1239,11 @@ export type UserCreateWithoutInterviewSessionsInput = {
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUncheckedCreateWithoutInterviewSessionsInput = {
@@ -984,9 +1260,11 @@ export type UserUncheckedCreateWithoutInterviewSessionsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserCreateOrConnectWithoutInterviewSessionsInput = {
@@ -1019,9 +1297,11 @@ export type UserUpdateWithoutInterviewSessionsInput = {
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserUncheckedUpdateWithoutInterviewSessionsInput = {
@@ -1038,9 +1318,11 @@ export type UserUncheckedUpdateWithoutInterviewSessionsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserCreateWithoutQuestionAttemptsInput = {
@@ -1057,9 +1339,11 @@ export type UserCreateWithoutQuestionAttemptsInput = {
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUncheckedCreateWithoutQuestionAttemptsInput = {
@@ -1076,9 +1360,11 @@ export type UserUncheckedCreateWithoutQuestionAttemptsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
   evaluations?: Prisma.EvaluationUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserCreateOrConnectWithoutQuestionAttemptsInput = {
@@ -1111,9 +1397,11 @@ export type UserUpdateWithoutQuestionAttemptsInput = {
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserUncheckedUpdateWithoutQuestionAttemptsInput = {
@@ -1130,9 +1418,11 @@ export type UserUncheckedUpdateWithoutQuestionAttemptsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
   evaluations?: Prisma.EvaluationUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserCreateWithoutEvaluationsInput = {
@@ -1149,9 +1439,11 @@ export type UserCreateWithoutEvaluationsInput = {
   refreshTokens?: Prisma.RefreshTokenCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserUncheckedCreateWithoutEvaluationsInput = {
@@ -1168,9 +1460,11 @@ export type UserUncheckedCreateWithoutEvaluationsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedCreateNestedManyWithoutUserInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedCreateNestedManyWithoutUserInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedCreateNestedManyWithoutUserInput
-  interviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  candidateInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutCandidateInput
+  recruiterInterviews?: Prisma.InterviewUncheckedCreateNestedManyWithoutRecruiterInput
   interviewSessions?: Prisma.InterviewSessionUncheckedCreateNestedManyWithoutCandidateInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedCreateNestedManyWithoutCandidateInput
+  jobs?: Prisma.JobUncheckedCreateNestedManyWithoutRecruiterInput
 }
 
 export type UserCreateOrConnectWithoutEvaluationsInput = {
@@ -1203,9 +1497,11 @@ export type UserUpdateWithoutEvaluationsInput = {
   refreshTokens?: Prisma.RefreshTokenUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUpdateManyWithoutRecruiterNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEvaluationsInput = {
@@ -1222,9 +1518,11 @@ export type UserUncheckedUpdateWithoutEvaluationsInput = {
   refreshTokens?: Prisma.RefreshTokenUncheckedUpdateManyWithoutUserNestedInput
   passwordResetTokens?: Prisma.PasswordResetTokenUncheckedUpdateManyWithoutUserNestedInput
   emailVerificationTokens?: Prisma.EmailVerificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  interviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  candidateInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutCandidateNestedInput
+  recruiterInterviews?: Prisma.InterviewUncheckedUpdateManyWithoutRecruiterNestedInput
   interviewSessions?: Prisma.InterviewSessionUncheckedUpdateManyWithoutCandidateNestedInput
   questionAttempts?: Prisma.QuestionAttemptUncheckedUpdateManyWithoutCandidateNestedInput
+  jobs?: Prisma.JobUncheckedUpdateManyWithoutRecruiterNestedInput
 }
 
 
@@ -1236,20 +1534,24 @@ export type UserCountOutputType = {
   refreshTokens: number
   passwordResetTokens: number
   emailVerificationTokens: number
-  interviews: number
+  candidateInterviews: number
+  recruiterInterviews: number
   interviewSessions: number
   questionAttempts: number
   evaluations: number
+  jobs: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   refreshTokens?: boolean | UserCountOutputTypeCountRefreshTokensArgs
   passwordResetTokens?: boolean | UserCountOutputTypeCountPasswordResetTokensArgs
   emailVerificationTokens?: boolean | UserCountOutputTypeCountEmailVerificationTokensArgs
-  interviews?: boolean | UserCountOutputTypeCountInterviewsArgs
+  candidateInterviews?: boolean | UserCountOutputTypeCountCandidateInterviewsArgs
+  recruiterInterviews?: boolean | UserCountOutputTypeCountRecruiterInterviewsArgs
   interviewSessions?: boolean | UserCountOutputTypeCountInterviewSessionsArgs
   questionAttempts?: boolean | UserCountOutputTypeCountQuestionAttemptsArgs
   evaluations?: boolean | UserCountOutputTypeCountEvaluationsArgs
+  jobs?: boolean | UserCountOutputTypeCountJobsArgs
 }
 
 /**
@@ -1286,7 +1588,14 @@ export type UserCountOutputTypeCountEmailVerificationTokensArgs<ExtArgs extends 
 /**
  * UserCountOutputType without action
  */
-export type UserCountOutputTypeCountInterviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type UserCountOutputTypeCountCandidateInterviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.InterviewWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountRecruiterInterviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.InterviewWhereInput
 }
 
@@ -1311,6 +1620,13 @@ export type UserCountOutputTypeCountEvaluationsArgs<ExtArgs extends runtime.Type
   where?: Prisma.EvaluationWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountJobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.JobWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1326,10 +1642,12 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
   passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
   emailVerificationTokens?: boolean | Prisma.User$emailVerificationTokensArgs<ExtArgs>
-  interviews?: boolean | Prisma.User$interviewsArgs<ExtArgs>
+  candidateInterviews?: boolean | Prisma.User$candidateInterviewsArgs<ExtArgs>
+  recruiterInterviews?: boolean | Prisma.User$recruiterInterviewsArgs<ExtArgs>
   interviewSessions?: boolean | Prisma.User$interviewSessionsArgs<ExtArgs>
   questionAttempts?: boolean | Prisma.User$questionAttemptsArgs<ExtArgs>
   evaluations?: boolean | Prisma.User$evaluationsArgs<ExtArgs>
+  jobs?: boolean | Prisma.User$jobsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1377,10 +1695,12 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   refreshTokens?: boolean | Prisma.User$refreshTokensArgs<ExtArgs>
   passwordResetTokens?: boolean | Prisma.User$passwordResetTokensArgs<ExtArgs>
   emailVerificationTokens?: boolean | Prisma.User$emailVerificationTokensArgs<ExtArgs>
-  interviews?: boolean | Prisma.User$interviewsArgs<ExtArgs>
+  candidateInterviews?: boolean | Prisma.User$candidateInterviewsArgs<ExtArgs>
+  recruiterInterviews?: boolean | Prisma.User$recruiterInterviewsArgs<ExtArgs>
   interviewSessions?: boolean | Prisma.User$interviewSessionsArgs<ExtArgs>
   questionAttempts?: boolean | Prisma.User$questionAttemptsArgs<ExtArgs>
   evaluations?: boolean | Prisma.User$evaluationsArgs<ExtArgs>
+  jobs?: boolean | Prisma.User$jobsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1392,10 +1712,12 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     refreshTokens: Prisma.$RefreshTokenPayload<ExtArgs>[]
     passwordResetTokens: Prisma.$PasswordResetTokenPayload<ExtArgs>[]
     emailVerificationTokens: Prisma.$EmailVerificationTokenPayload<ExtArgs>[]
-    interviews: Prisma.$InterviewPayload<ExtArgs>[]
+    candidateInterviews: Prisma.$InterviewPayload<ExtArgs>[]
+    recruiterInterviews: Prisma.$InterviewPayload<ExtArgs>[]
     interviewSessions: Prisma.$InterviewSessionPayload<ExtArgs>[]
     questionAttempts: Prisma.$QuestionAttemptPayload<ExtArgs>[]
     evaluations: Prisma.$EvaluationPayload<ExtArgs>[]
+    jobs: Prisma.$JobPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1805,10 +2127,12 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   refreshTokens<T extends Prisma.User$refreshTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$refreshTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RefreshTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   passwordResetTokens<T extends Prisma.User$passwordResetTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$passwordResetTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PasswordResetTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   emailVerificationTokens<T extends Prisma.User$emailVerificationTokensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$emailVerificationTokensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EmailVerificationTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  interviews<T extends Prisma.User$interviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$interviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InterviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  candidateInterviews<T extends Prisma.User$candidateInterviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$candidateInterviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InterviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  recruiterInterviews<T extends Prisma.User$recruiterInterviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$recruiterInterviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InterviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   interviewSessions<T extends Prisma.User$interviewSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$interviewSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InterviewSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   questionAttempts<T extends Prisma.User$questionAttemptsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$questionAttemptsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionAttemptPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   evaluations<T extends Prisma.User$evaluationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$evaluationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EvaluationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  jobs<T extends Prisma.User$jobsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$jobsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$JobPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2313,9 +2637,33 @@ export type User$emailVerificationTokensArgs<ExtArgs extends runtime.Types.Exten
 }
 
 /**
- * User.interviews
+ * User.candidateInterviews
  */
-export type User$interviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type User$candidateInterviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Interview
+   */
+  select?: Prisma.InterviewSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Interview
+   */
+  omit?: Prisma.InterviewOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.InterviewInclude<ExtArgs> | null
+  where?: Prisma.InterviewWhereInput
+  orderBy?: Prisma.InterviewOrderByWithRelationInput | Prisma.InterviewOrderByWithRelationInput[]
+  cursor?: Prisma.InterviewWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.InterviewScalarFieldEnum | Prisma.InterviewScalarFieldEnum[]
+}
+
+/**
+ * User.recruiterInterviews
+ */
+export type User$recruiterInterviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Interview
    */
@@ -2406,6 +2754,30 @@ export type User$evaluationsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.EvaluationScalarFieldEnum | Prisma.EvaluationScalarFieldEnum[]
+}
+
+/**
+ * User.jobs
+ */
+export type User$jobsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Job
+   */
+  select?: Prisma.JobSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Job
+   */
+  omit?: Prisma.JobOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.JobInclude<ExtArgs> | null
+  where?: Prisma.JobWhereInput
+  orderBy?: Prisma.JobOrderByWithRelationInput | Prisma.JobOrderByWithRelationInput[]
+  cursor?: Prisma.JobWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.JobScalarFieldEnum | Prisma.JobScalarFieldEnum[]
 }
 
 /**

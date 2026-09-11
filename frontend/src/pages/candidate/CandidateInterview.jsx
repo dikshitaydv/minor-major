@@ -39,6 +39,7 @@ function CandidateInterview() {
   const [remainingSeconds, setRemainingSeconds] = useState(null)
   const startedAtRef = useRef(null)
   const durationSecondsRef = useRef(null)
+  const autoSubmitStartedRef = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -161,13 +162,19 @@ function CandidateInterview() {
     [sessionId, activeQuestionId, sending],
   )
 
-  const handleEndInterview = useCallback(async () => {
+  const handleEndInterview = useCallback(async (automatic = false) => {
     if (!sessionId || ending) return
 
-    const confirmed = window.confirm(
-      'Are you sure you want to end this interview? This cannot be undone.',
-    )
-    if (!confirmed) return
+    if (!automatic) {
+      const confirmed = window.confirm(
+        'Are you sure you want to end this interview? This cannot be undone.',
+      )
+      if (!confirmed) return
+    }
+
+    if (automatic) {
+      autoSubmitStartedRef.current = true
+    }
 
     setEnding(true)
     setError('')
@@ -177,11 +184,32 @@ function CandidateInterview() {
       setSessionEnded(true)
       navigate(`/candidate/results/${interviewId}`)
     } catch (err) {
+      if (automatic) {
+        autoSubmitStartedRef.current = false
+      }
       setError(err.message || 'Unable to end the interview. Please try again.')
     } finally {
       setEnding(false)
     }
   }, [sessionId, ending, interviewId, navigate])
+
+  useEffect(() => {
+    if (
+      remainingSeconds !== 0 ||
+      sessionEnded ||
+      sending ||
+      autoSubmitStartedRef.current
+    ) {
+      return
+    }
+
+    handleEndInterview(true)
+  }, [
+    remainingSeconds,
+    sessionEnded,
+    sending,
+    handleEndInterview,
+  ])
 
   if (loading) {
     return (
@@ -210,8 +238,8 @@ function CandidateInterview() {
     remainingSeconds === null
       ? null
       : `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(
-          remainingSeconds % 60,
-        ).padStart(2, '0')}`
+        remainingSeconds % 60,
+      ).padStart(2, '0')}`
 
   return (
     <>

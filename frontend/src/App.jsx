@@ -44,19 +44,35 @@ function App() {
           {/* Recruiter */}
           <Route
             path="/recruiter/dashboard"
-            element={<RecruiterDashboard />}
+            element={
+              <ProtectedRoute allowedRoles={['RECRUITER']}>
+                <RecruiterDashboard />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/recruiter/jobs"
-            element={<RecruiterJobs />}
+            element={
+              <ProtectedRoute allowedRoles={['RECRUITER']}>
+                <RecruiterJobs />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/recruiter/candidates"
-            element={<RecruiterCandidates />}
+            element={
+              <ProtectedRoute allowedRoles={['RECRUITER']}>
+                <RecruiterCandidates />
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/recruiter/interviews"
-            element={<RecruiterInterviews />}
+            element={
+              <ProtectedRoute allowedRoles={['RECRUITER']}>
+                <RecruiterInterviews />
+              </ProtectedRoute>
+            }
           />
 
 

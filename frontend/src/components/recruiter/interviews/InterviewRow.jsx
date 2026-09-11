@@ -1,41 +1,54 @@
 function InterviewRow({ interview, onClick }) {
-  const statusClass =
-    interview.status === 'Completed'
-      ? 'bg-[#edf7f1] text-[#3d8a60]'
-      : interview.status === 'In Progress'
-        ? 'bg-[#fff7e8] text-[#a06b19]'
-        : 'bg-[#edf5fc] text-[#3972a7]'
+  const formattedStatus = formatStatus(interview.status)
 
-  const modeClass =
-    interview.mode === 'On-Campus'
-      ? 'text-[#3972a7]'
-      : 'text-slate-500'
+  const statusClass =
+    interview.status === 'COMPLETED'
+      ? 'bg-[#edf7f1] text-[#3d8a60]'
+      : interview.status === 'IN_PROGRESS'
+        ? 'bg-[#fff7e8] text-[#a06b19]'
+        : interview.status === 'CANCELLED'
+          ? 'bg-[#fdf0f0] text-[#b64b4b]'
+          : interview.status === 'EXPIRED'
+            ? 'bg-slate-100 text-slate-500'
+            : 'bg-[#edf5fc] text-[#3972a7]'
+
+  const scheduledDate = new Date(interview.scheduledAt)
+
+  const date = scheduledDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+
+  const time = scheduledDate.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="grid w-full grid-cols-[1.6fr_1.4fr_1.3fr_1fr_0.7fr_0.9fr_40px] items-center px-5 py-4 text-left transition hover:bg-slate-50"
+      className="grid w-full grid-cols-[1.5fr_1.2fr_1.2fr_1fr_0.7fr_0.9fr_40px] items-center border-b border-slate-100 px-5 py-4 text-left transition hover:bg-slate-50"
     >
 
-      {/* =====================================================
-          CANDIDATE
-      ====================================================== */}
+      {/* CANDIDATE */}
 
       <div className="flex min-w-0 items-center gap-3">
 
         <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#eaf3fc] text-[10px] font-semibold text-[#3972a7]">
-          {interview.initials}
+          {interview.candidate?.initials || '--'}
         </div>
 
         <div className="min-w-0">
 
           <p className="truncate text-xs font-semibold text-slate-700">
-            {interview.candidate}
+            {interview.candidate?.name || 'Unknown Candidate'}
           </p>
 
           <p className="mt-1 truncate text-[10px] text-slate-400">
-            {interview.email}
+            {interview.candidate?.email || 'No email available'}
           </p>
 
         </div>
@@ -43,70 +56,61 @@ function InterviewRow({ interview, onClick }) {
       </div>
 
 
-      {/* =====================================================
-          JOB
-      ====================================================== */}
-
-      <div className="min-w-0 pr-4">
-
-        <p className="truncate text-xs text-slate-600">
-          {interview.job}
-        </p>
-
-        <p className="mt-1 text-[9px] text-slate-400">
-          {interview.id}
-        </p>
-
-      </div>
-
-
-      {/* =====================================================
-          COLLEGE
-      ====================================================== */}
+      {/* INTERVIEW */}
 
       <div className="min-w-0 pr-4">
 
         <p className="truncate text-xs font-medium text-slate-600">
-          {interview.college || 'All Colleges'}
+          {interview.title}
         </p>
 
-        <p
-          className={`mt-1 text-[9px] font-medium ${modeClass}`}
-        >
-          {interview.mode || 'General'}
+        <p className="mt-1 truncate text-[9px] text-slate-400">
+          {interview.type}
         </p>
 
       </div>
 
 
-      {/* =====================================================
-          SCHEDULE
-      ====================================================== */}
+      {/* COMPANY / FOCUS */}
+
+      <div className="min-w-0 pr-4">
+
+        <p className="truncate text-xs font-medium text-slate-600">
+          {interview.company || 'No Company'}
+        </p>
+
+        <p className="mt-1 truncate text-[9px] text-slate-400">
+          {interview.focusAreas?.join(', ') || 'General Interview'}
+        </p>
+
+      </div>
+
+
+      {/* SCHEDULE */}
 
       <div>
 
         <p className="text-xs font-medium text-slate-600">
-          {interview.date}
+          {date}
         </p>
 
         <p className="mt-1 text-[9px] text-slate-400">
-          {interview.time}
+          {time}
         </p>
 
         <p className="mt-0.5 text-[9px] text-slate-400">
-          {interview.duration}
+          {interview.duration} mins
         </p>
 
       </div>
 
 
-      {/* =====================================================
-          SCORE
-      ====================================================== */}
+      {/* SCORE */}
 
       <div>
 
-        {interview.score !== null ? (
+        {interview.score !== null &&
+        interview.score !== undefined ? (
           <div>
 
             <span className="text-sm font-bold text-[#17324f]">
@@ -127,24 +131,20 @@ function InterviewRow({ interview, onClick }) {
       </div>
 
 
-      {/* =====================================================
-          STATUS
-      ====================================================== */}
+      {/* STATUS */}
 
       <div>
 
         <span
           className={`inline-block px-2 py-1 text-[9px] font-semibold ${statusClass}`}
         >
-          {interview.status}
+          {formattedStatus}
         </span>
 
       </div>
 
 
-      {/* =====================================================
-          ARROW
-      ====================================================== */}
+      {/* ARROW */}
 
       <div className="flex justify-end text-slate-300">
 
@@ -157,9 +157,18 @@ function InterviewRow({ interview, onClick }) {
 }
 
 
-/* ============================================================
-   ARROW ICON
-============================================================ */
+function formatStatus(status) {
+  return status
+    .toLowerCase()
+    .split('_')
+    .map(
+      (word) =>
+        word.charAt(0).toUpperCase() +
+        word.slice(1),
+    )
+    .join(' ')
+}
+
 
 function ArrowIcon() {
   return (

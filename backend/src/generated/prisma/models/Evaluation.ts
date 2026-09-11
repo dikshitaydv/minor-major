@@ -325,6 +325,7 @@ export type EvaluationWhereInput = {
   feedback?: Prisma.StringFilter<"Evaluation"> | string
   createdAt?: Prisma.DateTimeFilter<"Evaluation"> | Date | string
   interview?: Prisma.XOR<Prisma.InterviewScalarRelationFilter, Prisma.InterviewWhereInput>
+  session?: Prisma.XOR<Prisma.InterviewSessionScalarRelationFilter, Prisma.InterviewSessionWhereInput>
   candidate?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }
 
@@ -346,6 +347,7 @@ export type EvaluationOrderByWithRelationInput = {
   feedback?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   interview?: Prisma.InterviewOrderByWithRelationInput
+  session?: Prisma.InterviewSessionOrderByWithRelationInput
   candidate?: Prisma.UserOrderByWithRelationInput
 }
 
@@ -370,6 +372,7 @@ export type EvaluationWhereUniqueInput = Prisma.AtLeast<{
   feedback?: Prisma.StringFilter<"Evaluation"> | string
   createdAt?: Prisma.DateTimeFilter<"Evaluation"> | Date | string
   interview?: Prisma.XOR<Prisma.InterviewScalarRelationFilter, Prisma.InterviewWhereInput>
+  session?: Prisma.XOR<Prisma.InterviewSessionScalarRelationFilter, Prisma.InterviewSessionWhereInput>
   candidate?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
 }, "id" | "interviewId" | "sessionId">
 
@@ -421,7 +424,6 @@ export type EvaluationScalarWhereWithAggregatesInput = {
 
 export type EvaluationCreateInput = {
   id?: string
-  sessionId: string
   overallScore: number
   algorithmCorrectness: number
   logicalReasoning: number
@@ -435,6 +437,7 @@ export type EvaluationCreateInput = {
   feedback: string
   createdAt?: Date | string
   interview: Prisma.InterviewCreateNestedOneWithoutEvaluationInput
+  session: Prisma.InterviewSessionCreateNestedOneWithoutEvaluationInput
   candidate: Prisma.UserCreateNestedOneWithoutEvaluationsInput
 }
 
@@ -459,7 +462,6 @@ export type EvaluationUncheckedCreateInput = {
 
 export type EvaluationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.IntFieldUpdateOperationsInput | number
   algorithmCorrectness?: Prisma.IntFieldUpdateOperationsInput | number
   logicalReasoning?: Prisma.IntFieldUpdateOperationsInput | number
@@ -473,6 +475,7 @@ export type EvaluationUpdateInput = {
   feedback?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interview?: Prisma.InterviewUpdateOneRequiredWithoutEvaluationNestedInput
+  session?: Prisma.InterviewSessionUpdateOneRequiredWithoutEvaluationNestedInput
   candidate?: Prisma.UserUpdateOneRequiredWithoutEvaluationsNestedInput
 }
 
@@ -516,7 +519,6 @@ export type EvaluationCreateManyInput = {
 
 export type EvaluationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.IntFieldUpdateOperationsInput | number
   algorithmCorrectness?: Prisma.IntFieldUpdateOperationsInput | number
   logicalReasoning?: Prisma.IntFieldUpdateOperationsInput | number
@@ -714,6 +716,38 @@ export type EvaluationUncheckedUpdateOneWithoutInterviewNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.EvaluationUpdateToOneWithWhereWithoutInterviewInput, Prisma.EvaluationUpdateWithoutInterviewInput>, Prisma.EvaluationUncheckedUpdateWithoutInterviewInput>
 }
 
+export type EvaluationCreateNestedOneWithoutSessionInput = {
+  create?: Prisma.XOR<Prisma.EvaluationCreateWithoutSessionInput, Prisma.EvaluationUncheckedCreateWithoutSessionInput>
+  connectOrCreate?: Prisma.EvaluationCreateOrConnectWithoutSessionInput
+  connect?: Prisma.EvaluationWhereUniqueInput
+}
+
+export type EvaluationUncheckedCreateNestedOneWithoutSessionInput = {
+  create?: Prisma.XOR<Prisma.EvaluationCreateWithoutSessionInput, Prisma.EvaluationUncheckedCreateWithoutSessionInput>
+  connectOrCreate?: Prisma.EvaluationCreateOrConnectWithoutSessionInput
+  connect?: Prisma.EvaluationWhereUniqueInput
+}
+
+export type EvaluationUpdateOneWithoutSessionNestedInput = {
+  create?: Prisma.XOR<Prisma.EvaluationCreateWithoutSessionInput, Prisma.EvaluationUncheckedCreateWithoutSessionInput>
+  connectOrCreate?: Prisma.EvaluationCreateOrConnectWithoutSessionInput
+  upsert?: Prisma.EvaluationUpsertWithoutSessionInput
+  disconnect?: Prisma.EvaluationWhereInput | boolean
+  delete?: Prisma.EvaluationWhereInput | boolean
+  connect?: Prisma.EvaluationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EvaluationUpdateToOneWithWhereWithoutSessionInput, Prisma.EvaluationUpdateWithoutSessionInput>, Prisma.EvaluationUncheckedUpdateWithoutSessionInput>
+}
+
+export type EvaluationUncheckedUpdateOneWithoutSessionNestedInput = {
+  create?: Prisma.XOR<Prisma.EvaluationCreateWithoutSessionInput, Prisma.EvaluationUncheckedCreateWithoutSessionInput>
+  connectOrCreate?: Prisma.EvaluationCreateOrConnectWithoutSessionInput
+  upsert?: Prisma.EvaluationUpsertWithoutSessionInput
+  disconnect?: Prisma.EvaluationWhereInput | boolean
+  delete?: Prisma.EvaluationWhereInput | boolean
+  connect?: Prisma.EvaluationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.EvaluationUpdateToOneWithWhereWithoutSessionInput, Prisma.EvaluationUpdateWithoutSessionInput>, Prisma.EvaluationUncheckedUpdateWithoutSessionInput>
+}
+
 export type EvaluationCreatestrengthsInput = {
   set: string[]
 }
@@ -734,7 +768,6 @@ export type EvaluationUpdateimprovementsInput = {
 
 export type EvaluationCreateWithoutCandidateInput = {
   id?: string
-  sessionId: string
   overallScore: number
   algorithmCorrectness: number
   logicalReasoning: number
@@ -748,6 +781,7 @@ export type EvaluationCreateWithoutCandidateInput = {
   feedback: string
   createdAt?: Date | string
   interview: Prisma.InterviewCreateNestedOneWithoutEvaluationInput
+  session: Prisma.InterviewSessionCreateNestedOneWithoutEvaluationInput
 }
 
 export type EvaluationUncheckedCreateWithoutCandidateInput = {
@@ -818,7 +852,6 @@ export type EvaluationScalarWhereInput = {
 
 export type EvaluationCreateWithoutInterviewInput = {
   id?: string
-  sessionId: string
   overallScore: number
   algorithmCorrectness: number
   logicalReasoning: number
@@ -831,6 +864,7 @@ export type EvaluationCreateWithoutInterviewInput = {
   improvements?: Prisma.EvaluationCreateimprovementsInput | string[]
   feedback: string
   createdAt?: Date | string
+  session: Prisma.InterviewSessionCreateNestedOneWithoutEvaluationInput
   candidate: Prisma.UserCreateNestedOneWithoutEvaluationsInput
 }
 
@@ -870,7 +904,6 @@ export type EvaluationUpdateToOneWithWhereWithoutInterviewInput = {
 
 export type EvaluationUpdateWithoutInterviewInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.IntFieldUpdateOperationsInput | number
   algorithmCorrectness?: Prisma.IntFieldUpdateOperationsInput | number
   logicalReasoning?: Prisma.IntFieldUpdateOperationsInput | number
@@ -883,12 +916,101 @@ export type EvaluationUpdateWithoutInterviewInput = {
   improvements?: Prisma.EvaluationUpdateimprovementsInput | string[]
   feedback?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  session?: Prisma.InterviewSessionUpdateOneRequiredWithoutEvaluationNestedInput
   candidate?: Prisma.UserUpdateOneRequiredWithoutEvaluationsNestedInput
 }
 
 export type EvaluationUncheckedUpdateWithoutInterviewInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
+  candidateId?: Prisma.StringFieldUpdateOperationsInput | string
+  overallScore?: Prisma.IntFieldUpdateOperationsInput | number
+  algorithmCorrectness?: Prisma.IntFieldUpdateOperationsInput | number
+  logicalReasoning?: Prisma.IntFieldUpdateOperationsInput | number
+  conceptCoverage?: Prisma.IntFieldUpdateOperationsInput | number
+  completeness?: Prisma.IntFieldUpdateOperationsInput | number
+  dataStructure?: Prisma.IntFieldUpdateOperationsInput | number
+  complexity?: Prisma.IntFieldUpdateOperationsInput | number
+  edgeCases?: Prisma.IntFieldUpdateOperationsInput | number
+  strengths?: Prisma.EvaluationUpdatestrengthsInput | string[]
+  improvements?: Prisma.EvaluationUpdateimprovementsInput | string[]
+  feedback?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type EvaluationCreateWithoutSessionInput = {
+  id?: string
+  overallScore: number
+  algorithmCorrectness: number
+  logicalReasoning: number
+  conceptCoverage: number
+  completeness: number
+  dataStructure: number
+  complexity: number
+  edgeCases: number
+  strengths?: Prisma.EvaluationCreatestrengthsInput | string[]
+  improvements?: Prisma.EvaluationCreateimprovementsInput | string[]
+  feedback: string
+  createdAt?: Date | string
+  interview: Prisma.InterviewCreateNestedOneWithoutEvaluationInput
+  candidate: Prisma.UserCreateNestedOneWithoutEvaluationsInput
+}
+
+export type EvaluationUncheckedCreateWithoutSessionInput = {
+  id?: string
+  interviewId: string
+  candidateId: string
+  overallScore: number
+  algorithmCorrectness: number
+  logicalReasoning: number
+  conceptCoverage: number
+  completeness: number
+  dataStructure: number
+  complexity: number
+  edgeCases: number
+  strengths?: Prisma.EvaluationCreatestrengthsInput | string[]
+  improvements?: Prisma.EvaluationCreateimprovementsInput | string[]
+  feedback: string
+  createdAt?: Date | string
+}
+
+export type EvaluationCreateOrConnectWithoutSessionInput = {
+  where: Prisma.EvaluationWhereUniqueInput
+  create: Prisma.XOR<Prisma.EvaluationCreateWithoutSessionInput, Prisma.EvaluationUncheckedCreateWithoutSessionInput>
+}
+
+export type EvaluationUpsertWithoutSessionInput = {
+  update: Prisma.XOR<Prisma.EvaluationUpdateWithoutSessionInput, Prisma.EvaluationUncheckedUpdateWithoutSessionInput>
+  create: Prisma.XOR<Prisma.EvaluationCreateWithoutSessionInput, Prisma.EvaluationUncheckedCreateWithoutSessionInput>
+  where?: Prisma.EvaluationWhereInput
+}
+
+export type EvaluationUpdateToOneWithWhereWithoutSessionInput = {
+  where?: Prisma.EvaluationWhereInput
+  data: Prisma.XOR<Prisma.EvaluationUpdateWithoutSessionInput, Prisma.EvaluationUncheckedUpdateWithoutSessionInput>
+}
+
+export type EvaluationUpdateWithoutSessionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  overallScore?: Prisma.IntFieldUpdateOperationsInput | number
+  algorithmCorrectness?: Prisma.IntFieldUpdateOperationsInput | number
+  logicalReasoning?: Prisma.IntFieldUpdateOperationsInput | number
+  conceptCoverage?: Prisma.IntFieldUpdateOperationsInput | number
+  completeness?: Prisma.IntFieldUpdateOperationsInput | number
+  dataStructure?: Prisma.IntFieldUpdateOperationsInput | number
+  complexity?: Prisma.IntFieldUpdateOperationsInput | number
+  edgeCases?: Prisma.IntFieldUpdateOperationsInput | number
+  strengths?: Prisma.EvaluationUpdatestrengthsInput | string[]
+  improvements?: Prisma.EvaluationUpdateimprovementsInput | string[]
+  feedback?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  interview?: Prisma.InterviewUpdateOneRequiredWithoutEvaluationNestedInput
+  candidate?: Prisma.UserUpdateOneRequiredWithoutEvaluationsNestedInput
+}
+
+export type EvaluationUncheckedUpdateWithoutSessionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  interviewId?: Prisma.StringFieldUpdateOperationsInput | string
   candidateId?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.IntFieldUpdateOperationsInput | number
   algorithmCorrectness?: Prisma.IntFieldUpdateOperationsInput | number
@@ -924,7 +1046,6 @@ export type EvaluationCreateManyCandidateInput = {
 
 export type EvaluationUpdateWithoutCandidateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   overallScore?: Prisma.IntFieldUpdateOperationsInput | number
   algorithmCorrectness?: Prisma.IntFieldUpdateOperationsInput | number
   logicalReasoning?: Prisma.IntFieldUpdateOperationsInput | number
@@ -938,6 +1059,7 @@ export type EvaluationUpdateWithoutCandidateInput = {
   feedback?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   interview?: Prisma.InterviewUpdateOneRequiredWithoutEvaluationNestedInput
+  session?: Prisma.InterviewSessionUpdateOneRequiredWithoutEvaluationNestedInput
 }
 
 export type EvaluationUncheckedUpdateWithoutCandidateInput = {
@@ -996,6 +1118,7 @@ export type EvaluationSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   feedback?: boolean
   createdAt?: boolean
   interview?: boolean | Prisma.InterviewDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.InterviewSessionDefaultArgs<ExtArgs>
   candidate?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evaluation"]>
 
@@ -1017,6 +1140,7 @@ export type EvaluationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   feedback?: boolean
   createdAt?: boolean
   interview?: boolean | Prisma.InterviewDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.InterviewSessionDefaultArgs<ExtArgs>
   candidate?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evaluation"]>
 
@@ -1038,6 +1162,7 @@ export type EvaluationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   feedback?: boolean
   createdAt?: boolean
   interview?: boolean | Prisma.InterviewDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.InterviewSessionDefaultArgs<ExtArgs>
   candidate?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["evaluation"]>
 
@@ -1063,14 +1188,17 @@ export type EvaluationSelectScalar = {
 export type EvaluationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "interviewId" | "sessionId" | "candidateId" | "overallScore" | "algorithmCorrectness" | "logicalReasoning" | "conceptCoverage" | "completeness" | "dataStructure" | "complexity" | "edgeCases" | "strengths" | "improvements" | "feedback" | "createdAt", ExtArgs["result"]["evaluation"]>
 export type EvaluationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   interview?: boolean | Prisma.InterviewDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.InterviewSessionDefaultArgs<ExtArgs>
   candidate?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type EvaluationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   interview?: boolean | Prisma.InterviewDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.InterviewSessionDefaultArgs<ExtArgs>
   candidate?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 export type EvaluationIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   interview?: boolean | Prisma.InterviewDefaultArgs<ExtArgs>
+  session?: boolean | Prisma.InterviewSessionDefaultArgs<ExtArgs>
   candidate?: boolean | Prisma.UserDefaultArgs<ExtArgs>
 }
 
@@ -1078,6 +1206,7 @@ export type $EvaluationPayload<ExtArgs extends runtime.Types.Extensions.Internal
   name: "Evaluation"
   objects: {
     interview: Prisma.$InterviewPayload<ExtArgs>
+    session: Prisma.$InterviewSessionPayload<ExtArgs>
     candidate: Prisma.$UserPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1492,6 +1621,7 @@ readonly fields: EvaluationFieldRefs;
 export interface Prisma__EvaluationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   interview<T extends Prisma.InterviewDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InterviewDefaultArgs<ExtArgs>>): Prisma.Prisma__InterviewClient<runtime.Types.Result.GetResult<Prisma.$InterviewPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  session<T extends Prisma.InterviewSessionDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.InterviewSessionDefaultArgs<ExtArgs>>): Prisma.Prisma__InterviewSessionClient<runtime.Types.Result.GetResult<Prisma.$InterviewSessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   candidate<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.

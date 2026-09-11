@@ -61,3 +61,12 @@ export const MessageSender = {
 } as const
 
 export type MessageSender = (typeof MessageSender)[keyof typeof MessageSender]
+
+
+export const JobStatus = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  CLOSED: 'CLOSED'
+} as const
+
+export type JobStatus = (typeof JobStatus)[keyof typeof JobStatus]

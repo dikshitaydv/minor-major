@@ -1,6 +1,10 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 function RecruiterSidebar() {
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
   const workspaceNavigation = [
     {
       name: 'Dashboard',
@@ -37,10 +41,40 @@ function RecruiterSidebar() {
     },
   ]
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+
+      navigate('/login', {
+        replace: true,
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+
+      // Even if backend logout fails,
+      // AuthContext should ideally clear the frontend state.
+      navigate('/login', {
+        replace: true,
+      })
+    }
+  }
+
+  const firstName = user?.firstName || 'Recruiter'
+  const lastName = user?.lastName || ''
+
+  const initials = `${firstName?.[0] || ''}${
+    lastName?.[0] || ''
+  }`.toUpperCase()
+
+  const fullName =
+    `${firstName} ${lastName}`.trim()
+
   return (
     <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
 
-      {/* Logo */}
+      {/* =====================================================
+          LOGO
+      ====================================================== */}
 
       <div className="flex h-20 shrink-0 items-center px-7">
 
@@ -69,11 +103,13 @@ function RecruiterSidebar() {
       </div>
 
 
-      {/* Navigation */}
+      {/* =====================================================
+          NAVIGATION
+      ====================================================== */}
 
       <nav className="min-h-0 flex-1 overflow-y-auto px-4 py-5">
 
-        {/* Workspace */}
+        {/* WORKSPACE */}
 
         <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
           Workspace
@@ -114,7 +150,7 @@ function RecruiterSidebar() {
         </div>
 
 
-        {/* Management */}
+        {/* MANAGEMENT */}
 
         <p className="mb-3 mt-8 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
           Management
@@ -157,30 +193,48 @@ function RecruiterSidebar() {
       </nav>
 
 
-      {/* Recruiter Profile */}
+      {/* =====================================================
+          USER + LOGOUT
+      ====================================================== */}
 
       <div className="shrink-0 border-t border-slate-100 p-4">
 
-        <button
-          type="button"
-          className="flex w-full items-center gap-3 px-3 py-3 text-left transition hover:bg-slate-50"
-        >
+        {/* PROFILE */}
+
+        <div className="flex items-center gap-3 px-3 py-3">
 
           <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#dcecff] text-sm font-semibold text-[#285b8f]">
-            R
+
+            {initials || 'R'}
+
           </div>
 
           <div className="min-w-0">
 
             <p className="truncate text-sm font-semibold text-slate-700">
-              Recruiter
+              {fullName}
             </p>
 
             <p className="truncate text-xs text-slate-400">
-              Recruitment team
+              {user?.email || 'Recruitment team'}
             </p>
 
           </div>
+
+        </div>
+
+
+        {/* LOGOUT */}
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="mt-1 flex w-full items-center gap-3 border-t border-slate-100 px-3 py-3 text-sm font-medium text-slate-500 transition hover:bg-red-50 hover:text-red-600"
+        >
+
+          <LogoutIcon />
+
+          Logout
 
         </button>
 
@@ -294,6 +348,27 @@ function SettingsIcon() {
     >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.5V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H4v-2.5h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V4h2.5v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v2.5h-.2a1.7 1.7 0 0 0-1.6 1Z" />
+    </svg>
+  )
+}
+
+
+function LogoutIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M10 17l5-5-5-5" />
+
+      <path d="M15 12H3" />
+
+      <path d="M3 5V3h10a2 2 0 0 1 2 2v2" />
+
+      <path d="M12 17v2a2 2 0 0 1-2 2H3v-2" />
     </svg>
   )
 }

@@ -43,6 +43,16 @@ export type EmailVerificationToken = Prisma.EmailVerificationTokenModel
  */
 export type Question = Prisma.QuestionModel
 /**
+ * Model Job
+ * 
+ */
+export type Job = Prisma.JobModel
+/**
+ * Model JobQuestion
+ * 
+ */
+export type JobQuestion = Prisma.JobQuestionModel
+/**
  * Model Interview
  * 
  */

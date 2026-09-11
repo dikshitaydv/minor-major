@@ -56,6 +56,8 @@ export const ModelName = {
   PasswordResetToken: 'PasswordResetToken',
   EmailVerificationToken: 'EmailVerificationToken',
   Question: 'Question',
+  Job: 'Job',
+  JobQuestion: 'JobQuestion',
   Interview: 'Interview',
   InterviewQuestion: 'InterviewQuestion',
   InterviewSession: 'InterviewSession',
@@ -147,6 +149,33 @@ export const QuestionScalarFieldEnum = {
 export type QuestionScalarFieldEnum = (typeof QuestionScalarFieldEnum)[keyof typeof QuestionScalarFieldEnum]
 
 
+export const JobScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  department: 'department',
+  location: 'location',
+  description: 'description',
+  requirements: 'requirements',
+  status: 'status',
+  recruiterId: 'recruiterId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type JobScalarFieldEnum = (typeof JobScalarFieldEnum)[keyof typeof JobScalarFieldEnum]
+
+
+export const JobQuestionScalarFieldEnum = {
+  id: 'id',
+  jobId: 'jobId',
+  questionId: 'questionId',
+  order: 'order',
+  createdAt: 'createdAt'
+} as const
+
+export type JobQuestionScalarFieldEnum = (typeof JobQuestionScalarFieldEnum)[keyof typeof JobQuestionScalarFieldEnum]
+
+
 export const InterviewScalarFieldEnum = {
   id: 'id',
   title: 'title',
@@ -157,6 +186,7 @@ export const InterviewScalarFieldEnum = {
   duration: 'duration',
   status: 'status',
   candidateId: 'candidateId',
+  recruiterId: 'recruiterId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

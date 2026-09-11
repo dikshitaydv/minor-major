@@ -1,26 +1,43 @@
 import { apiClient, apiRequest, setAccessToken } from '../lib/apiClient.js'
 
-export const register = async ({ firstName, lastName, email, password }) => {
+const getUser = (data) => data?.user ?? data ?? null
+
+export const register = async ({
+  firstName,
+  lastName,
+  email,
+  password,
+}) => {
   const result = await apiRequest('/auth/register', {
     method: 'POST',
-    body: { firstName, lastName, email, password },
+    body: {
+      firstName,
+      lastName,
+      email,
+      password,
+    },
     skipAuth: true,
   })
 
   return result.data
 }
 
+
 export const login = async ({ email, password }) => {
   const result = await apiRequest('/auth/login', {
     method: 'POST',
-    body: { email, password },
+    body: {
+      email,
+      password,
+    },
     skipAuth: true,
   })
 
   setAccessToken(result.accessToken)
 
-  return result.data
+  return getUser(result.data)
 }
+
 
 export const refresh = async () => {
   try {
@@ -32,18 +49,25 @@ export const refresh = async () => {
 
     setAccessToken(result.data.accessToken)
 
-    return result.data.user
+    return getUser(result.data)
   } catch {
     return null
   }
 }
 
+
 export const me = async () => {
   const result = await apiClient.get('/auth/me')
-  return result.data
+
+  return getUser(result.data)
 }
 
+
 export const logout = async () => {
-  await apiRequest('/auth/logout', { method: 'POST', skipRefresh: true })
+  await apiRequest('/auth/logout', {
+    method: 'POST',
+    skipRefresh: true,
+  })
+
   setAccessToken(null)
 }
