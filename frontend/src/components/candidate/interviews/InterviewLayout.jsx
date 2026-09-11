@@ -5,19 +5,37 @@ import QuestionPanel from './QuestionPanel'
 import ChatPanel from './ChatPanel'
 
 function InterviewLayout({
+  title,
   questions,
-  currentQuestion,
-  selectedQuestion,
+  activeQuestionId,
+  viewedQuestionId,
   onQuestionSelect,
+  messages,
+  onSendMessage,
+  sending,
+  sessionEnded,
+  timeLabel,
+  onEndInterview,
+  ending,
 }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
+  const activeIndex = questions.findIndex((q) => q.id === activeQuestionId)
+  const selectedQuestion =
+    questions.find((q) => q.id === viewedQuestionId) ?? questions[0] ?? null
+
+  const selectedIndex = questions.findIndex((q) => q.id === selectedQuestion?.id)
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f4f8fc]">
 
       <InterviewTopBar
-        currentQuestion={currentQuestion}
+        title={title}
+        currentQuestionNumber={activeIndex >= 0 ? activeIndex + 1 : 1}
         totalQuestions={questions.length}
+        timeLabel={timeLabel}
+        onEndInterview={onEndInterview}
+        ending={ending}
       />
 
       <div
@@ -32,7 +50,7 @@ function InterviewLayout({
 
         <QuestionSidebar
           questions={questions}
-          currentQuestion={currentQuestion}
+          currentQuestion={selectedQuestion?.id}
           onQuestionSelect={onQuestionSelect}
           isCollapsed={isSidebarCollapsed}
           onToggle={() =>
@@ -45,7 +63,7 @@ function InterviewLayout({
 
         <QuestionPanel
           question={selectedQuestion}
-          questionNumber={currentQuestion}
+          questionNumber={selectedIndex >= 0 ? selectedIndex + 1 : 1}
           totalQuestions={questions.length}
         />
 
@@ -53,7 +71,10 @@ function InterviewLayout({
         {/* Chat Panel */}
 
         <ChatPanel
-          question={selectedQuestion}
+          messages={messages}
+          onSendMessage={onSendMessage}
+          sending={sending}
+          sessionEnded={sessionEnded}
         />
 
       </div>

@@ -1,4 +1,11 @@
-function InterviewTopBar() {
+function InterviewTopBar({
+  title = 'Interview',
+  currentQuestionNumber,
+  totalQuestions,
+  timeLabel,
+  onEndInterview,
+  ending,
+}) {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5">
 
@@ -14,49 +21,55 @@ function InterviewTopBar() {
           </p>
 
           <p className="text-[10px] text-slate-400">
-            Backend Developer Interview
+            {title}
           </p>
         </div>
 
       </div>
 
 
-      <div className="hidden items-center gap-3 md:flex">
+      {Boolean(totalQuestions) && (
+        <div className="hidden items-center gap-3 md:flex">
 
-        <span className="text-xs text-slate-400">
-          Question
-        </span>
+          <span className="text-xs text-slate-400">
+            Question
+          </span>
 
-        <span className="text-sm font-semibold text-[#17324f]">
-          2
-        </span>
+          <span className="text-sm font-semibold text-[#17324f]">
+            {currentQuestionNumber}
+          </span>
 
-        <span className="text-xs text-slate-400">
-          / 5
-        </span>
+          <span className="text-xs text-slate-400">
+            / {totalQuestions}
+          </span>
 
-      </div>
+        </div>
+      )}
 
 
       <div className="flex items-center gap-5">
 
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#285b8f]">
+        {timeLabel && (
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#285b8f]">
 
-          <ClockIcon />
+            <ClockIcon />
 
-          <span>
-            38:42
-          </span>
+            <span>
+              {timeLabel}
+            </span>
 
-        </div>
+          </div>
+        )}
 
         <div className="h-6 w-px bg-slate-200" />
 
         <button
           type="button"
-          className="border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-500 transition hover:border-red-200 hover:text-red-500"
+          onClick={onEndInterview}
+          disabled={ending}
+          className="border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-500 transition hover:border-red-200 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          End Interview
+          {ending ? 'Ending...' : 'End Interview'}
         </button>
 
       </div>

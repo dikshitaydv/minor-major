@@ -1,83 +1,46 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CandidateLayout from '../../components/layout/CandidateLayout'
+import * as candidateApi from '../../api/candidate.api.js'
 
 function CandidateInterviews() {
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState('All')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [interviews, setInterviews] = useState([])
 
-  const interviews = [
-    {
-      id: 'INT-001',
-      title: 'Backend Developer',
-      type: 'Technical Interview',
-      company: 'Tech Solutions',
-      date: 'Tomorrow',
-      time: '10:30 AM',
-      duration: '45 min',
-      status: 'Upcoming',
-      topics: ['Data Structures', 'Algorithms', 'Problem Solving'],
-    },
-    {
-      id: 'INT-002',
-      title: 'Software Engineer',
-      type: 'Coding Assessment',
-      company: 'Innovate Labs',
-      date: 'Sep 04, 2026',
-      time: '02:00 PM',
-      duration: '60 min',
-      status: 'Upcoming',
-      topics: ['Arrays', 'Graphs', 'Dynamic Programming'],
-    },
-    {
-      id: 'INT-003',
-      title: 'Frontend Developer',
-      type: 'Technical Interview',
-      company: 'Digital Systems',
-      date: 'Aug 24, 2026',
-      time: '11:00 AM',
-      duration: '45 min',
-      status: 'Completed',
-      score: 86,
-      topics: ['React', 'JavaScript', 'Web Development'],
-    },
-    {
-      id: 'INT-004',
-      title: 'Software Engineer',
-      type: 'Coding Interview',
-      company: 'CloudWorks',
-      date: 'Aug 20, 2026',
-      time: '03:30 PM',
-      duration: '45 min',
-      status: 'Completed',
-      score: 78,
-      topics: ['Algorithms', 'Complexity', 'Data Structures'],
-    },
-    {
-      id: 'INT-005',
-      title: 'Backend Developer',
-      type: 'Technical Interview',
-      company: 'FinTech Labs',
-      date: 'Aug 16, 2026',
-      time: '10:00 AM',
-      duration: '60 min',
-      status: 'Completed',
-      score: 82,
-      topics: ['APIs', 'Databases', 'System Design'],
-    },
-    {
-      id: 'INT-006',
-      title: 'Algorithm Assessment',
-      type: 'Coding Assessment',
-      company: 'Tech Solutions',
-      date: 'Aug 10, 2026',
-      time: '01:00 PM',
-      duration: '45 min',
-      status: 'Expired',
-      topics: ['Algorithms', 'Dynamic Programming'],
-    },
-  ]
+  useEffect(() => {
+    let cancelled = false
+
+    candidateApi
+      .listInterviews()
+      .then((data) => {
+        if (cancelled) return
+
+        setInterviews(
+          data.map((interview) => ({
+            id: interview.id,
+            title: interview.title,
+            type: interview.type,
+            company: interview.company,
+            date: candidateApi.formatDate(interview.scheduledAt),
+            time: candidateApi.formatTime(interview.scheduledAt),
+            duration: candidateApi.formatDuration(interview.duration),
+            status: candidateApi.toInterviewStatusLabel(interview.status),
+            score: interview.score,
+            topics: interview.topics,
+          })),
+        )
+      })
+      .catch((err) => !cancelled && setError(err.message || 'Unable to load interviews.'))
+      .finally(() => !cancelled && setLoading(false))
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const tabs = ['All', 'Upcoming', 'Completed', 'Expired']
 
@@ -129,133 +92,148 @@ function CandidateInterviews() {
 
       </div>
 
-
-      {/* =====================================================
-          SUMMARY
-      ====================================================== */}
-
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-
-        <SummaryCard
-          label="Total Interviews"
-          value={interviews.length}
-          description="All assigned interviews"
-        />
-
-        <SummaryCard
-          label="Upcoming"
-          value={upcomingCount}
-          description="Interviews waiting for you"
-        />
-
-        <SummaryCard
-          label="Completed"
-          value={completedCount}
-          description="Interviews you've finished"
-        />
-
-      </div>
-
-
-      {/* =====================================================
-          FILTERS
-      ====================================================== */}
-
-      <div className="mb-4 flex items-center justify-between border-b border-slate-200">
-
-        <div className="flex gap-6">
-
-          {tabs.map((tab) => (
-
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`relative pb-3 text-sm font-medium transition ${
-                activeTab === tab
-                  ? 'text-[#285b8f]'
-                  : 'text-slate-400 hover:text-slate-700'
-              }`}
-            >
-
-              {tab}
-
-              {tab !== 'All' && (
-                <span
-                  className={`ml-2 text-xs ${
-                    activeTab === tab
-                      ? 'text-[#4b9bea]'
-                      : 'text-slate-400'
-                  }`}
-                >
-                  {
-                    interviews.filter(
-                      (interview) => interview.status === tab
-                    ).length
-                  }
-                </span>
-              )}
-
-              {activeTab === tab && (
-                <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#285b8f]" />
-              )}
-
-            </button>
-
-          ))}
-
+      {error && (
+        <div className="mb-6 border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+          {error}
         </div>
+      )}
 
-      </div>
+      {loading ? (
+        <div className="flex h-48 items-center justify-center">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#285b8f]/30 border-t-[#285b8f]" />
+        </div>
+      ) : (
+        <>
 
+          {/* =====================================================
+              SUMMARY
+          ====================================================== */}
 
-      {/* =====================================================
-          INTERVIEW LIST
-      ====================================================== */}
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
 
-      <div className="space-y-3">
+            <SummaryCard
+              label="Total Interviews"
+              value={interviews.length}
+              description="All assigned interviews"
+            />
 
-        {filteredInterviews.map((interview) => (
+            <SummaryCard
+              label="Upcoming"
+              value={upcomingCount}
+              description="Interviews waiting for you"
+            />
 
-          <InterviewListItem
-            key={interview.id}
-            interview={interview}
-            onOpen={() => {
-              if (interview.status === 'Upcoming') {
-                navigate(`/candidate/interview/${interview.id}`)
-              }
+            <SummaryCard
+              label="Completed"
+              value={completedCount}
+              description="Interviews you've finished"
+            />
 
-              if (interview.status === 'Completed') {
-                navigate(`/candidate/results/${interview.id}`)
-              }
-            }}
-          />
-
-        ))}
-
-      </div>
-
-
-      {/* =====================================================
-          EMPTY STATE
-      ====================================================== */}
-
-      {filteredInterviews.length === 0 && (
-        <div className="border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-
-          <div className="mx-auto flex h-12 w-12 items-center justify-center bg-[#eaf3fc] text-[#3972a7]">
-            <CalendarIcon />
           </div>
 
-          <h3 className="mt-4 text-sm font-semibold text-slate-700">
-            No interviews found
-          </h3>
 
-          <p className="mt-1 text-xs text-slate-400">
-            There are no interviews in this category.
-          </p>
+          {/* =====================================================
+              FILTERS
+          ====================================================== */}
 
-        </div>
+          <div className="mb-4 flex items-center justify-between border-b border-slate-200">
+
+            <div className="flex gap-6">
+
+              {tabs.map((tab) => (
+
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`relative pb-3 text-sm font-medium transition ${
+                    activeTab === tab
+                      ? 'text-[#285b8f]'
+                      : 'text-slate-400 hover:text-slate-700'
+                  }`}
+                >
+
+                  {tab}
+
+                  {tab !== 'All' && (
+                    <span
+                      className={`ml-2 text-xs ${
+                        activeTab === tab
+                          ? 'text-[#4b9bea]'
+                          : 'text-slate-400'
+                      }`}
+                    >
+                      {
+                        interviews.filter(
+                          (interview) => interview.status === tab
+                        ).length
+                      }
+                    </span>
+                  )}
+
+                  {activeTab === tab && (
+                    <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#285b8f]" />
+                  )}
+
+                </button>
+
+              ))}
+
+            </div>
+
+          </div>
+
+
+          {/* =====================================================
+              INTERVIEW LIST
+          ====================================================== */}
+
+          <div className="space-y-3">
+
+            {filteredInterviews.map((interview) => (
+
+              <InterviewListItem
+                key={interview.id}
+                interview={interview}
+                onOpen={() => {
+                  if (interview.status === 'Upcoming') {
+                    navigate(`/candidate/interview/${interview.id}`)
+                  }
+
+                  if (interview.status === 'Completed') {
+                    navigate(`/candidate/results/${interview.id}`)
+                  }
+                }}
+              />
+
+            ))}
+
+          </div>
+
+
+          {/* =====================================================
+              EMPTY STATE
+          ====================================================== */}
+
+          {filteredInterviews.length === 0 && (
+            <div className="border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+
+              <div className="mx-auto flex h-12 w-12 items-center justify-center bg-[#eaf3fc] text-[#3972a7]">
+                <CalendarIcon />
+              </div>
+
+              <h3 className="mt-4 text-sm font-semibold text-slate-700">
+                No interviews found
+              </h3>
+
+              <p className="mt-1 text-xs text-slate-400">
+                There are no interviews in this category.
+              </p>
+
+            </div>
+          )}
+
+        </>
       )}
 
     </CandidateLayout>
@@ -332,7 +310,7 @@ function InterviewListItem({ interview, onOpen }) {
             </div>
 
             <p className="mt-1 text-xs text-slate-400">
-              {interview.type} · {interview.company}
+              {interview.type}{interview.company ? ` · ${interview.company}` : ''}
             </p>
 
 

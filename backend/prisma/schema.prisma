@@ -21,6 +21,36 @@ enum Role {
   CANDIDATE
 }
 
+enum InterviewStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum QuestionStatus {
+  PENDING
+  CURRENT
+  COMPLETED
+}
+
+enum MessageSender {
+  AI
+  CANDIDATE
+}
+
 
 // ─────────────────────────────────────────────
 // USER
@@ -46,6 +76,11 @@ model User {
   refreshTokens          RefreshToken[]
   passwordResetTokens    PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+
+  interviews             Interview[]
+  interviewSessions      InterviewSession[]
+  questionAttempts       QuestionAttempt[]
+  evaluations            Evaluation[]
 
   @@index([role])
   @@index([isActive])
@@ -115,4 +150,206 @@ model EmailVerificationToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+
+// ─────────────────────────────────────────────
+// QUESTION (question bank)
+// ─────────────────────────────────────────────
+
+model Question {
+  id          String     @id @default(cuid())
+
+  title       String
+  difficulty  Difficulty @default(MEDIUM)
+  topics      String[]
+
+  description String
+  examples    Json       @default("[]")
+  constraints String[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  interviewQuestions InterviewQuestion[]
+  messages           Message[]
+  attempts           QuestionAttempt[]
+
+  @@index([difficulty])
+}
+
+
+// ─────────────────────────────────────────────
+// INTERVIEW
+// ─────────────────────────────────────────────
+
+model Interview {
+  id           String          @id @default(cuid())
+
+  title        String
+  type         String          @default("Technical Interview")
+  company      String?
+
+  focusAreas   String[]
+
+  scheduledAt  DateTime
+  duration     Int             @default(45) // minutes
+
+  status       InterviewStatus @default(SCHEDULED)
+
+  candidateId  String
+  candidate    User            @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  questions    InterviewQuestion[]
+  session      InterviewSession?
+  evaluation   Evaluation?
+
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([candidateId])
+  @@index([status])
+}
+
+
+// ─────────────────────────────────────────────
+// INTERVIEW QUESTION (ordered question set per interview)
+// ─────────────────────────────────────────────
+
+model InterviewQuestion {
+  id          String         @id @default(cuid())
+
+  interviewId String
+  interview   Interview      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  questionId  String
+  question    Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  order       Int            @default(0)
+  status      QuestionStatus @default(PENDING)
+
+  createdAt   DateTime       @default(now())
+
+  @@unique([interviewId, questionId])
+  @@index([interviewId])
+}
+
+
+// ─────────────────────────────────────────────
+// INTERVIEW SESSION (an in-progress / completed attempt)
+// ─────────────────────────────────────────────
+
+model InterviewSession {
+  id              String        @id @default(cuid())
+
+  interviewId     String        @unique
+  interview       Interview     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  candidateId     String
+  candidate       User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  status          SessionStatus @default(IN_PROGRESS)
+
+  currentQuestionId String?
+
+  startedAt       DateTime      @default(now())
+  endedAt         DateTime?
+  durationSeconds Int?
+
+  messages        Message[]
+  attempts        QuestionAttempt[]
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([candidateId])
+  @@index([status])
+}
+
+
+// ─────────────────────────────────────────────
+// MESSAGE (chat transcript)
+// ─────────────────────────────────────────────
+
+model Message {
+  id         String           @id @default(cuid())
+
+  sessionId  String
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionId String?
+  question   Question?        @relation(fields: [questionId], references: [id])
+
+  sender     MessageSender
+  message    String
+
+  createdAt  DateTime         @default(now())
+
+  @@index([sessionId])
+  @@index([sessionId, createdAt])
+}
+
+
+// ─────────────────────────────────────────────
+// QUESTION ATTEMPT (candidate's attempt at a single question)
+// ─────────────────────────────────────────────
+
+model QuestionAttempt {
+  id          String           @id @default(cuid())
+
+  sessionId   String
+  session     InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionId  String
+  question    Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  candidateId String
+  candidate   User             @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  status      QuestionStatus   @default(CURRENT)
+
+  startedAt   DateTime         @default(now())
+  completedAt DateTime?
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+  @@index([candidateId])
+}
+
+
+// ─────────────────────────────────────────────
+// EVALUATION (final report for a completed interview)
+// ─────────────────────────────────────────────
+
+model Evaluation {
+  id                   String    @id @default(cuid())
+
+  interviewId          String    @unique
+  interview            Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  sessionId            String    @unique
+
+  candidateId          String
+  candidate            User      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  overallScore         Int
+
+  algorithmCorrectness Int
+  logicalReasoning     Int
+  conceptCoverage      Int
+  completeness         Int
+  dataStructure        Int
+  complexity           Int
+  edgeCases            Int
+
+  strengths            String[]
+  improvements         String[]
+  feedback             String
+
+  createdAt            DateTime  @default(now())
+
+  @@index([candidateId])
 }

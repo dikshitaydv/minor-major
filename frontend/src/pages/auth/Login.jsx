@@ -1,8 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
+
+const ROLE_HOME = {
+  ADMIN: '/admin/dashboard',
+  RECRUITER: '/recruiter/dashboard',
+  CANDIDATE: '/candidate/dashboard',
+}
 
 function Login() {
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -18,64 +26,11 @@ function Login() {
     setLoading(true)
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 700))
+      const user = await login({ email, password })
 
-      // TEMPORARY DEVELOPMENT LOGIN
-      // The real backend will determine the role later.
-
-      const mockUsers = {
-        'admin@interviewiq.com': {
-          password: 'admin123',
-          role: 'admin',
-        },
-
-        'recruiter@interviewiq.com': {
-          password: 'recruiter123',
-          role: 'recruiter',
-        },
-
-        'candidate@interviewiq.com': {
-          password: 'candidate123',
-          role: 'candidate',
-        },
-      }
-
-      const user = mockUsers[email.toLowerCase()]
-
-      // Check whether account exists
-      if (!user) {
-        setError('Account not found. Please check your email.')
-        return
-      }
-
-      // Check password
-      if (user.password !== password) {
-        setError('Incorrect password. Please try again.')
-        return
-      }
-
-      // Store temporary user information
-      const userData = {
-        email,
-        role: user.role,
-      }
-
-      localStorage.setItem(
-        'interviewai_user',
-        JSON.stringify(userData)
-      )
-
-      // Role-based navigation
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard')
-      } else if (user.role === 'recruiter') {
-        navigate('/recruiter/dashboard')
-      } else {
-        navigate('/candidate/dashboard')
-      }
-
+      navigate(ROLE_HOME[user.role] || '/login')
     } catch (err) {
-      setError('Unable to sign in. Please try again.')
+      setError(err.message || 'Unable to sign in. Please try again.')
     } finally {
       setLoading(false)
     }

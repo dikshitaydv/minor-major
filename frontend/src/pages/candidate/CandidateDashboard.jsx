@@ -1,6 +1,84 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import CandidateLayout from '../../components/layout/CandidateLayout'
+import { useAuth } from '../../context/AuthContext.jsx'
+import * as candidateApi from '../../api/candidate.api.js'
 
 function CandidateDashboard() {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [dashboard, setDashboard] = useState(null)
+  const [preparation, setPreparation] = useState(null)
+  const [latestResult, setLatestResult] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const [dashboardData, preparationData] = await Promise.all([
+          candidateApi.getDashboard(),
+          candidateApi.getPreparation(),
+        ])
+
+        if (cancelled) return
+
+        setDashboard(dashboardData)
+        setPreparation(preparationData)
+
+        const latestCompleted = dashboardData.recentInterviews[0]
+        if (latestCompleted) {
+          const detail = await candidateApi.getResultDetail(latestCompleted.id)
+          if (!cancelled) setLatestResult(detail)
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message || 'Unable to load your dashboard.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <CandidateLayout>
+        <div className="flex h-64 items-center justify-center">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#285b8f]/30 border-t-[#285b8f]" />
+        </div>
+      </CandidateLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <CandidateLayout>
+        <div className="border border-red-200 bg-red-50 p-6 text-sm text-red-600">
+          {error}
+        </div>
+      </CandidateLayout>
+    )
+  }
+
+  const upcoming = dashboard.upcomingInterviews[0]
+  const dimensionEntries = latestResult
+    ? Object.entries(latestResult.dimensions)
+    : []
+  const topRecommendation = preparation?.topicScores?.length
+    ? [...preparation.topicScores].sort((a, b) => a.score - b.score)[0]
+    : null
+
   return (
     <CandidateLayout>
 
@@ -15,7 +93,7 @@ function CandidateDashboard() {
         </p>
 
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#17324f] lg:text-3xl">
-          Good morning, Candidate
+          Good morning, {user?.firstName || 'Candidate'}
         </h1>
 
         <p className="mt-2 text-sm text-slate-500">
@@ -33,28 +111,28 @@ function CandidateDashboard() {
 
         <StatCard
           label="Upcoming Interviews"
-          value="2"
+          value={String(dashboard.stats.upcomingInterviews)}
           description="Scheduled interviews"
           icon={<CalendarIcon />}
         />
 
         <StatCard
           label="Completed"
-          value="5"
+          value={String(dashboard.stats.completedInterviews)}
           description="Interviews completed"
           icon={<CheckIcon />}
         />
 
         <StatCard
           label="Average Score"
-          value="82%"
-          description="+6% from previous"
+          value={`${dashboard.stats.averageScore}%`}
+          description={`${dashboard.stats.totalInterviews} total interviews`}
           icon={<ChartIcon />}
         />
 
         <StatCard
           label="Preparation"
-          value="74%"
+          value={`${preparation?.overallProgress ?? 0}%`}
           description="Overall progress"
           icon={<BookIcon />}
         />
@@ -75,107 +153,90 @@ function CandidateDashboard() {
           <SectionHeader
             title="Upcoming Interview"
             action="View all"
+            onAction={() => navigate('/candidate/interviews')}
           />
 
-          <div className="border border-slate-200 bg-white">
+          {upcoming ? (
+            <div className="border border-slate-200 bg-white">
 
-            <div className="p-6">
+              <div className="p-6">
 
-              <div className="flex flex-col justify-between gap-5 sm:flex-row">
-
-                <div>
-
-                  <div className="flex items-center gap-3">
-
-                    <div className="flex h-11 w-11 items-center justify-center bg-[#e7f2ff] text-[#285b8f]">
-                      <CodeIcon />
-                    </div>
-
-                    <div>
-
-                      <h3 className="font-semibold text-slate-800">
-                        Backend Developer
-                      </h3>
-
-                      <p className="text-xs text-slate-400">
-                        Technical Coding Interview
-                      </p>
-
-                    </div>
-
-                  </div>
-
-
-                  <div className="mt-5 flex flex-wrap gap-4 text-xs text-slate-500">
-
-                    <span className="flex items-center gap-2">
-                      <CalendarIcon />
-                      Tomorrow
-                    </span>
-
-                    <span className="flex items-center gap-2">
-                      <ClockIcon />
-                      10:30 AM
-                    </span>
-
-                    <span className="flex items-center gap-2">
-                      <TimerIcon />
-                      45 minutes
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-                <div className="flex items-start">
-
-                  <span className="bg-[#eaf5ff] px-3 py-1.5 text-xs font-semibold text-[#3972a7]">
-                    Scheduled
-                  </span>
-
-                </div>
-
-              </div>
-
-
-              <div className="mt-6 border-t border-slate-100 pt-5">
-
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col justify-between gap-5 sm:flex-row">
 
                   <div>
 
-                    <p className="text-xs text-slate-400">
-                      Interview focus
-                    </p>
+                    <div className="flex items-center gap-3">
 
-                    <div className="mt-2 flex flex-wrap gap-2">
+                      <div className="flex h-11 w-11 items-center justify-center bg-[#e7f2ff] text-[#285b8f]">
+                        <CodeIcon />
+                      </div>
 
-                      <Tag text="Data Structures" />
+                      <div>
 
-                      <Tag text="Algorithms" />
+                        <h3 className="font-semibold text-slate-800">
+                          {upcoming.title}
+                        </h3>
 
-                      <Tag text="Problem Solving" />
+                      </div>
+
+                    </div>
+
+
+                    <div className="mt-5 flex flex-wrap gap-4 text-xs text-slate-500">
+
+                      <span className="flex items-center gap-2">
+                        <CalendarIcon />
+                        {candidateApi.formatDate(upcoming.scheduledAt)}
+                      </span>
+
+                      <span className="flex items-center gap-2">
+                        <ClockIcon />
+                        {candidateApi.formatTime(upcoming.scheduledAt)}
+                      </span>
+
+                      <span className="flex items-center gap-2">
+                        <TimerIcon />
+                        {candidateApi.formatDuration(upcoming.duration)}
+                      </span>
 
                     </div>
 
                   </div>
 
 
-                  <button
-                    type="button"
-                    className="hidden bg-[#285b8f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214d79] sm:block"
-                  >
-                    View Interview →
-                  </button>
+                  <div className="flex items-start">
+
+                    <span className="bg-[#eaf5ff] px-3 py-1.5 text-xs font-semibold text-[#3972a7]">
+                      {candidateApi.toInterviewStatusLabel(upcoming.status)}
+                    </span>
+
+                  </div>
+
+                </div>
+
+
+                <div className="mt-6 border-t border-slate-100 pt-5">
+
+                  <div className="flex items-center justify-between">
+
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/candidate/interview/${upcoming.id}`)}
+                      className="hidden bg-[#285b8f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214d79] sm:block"
+                    >
+                      View Interview →
+                    </button>
+
+                  </div>
 
                 </div>
 
               </div>
 
             </div>
-
-          </div>
+          ) : (
+            <EmptyState message="No upcoming interviews scheduled." />
+          )}
 
         </div>
 
@@ -187,6 +248,7 @@ function CandidateDashboard() {
           <SectionHeader
             title="Preparation"
             action="Practice"
+            onAction={() => navigate('/candidate/preparation')}
           />
 
           <div className="border border-slate-200 bg-white p-6">
@@ -220,13 +282,13 @@ function CandidateDashboard() {
                     stroke="#4b9bea"
                     strokeWidth="8"
                     strokeDasharray="264"
-                    strokeDashoffset="69"
+                    strokeDashoffset={264 - ((preparation?.overallProgress ?? 0) / 100) * 264}
                     strokeLinecap="round"
                   />
                 </svg>
 
                 <span className="text-xl font-bold text-[#17324f]">
-                  74%
+                  {preparation?.overallProgress ?? 0}%
                 </span>
 
               </div>
@@ -234,23 +296,20 @@ function CandidateDashboard() {
 
               <div className="flex-1 space-y-3">
 
-                <ProgressItem
-                  label="Arrays"
-                  value="85%"
-                  progress="85"
-                />
+                {(preparation?.topicScores ?? []).slice(0, 3).map((topic) => (
+                  <ProgressItem
+                    key={topic.topic}
+                    label={topic.topic}
+                    value={`${topic.score}%`}
+                    progress={topic.score}
+                  />
+                ))}
 
-                <ProgressItem
-                  label="Graphs"
-                  value="62%"
-                  progress="62"
-                />
-
-                <ProgressItem
-                  label="Dynamic Programming"
-                  value="48%"
-                  progress="48"
-                />
+                {(!preparation || preparation.topicScores.length === 0) && (
+                  <p className="text-xs text-slate-400">
+                    Complete an interview to see topic progress.
+                  </p>
+                )}
 
               </div>
 
@@ -272,64 +331,37 @@ function CandidateDashboard() {
         <SectionHeader
           title="Your Performance"
           action="View detailed results"
+          onAction={() => navigate('/candidate/results')}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {dimensionEntries.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
-          <DimensionCard
-            title="Problem Understanding"
-            score="85%"
-            progress="85"
-          />
+            {dimensionEntries.map(([key, score]) => (
+              <DimensionCard
+                key={key}
+                title={DIMENSION_LABELS[key] || key}
+                score={`${score}%`}
+                progress={score}
+              />
+            ))}
 
-          <DimensionCard
-            title="Reasoning & Approach"
-            score="80%"
-            progress="80"
-          />
+            <div className="flex items-center justify-center border border-dashed border-slate-300 bg-white p-5">
 
-          <DimensionCard
-            title="Data Structures"
-            score="76%"
-            progress="76"
-          />
+              <button
+                type="button"
+                onClick={() => navigate('/candidate/results')}
+                className="text-sm font-semibold text-[#285b8f] hover:underline"
+              >
+                View full evaluation →
+              </button>
 
-          <DimensionCard
-            title="Algorithmic Correctness"
-            score="88%"
-            progress="88"
-          />
-
-          <DimensionCard
-            title="Time & Space Complexity"
-            score="72%"
-            progress="72"
-          />
-
-          <DimensionCard
-            title="Edge Cases"
-            score="79%"
-            progress="79"
-          />
-
-          <DimensionCard
-            title="Follow-up Responses"
-            score="81%"
-            progress="81"
-          />
-
-          <div className="flex items-center justify-center border border-dashed border-slate-300 bg-white p-5">
-
-            <button
-              type="button"
-              className="text-sm font-semibold text-[#285b8f] hover:underline"
-            >
-              View full evaluation →
-            </button>
+            </div>
 
           </div>
-
-        </div>
+        ) : (
+          <EmptyState message="Complete an interview to see your performance breakdown." />
+        )}
 
       </div>
 
@@ -347,42 +379,40 @@ function CandidateDashboard() {
           <SectionHeader
             title="Recent Feedback"
             action="View all"
+            onAction={() => navigate('/candidate/results')}
           />
 
-          <div className="border border-slate-200 bg-white p-6">
+          {latestResult ? (
+            <div className="border border-slate-200 bg-white p-6">
 
-            <div className="flex gap-4">
+              <div className="flex gap-4">
 
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#e7f2ff] text-[#3972a7]">
-                <MessageIcon />
-              </div>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#e7f2ff] text-[#3972a7]">
+                  <MessageIcon />
+                </div>
 
-              <div>
+                <div>
 
-                <p className="text-sm leading-6 text-slate-600">
+                  <p className="text-sm leading-6 text-slate-600">
+                    {latestResult.feedback}
+                  </p>
 
-                  Strong algorithmic reasoning and good problem
-                  decomposition. Consider explaining your complexity
-                  analysis more explicitly.
-
-                </p>
-
-                <p className="mt-3 text-xs text-slate-400">
-                  From your latest interview · 2 days ago
-                </p>
+                </div>
 
               </div>
+
+              <button
+                type="button"
+                onClick={() => navigate(`/candidate/results/${latestResult.interviewId}`)}
+                className="mt-5 text-sm font-semibold text-[#285b8f] hover:underline"
+              >
+                View full feedback →
+              </button>
 
             </div>
-
-            <button
-              type="button"
-              className="mt-5 text-sm font-semibold text-[#285b8f] hover:underline"
-            >
-              View full feedback →
-            </button>
-
-          </div>
+          ) : (
+            <EmptyState message="Feedback will appear after your first completed interview." />
+          )}
 
         </div>
 
@@ -394,60 +424,66 @@ function CandidateDashboard() {
           <SectionHeader
             title="Recommended for You"
             action="View preparation"
+            onAction={() => navigate('/candidate/preparation')}
           />
 
-          <div className="border border-slate-200 bg-white p-6">
+          {topRecommendation ? (
+            <div className="border border-slate-200 bg-white p-6">
 
-            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
 
-              <div>
+                <div>
 
-                <p className="text-xs font-semibold uppercase tracking-wider text-[#4b9bea]">
-                  Focus Area
-                </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#4b9bea]">
+                    Focus Area
+                  </p>
 
-                <h3 className="mt-2 text-lg font-semibold text-[#17324f]">
-                  Dynamic Programming
-                </h3>
+                  <h3 className="mt-2 text-lg font-semibold text-[#17324f]">
+                    {topRecommendation.topic}
+                  </h3>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  Improve your problem-solving performance.
-                </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Improve your problem-solving performance.
+                  </p>
+
+                </div>
+
+                <div className="text-right">
+
+                  <p className="text-2xl font-bold text-[#17324f]">
+                    {topRecommendation.score}%
+                  </p>
+
+                  <p className="text-xs text-slate-400">
+                    Current score
+                  </p>
+
+                </div>
 
               </div>
 
-              <div className="text-right">
+              <div className="mt-5 h-2 overflow-hidden bg-slate-100">
 
-                <p className="text-2xl font-bold text-[#17324f]">
-                  48%
-                </p>
-
-                <p className="text-xs text-slate-400">
-                  Current score
-                </p>
+                <div
+                  className="h-full bg-[#4b9bea]"
+                  style={{ width: `${topRecommendation.score}%` }}
+                />
 
               </div>
 
+              <button
+                type="button"
+                onClick={() => navigate('/candidate/preparation')}
+                className="mt-5 bg-[#eaf3fc] px-4 py-2.5 text-sm font-semibold text-[#285b8f] transition hover:bg-[#dcecff]"
+              >
+                Start Practice →
+
+              </button>
+
             </div>
-
-            <div className="mt-5 h-2 overflow-hidden bg-slate-100">
-
-              <div
-                className="h-full bg-[#4b9bea]"
-                style={{ width: '48%' }}
-              />
-
-            </div>
-
-            <button
-              type="button"
-              className="mt-5 bg-[#eaf3fc] px-4 py-2.5 text-sm font-semibold text-[#285b8f] transition hover:bg-[#dcecff]"
-            >
-              Start Practice →
-
-            </button>
-
-          </div>
+          ) : (
+            <EmptyState message="Complete an interview to get a recommendation." />
+          )}
 
         </div>
 
@@ -455,6 +491,17 @@ function CandidateDashboard() {
 
     </CandidateLayout>
   )
+}
+
+
+const DIMENSION_LABELS = {
+  algorithmCorrectness: 'Algorithmic Correctness',
+  logicalReasoning: 'Reasoning & Approach',
+  conceptCoverage: 'Concept Coverage',
+  completeness: 'Completeness',
+  dataStructure: 'Data Structures',
+  complexity: 'Time & Space Complexity',
+  edgeCases: 'Edge Cases',
 }
 
 
@@ -495,7 +542,7 @@ function StatCard({ label, value, description, icon }) {
 }
 
 
-function SectionHeader({ title, action }) {
+function SectionHeader({ title, action, onAction }) {
   return (
     <div className="mb-3 flex items-center justify-between">
 
@@ -505,6 +552,7 @@ function SectionHeader({ title, action }) {
 
       <button
         type="button"
+        onClick={onAction}
         className="text-xs font-medium text-[#3972a7] hover:underline"
       >
         {action} →
@@ -515,11 +563,11 @@ function SectionHeader({ title, action }) {
 }
 
 
-function Tag({ text }) {
+function EmptyState({ message }) {
   return (
-    <span className="bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">
-      {text}
-    </span>
+    <div className="border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400">
+      {message}
+    </div>
   )
 }
 

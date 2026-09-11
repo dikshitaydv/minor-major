@@ -1,4 +1,4 @@
-function ChatHeader() {
+function ChatHeader({ isActive = true }) {
   return (
     <div className="flex h-16 shrink-0 items-center justify-between border-b border-white/10 bg-[#0d1626] px-5">
 
@@ -20,9 +20,11 @@ function ChatHeader() {
               AI Interviewer
             </p>
 
-            <span className="border border-[#4ade80]/20 bg-[#4ade80]/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-[#7ee2a0]">
-              Live
-            </span>
+            {isActive && (
+              <span className="border border-[#4ade80]/20 bg-[#4ade80]/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-[#7ee2a0]">
+                Live
+              </span>
+            )}
 
           </div>
 
@@ -46,7 +48,7 @@ function ChatHeader() {
           </p>
 
           <p className="text-[10px] font-medium text-slate-400">
-            Active
+            {isActive ? 'Active' : 'Ended'}
           </p>
 
         </div>

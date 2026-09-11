@@ -1,9 +1,11 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 function Signup() {
   const navigate = useNavigate()
+  const { register, login } = useAuth()
 
   const [form, setForm] = useState({
     firstName: '',
@@ -46,36 +48,20 @@ function Signup() {
     setLoading(true)
 
     try {
-      /*
-        TEMPORARY MOCK SIGNUP
+      await register({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+      })
 
-        Later this will become:
-
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firstName: form.firstName,
-            lastName: form.lastName,
-            email: form.email,
-            password: form.password,
-          }),
-        })
-
-        The backend automatically assigns:
-
-        role: "candidate"
-
-        The user cannot choose Admin or Recruiter.
-      */
-
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      // New accounts are always CANDIDATE role - register() doesn't
+      // return tokens, so log in right away to start the session.
+      await login({ email: form.email, password: form.password })
 
       navigate('/candidate/dashboard')
     } catch (err) {
-      setError('Unable to create your account. Please try again.')
+      setError(err.message || 'Unable to create your account. Please try again.')
     } finally {
       setLoading(false)
     }

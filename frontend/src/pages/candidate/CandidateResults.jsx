@@ -1,70 +1,148 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CandidateLayout from '../../components/layout/CandidateLayout'
+import * as candidateApi from '../../api/candidate.api.js'
+
+const DIMENSION_META = {
+  algorithmCorrectness: {
+    name: 'Algorithmic Correctness',
+    description: 'Correctness and completeness of the algorithm.',
+  },
+  logicalReasoning: {
+    name: 'Reasoning & Approach',
+    description: 'Quality and clarity of the proposed solution.',
+  },
+  conceptCoverage: {
+    name: 'Concept Coverage',
+    description: 'Breadth of relevant concepts covered while explaining.',
+  },
+  completeness: {
+    name: 'Completeness',
+    description: 'How much of the interview was worked through.',
+  },
+  dataStructure: {
+    name: 'Data Structure Selection',
+    description: 'Appropriateness of the selected data structures.',
+  },
+  complexity: {
+    name: 'Time & Space Complexity',
+    description: 'Understanding and optimization of complexity.',
+  },
+  edgeCases: {
+    name: 'Edge Case Handling',
+    description: 'Ability to identify and handle edge cases.',
+  },
+}
+
+const levelForScore = (score) => {
+  if (score >= 80) return 'Strong'
+  if (score >= 65) return 'Good'
+  return 'Needs Practice'
+}
 
 function CandidateResults() {
   const navigate = useNavigate()
 
-  const dimensions = [
-    {
-      name: 'Problem Understanding',
-      score: 85,
-      description: 'Ability to understand and clarify the problem.',
-    },
-    {
-      name: 'Reasoning & Approach',
-      score: 80,
-      description: 'Quality and clarity of the proposed solution.',
-    },
-    {
-      name: 'Data Structure Selection',
-      score: 76,
-      description: 'Appropriateness of the selected data structures.',
-    },
-    {
-      name: 'Algorithmic Correctness',
-      score: 88,
-      description: 'Correctness and completeness of the algorithm.',
-    },
-    {
-      name: 'Time & Space Complexity',
-      score: 72,
-      description: 'Understanding and optimization of complexity.',
-    },
-    {
-      name: 'Edge Case Handling',
-      score: 79,
-      description: 'Ability to identify and handle edge cases.',
-    },
-    {
-      name: 'Follow-up Response',
-      score: 81,
-      description: 'Quality of responses to adaptive follow-up questions.',
-    },
-  ]
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [results, setResults] = useState([])
+  const [latestDetail, setLatestDetail] = useState(null)
 
-  const recentResults = [
-    {
-      id: 'INT-003',
-      title: 'Frontend Developer',
-      date: 'Aug 24, 2026',
-      score: 86,
-      level: 'Strong',
-    },
-    {
-      id: 'INT-004',
-      title: 'Software Engineer',
-      date: 'Aug 20, 2026',
-      score: 78,
-      level: 'Good',
-    },
-    {
-      id: 'INT-005',
-      title: 'Backend Developer',
-      date: 'Aug 16, 2026',
-      score: 82,
-      level: 'Strong',
-    },
-  ]
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const resultsList = await candidateApi.listResults()
+        if (cancelled) return
+        setResults(resultsList)
+
+        if (resultsList.length > 0) {
+          const detail = await candidateApi.getResultDetail(resultsList[0].interviewId)
+          if (!cancelled) setLatestDetail(detail)
+        }
+      } catch (err) {
+        if (!cancelled) setError(err.message || 'Unable to load your results.')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <CandidateLayout>
+        <div className="flex h-64 items-center justify-center">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#285b8f]/30 border-t-[#285b8f]" />
+        </div>
+      </CandidateLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <CandidateLayout>
+        <div className="border border-red-200 bg-red-50 p-6 text-sm text-red-600">
+          {error}
+        </div>
+      </CandidateLayout>
+    )
+  }
+
+  if (results.length === 0) {
+    return (
+      <CandidateLayout>
+        <div className="mb-8">
+          <p className="text-sm font-medium text-[#4b9bea]">Performance</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#17324f] lg:text-3xl">
+            Interview Results
+          </h1>
+        </div>
+
+        <div className="border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+          <h3 className="text-sm font-semibold text-slate-700">
+            No results yet
+          </h3>
+          <p className="mt-1 text-xs text-slate-400">
+            Complete an interview to see your results here.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/candidate/interviews')}
+            className="mt-5 bg-[#285b8f] px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            View Interviews →
+          </button>
+        </div>
+      </CandidateLayout>
+    )
+  }
+
+  const dimensionEntries = latestDetail
+    ? Object.entries(latestDetail.dimensions)
+    : []
+
+  const strongest = dimensionEntries.length
+    ? dimensionEntries.reduce((a, b) => (b[1] > a[1] ? b : a))
+    : null
+
+  const weakest = dimensionEntries.length
+    ? dimensionEntries.reduce((a, b) => (b[1] < a[1] ? b : a))
+    : null
+
+  const previousScores = results.slice(1).map((r) => r.overallScore)
+  const previousAverage = previousScores.length
+    ? Math.round(previousScores.reduce((a, b) => a + b, 0) / previousScores.length)
+    : null
 
   return (
     <CandidateLayout>
@@ -118,17 +196,16 @@ function CandidateResults() {
 
           <div className="mt-6 flex items-center gap-6">
 
-            <ScoreCircle score={82} />
+            <ScoreCircle score={results[0].overallScore} />
 
             <div>
 
               <p className="text-xl font-bold text-[#17324f]">
-                Strong Performance
+                {levelForScore(results[0].overallScore)} Performance
               </p>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                You're performing above average across most
-                evaluation dimensions.
+                Based on your most recent completed interview.
               </p>
 
             </div>
@@ -137,29 +214,26 @@ function CandidateResults() {
 
           <div className="mt-7 border-t border-slate-100 pt-5">
 
-            <div className="flex justify-between text-xs">
+            {previousAverage !== null ? (
+              <>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Previous average</span>
+                  <span className="font-semibold text-slate-600">{previousAverage}%</span>
+                </div>
 
-              <span className="text-slate-400">
-                Previous average
-              </span>
-
-              <span className="font-semibold text-slate-600">
-                76%
-              </span>
-
-            </div>
-
-            <div className="mt-2 flex justify-between text-xs">
-
-              <span className="text-slate-400">
-                Current average
-              </span>
-
-              <span className="font-semibold text-[#3972a7]">
-                82% ↑
-              </span>
-
-            </div>
+                <div className="mt-2 flex justify-between text-xs">
+                  <span className="text-slate-400">Current score</span>
+                  <span className="font-semibold text-[#3972a7]">
+                    {results[0].overallScore}%
+                    {results[0].overallScore >= previousAverage ? ' ↑' : ' ↓'}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs text-slate-400">
+                Complete more interviews to see a trend.
+              </p>
+            )}
 
           </div>
 
@@ -183,7 +257,7 @@ function CandidateResults() {
               </p>
 
               <h3 className="mt-1 text-lg font-bold text-[#17324f]">
-                Algorithmic Correctness
+                {strongest ? DIMENSION_META[strongest[0]]?.name || strongest[0] : '—'}
               </h3>
 
             </div>
@@ -191,19 +265,18 @@ function CandidateResults() {
           </div>
 
           <p className="mt-6 text-3xl font-bold text-[#3d8a60]">
-            88%
+            {strongest ? `${strongest[1]}%` : '—'}
           </p>
 
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            You consistently produce correct solutions and
-            demonstrate a strong understanding of algorithms.
+            {strongest ? DIMENSION_META[strongest[0]]?.description : ''}
           </p>
 
           <div className="mt-5 h-1.5 bg-slate-100">
 
             <div
               className="h-full bg-[#6aa982]"
-              style={{ width: '88%' }}
+              style={{ width: `${strongest ? strongest[1] : 0}%` }}
             />
 
           </div>
@@ -228,7 +301,7 @@ function CandidateResults() {
               </p>
 
               <h3 className="mt-1 text-lg font-bold text-[#17324f]">
-                Time & Space Complexity
+                {weakest ? DIMENSION_META[weakest[0]]?.name || weakest[0] : '—'}
               </h3>
 
             </div>
@@ -236,19 +309,18 @@ function CandidateResults() {
           </div>
 
           <p className="mt-6 text-3xl font-bold text-[#b77a2d]">
-            72%
+            {weakest ? `${weakest[1]}%` : '—'}
           </p>
 
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Practice explaining complexity more clearly and
-            identify optimization opportunities earlier.
+            {weakest ? DIMENSION_META[weakest[0]]?.description : ''}
           </p>
 
           <div className="mt-5 h-1.5 bg-slate-100">
 
             <div
               className="h-full bg-[#d29a50]"
-              style={{ width: '72%' }}
+              style={{ width: `${weakest ? weakest[1] : 0}%` }}
             />
 
           </div>
@@ -275,8 +347,7 @@ function CandidateResults() {
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            A detailed breakdown of how your interview performance
-            was evaluated.
+            From your most recent completed interview.
           </p>
 
         </div>
@@ -284,11 +355,15 @@ function CandidateResults() {
 
         <div className="border border-slate-200 bg-white">
 
-          {dimensions.map((dimension, index) => (
+          {dimensionEntries.map(([key, score], index) => (
 
             <DimensionRow
-              key={dimension.name}
-              dimension={dimension}
+              key={key}
+              dimension={{
+                name: DIMENSION_META[key]?.name || key,
+                description: DIMENSION_META[key]?.description || '',
+                score,
+              }}
               index={index}
             />
 
@@ -332,10 +407,10 @@ function CandidateResults() {
 
         <div className="border border-slate-200 bg-white">
 
-          {recentResults.map((result) => (
+          {results.map((result) => (
 
             <div
-              key={result.id}
+              key={result.interviewId}
               className="flex flex-col gap-4 border-b border-slate-100 p-5 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
             >
 
@@ -352,7 +427,7 @@ function CandidateResults() {
                   </h3>
 
                   <p className="mt-1 text-xs text-slate-400">
-                    {result.date}
+                    {candidateApi.formatDate(result.completedAt)}
                   </p>
 
                 </div>
@@ -369,7 +444,7 @@ function CandidateResults() {
                   </p>
 
                   <p className="text-sm font-semibold text-slate-600">
-                    {result.level}
+                    {levelForScore(result.overallScore)}
                   </p>
 
                 </div>
@@ -382,7 +457,7 @@ function CandidateResults() {
                   </p>
 
                   <p className="text-lg font-bold text-[#285b8f]">
-                    {result.score}%
+                    {result.overallScore}%
                   </p>
 
                 </div>
@@ -391,7 +466,7 @@ function CandidateResults() {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(`/candidate/results/${result.id}`)
+                    navigate(`/candidate/results/${result.interviewId}`)
                   }
                   className="border border-slate-200 px-4 py-2 text-xs font-semibold text-[#285b8f] transition hover:bg-slate-50"
                 >
@@ -413,44 +488,39 @@ function CandidateResults() {
           INSIGHT
       ====================================================== */}
 
-      <div className="mt-8 border border-[#c9dff3] bg-[#eaf4ff] p-6">
+      {latestDetail && (
+        <div className="mt-8 border border-[#c9dff3] bg-[#eaf4ff] p-6">
 
-        <div className="flex items-start gap-4">
+          <div className="flex items-start gap-4">
 
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-white text-[#3972a7]">
-            <InsightIcon />
-          </div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-white text-[#3972a7]">
+              <InsightIcon />
+            </div>
 
-          <div>
+            <div>
 
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#3972a7]">
-              AI Performance Insight
-            </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[#3972a7]">
+                AI Performance Insight
+              </p>
 
-            <h3 className="mt-1 text-base font-bold text-[#17324f]">
-              Your reasoning is stronger than your complexity analysis.
-            </h3>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-[#58728d]">
+                {latestDetail.feedback}
+              </p>
 
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-[#58728d]">
-              Your recent interviews show strong problem decomposition
-              and algorithmic thinking. Focus your preparation on
-              articulating time and space complexity and identifying
-              optimization opportunities.
-            </p>
+              <button
+                type="button"
+                onClick={() => navigate('/candidate/preparation')}
+                className="mt-4 text-sm font-semibold text-[#285b8f] hover:underline"
+              >
+                Practice this area →
+              </button>
 
-            <button
-              type="button"
-              onClick={() => navigate('/candidate/preparation')}
-              className="mt-4 text-sm font-semibold text-[#285b8f] hover:underline"
-            >
-              Practice this area →
-            </button>
+            </div>
 
           </div>
 
         </div>
-
-      </div>
+      )}
 
     </CandidateLayout>
   )

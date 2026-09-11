@@ -1,16 +1,16 @@
 import { useState } from 'react'
 
-function ChatInput() {
+function ChatInput({ onSend, disabled }) {
   const [message, setMessage] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
 
-    if (!message.trim()) {
+    if (!message.trim() || disabled) {
       return
     }
 
-    console.log('Candidate response:', message)
+    onSend?.(message.trim())
 
     setMessage('')
   }
@@ -19,7 +19,7 @@ function ChatInput() {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
 
-      if (message.trim()) {
+      if (message.trim() && !disabled) {
         event.currentTarget.form.requestSubmit()
       }
     }
@@ -40,7 +40,8 @@ function ChatInput() {
             onKeyDown={handleKeyDown}
             placeholder="Explain your approach..."
             rows={3}
-            className="w-full resize-none bg-transparent px-4 py-3.5 text-[13px] leading-6 text-slate-200 outline-none placeholder:text-slate-600"
+            disabled={disabled}
+            className="w-full resize-none bg-transparent px-4 py-3.5 text-[13px] leading-6 text-slate-200 outline-none placeholder:text-slate-600 disabled:opacity-50"
           />
 
 
@@ -53,7 +54,7 @@ function ChatInput() {
               <div className="h-1.5 w-1.5 rounded-full bg-[#78b9f2]" />
 
               <span className="text-[9px] text-slate-600">
-                Your response is being evaluated
+                {disabled ? 'Waiting for a response...' : 'Your response is being evaluated'}
               </span>
 
             </div>
@@ -61,7 +62,7 @@ function ChatInput() {
 
             <button
               type="submit"
-              disabled={!message.trim()}
+              disabled={!message.trim() || disabled}
               className="flex h-8 items-center gap-2 bg-[#78aeda] px-4 text-[10px] font-semibold text-[#08111d] transition hover:bg-[#8fc1e6] disabled:cursor-not-allowed disabled:opacity-30"
             >
 

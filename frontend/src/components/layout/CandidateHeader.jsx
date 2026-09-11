@@ -1,5 +1,18 @@
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 function CandidateHeader() {
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  const initial = user?.firstName?.[0]?.toUpperCase() || 'C'
+  const fullName = user ? `${user.firstName} ${user.lastName}` : 'Candidate'
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
+
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 lg:px-8">
 
@@ -53,19 +66,16 @@ function CandidateHeader() {
         <div className="h-7 w-px bg-slate-200" />
 
 
-        <button
-          type="button"
-          className="flex items-center gap-3"
-        >
+        <div className="flex items-center gap-3">
 
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#dcecff] text-sm font-semibold text-[#285b8f]">
-            A
+            {initial}
           </div>
 
           <div className="hidden text-left sm:block">
 
             <p className="text-sm font-semibold text-slate-700">
-              Candidate
+              {fullName}
             </p>
 
             <p className="text-xs text-slate-400">
@@ -74,9 +84,15 @@ function CandidateHeader() {
 
           </div>
 
-          <ChevronIcon />
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="ml-2 text-xs font-semibold text-slate-400 transition hover:text-red-500"
+          >
+            Log out
+          </button>
 
-        </button>
+        </div>
 
       </div>
 
@@ -110,13 +126,4 @@ function BellIcon() {
   )
 }
 
-function ChevronIcon() {
-  return (
-    <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  )
-}
-
 export default CandidateHeader
-

@@ -16,3 +16,48 @@ export const Role = {
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const InterviewStatus = {
+  SCHEDULED: 'SCHEDULED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type InterviewStatus = (typeof InterviewStatus)[keyof typeof InterviewStatus]
+
+
+export const Difficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD'
+} as const
+
+export type Difficulty = (typeof Difficulty)[keyof typeof Difficulty]
+
+
+export const SessionStatus = {
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED'
+} as const
+
+export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus]
+
+
+export const QuestionStatus = {
+  PENDING: 'PENDING',
+  CURRENT: 'CURRENT',
+  COMPLETED: 'COMPLETED'
+} as const
+
+export type QuestionStatus = (typeof QuestionStatus)[keyof typeof QuestionStatus]
+
+
+export const MessageSender = {
+  AI: 'AI',
+  CANDIDATE: 'CANDIDATE'
+} as const
+
+export type MessageSender = (typeof MessageSender)[keyof typeof MessageSender]

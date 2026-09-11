@@ -1,110 +1,89 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CandidateLayout from '../../components/layout/CandidateLayout'
+import * as candidateApi from '../../api/candidate.api.js'
+
+const levelForScore = (score) => {
+  if (score >= 80) return 'Strong'
+  if (score >= 65) return 'Good'
+  return 'Needs Practice'
+}
+
+// Static practice-set catalog - there's no question-bank browsing endpoint
+// yet, so these stay illustrative until that's built.
+const practiceSets = [
+  {
+    title: 'Interview Warm-up',
+    description: 'Quick problems to get into interview mode.',
+    questions: 5,
+    duration: '20 min',
+    difficulty: 'Easy',
+  },
+  {
+    title: 'Algorithm Challenge',
+    description: 'Test your algorithmic reasoning under pressure.',
+    questions: 8,
+    duration: '40 min',
+    difficulty: 'Medium',
+  },
+  {
+    title: 'Advanced Problem Solving',
+    description: 'Complex problems requiring deeper reasoning.',
+    questions: 5,
+    duration: '45 min',
+    difficulty: 'Hard',
+  },
+]
 
 function CandidatePreparation() {
   const navigate = useNavigate()
 
-  const topics = [
-    {
-      name: 'Arrays & Strings',
-      category: 'Data Structures',
-      score: 85,
-      questions: 24,
-      completed: 20,
-      level: 'Strong',
-    },
-    {
-      name: 'Linked Lists',
-      category: 'Data Structures',
-      score: 78,
-      questions: 18,
-      completed: 14,
-      level: 'Good',
-    },
-    {
-      name: 'Trees & Graphs',
-      category: 'Data Structures',
-      score: 62,
-      questions: 26,
-      completed: 16,
-      level: 'Needs Practice',
-    },
-    {
-      name: 'Dynamic Programming',
-      category: 'Algorithms',
-      score: 48,
-      questions: 30,
-      completed: 14,
-      level: 'Needs Practice',
-    },
-    {
-      name: 'Sorting & Searching',
-      category: 'Algorithms',
-      score: 82,
-      questions: 20,
-      completed: 17,
-      level: 'Strong',
-    },
-    {
-      name: 'Complexity Analysis',
-      category: 'Problem Solving',
-      score: 72,
-      questions: 15,
-      completed: 10,
-      level: 'Good',
-    },
-  ]
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [preparation, setPreparation] = useState(null)
 
-  const recommendations = [
-    {
-      title: 'Dynamic Programming',
-      description:
-        'Your recent interviews show that DP is currently your biggest improvement area.',
-      score: 48,
-      priority: 'High Priority',
-      questions: 12,
-    },
-    {
-      title: 'Trees & Graphs',
-      description:
-        'Improve graph traversal and tree-based problem solving.',
-      score: 62,
-      priority: 'Medium Priority',
-      questions: 8,
-    },
-    {
-      title: 'Complexity Analysis',
-      description:
-        'Practice explaining time and space complexity clearly.',
-      score: 72,
-      priority: 'Medium Priority',
-      questions: 6,
-    },
-  ]
+  useEffect(() => {
+    let cancelled = false
 
-  const practiceSets = [
-    {
-      title: 'Interview Warm-up',
-      description: 'Quick problems to get into interview mode.',
-      questions: 5,
-      duration: '20 min',
-      difficulty: 'Easy',
-    },
-    {
-      title: 'Algorithm Challenge',
-      description: 'Test your algorithmic reasoning under pressure.',
-      questions: 8,
-      duration: '40 min',
-      difficulty: 'Medium',
-    },
-    {
-      title: 'Advanced Problem Solving',
-      description: 'Complex problems requiring deeper reasoning.',
-      questions: 5,
-      duration: '45 min',
-      difficulty: 'Hard',
-    },
-  ]
+    candidateApi
+      .getPreparation()
+      .then((data) => !cancelled && setPreparation(data))
+      .catch((err) => !cancelled && setError(err.message || 'Unable to load your preparation data.'))
+      .finally(() => !cancelled && setLoading(false))
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <CandidateLayout>
+        <div className="flex h-64 items-center justify-center">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#285b8f]/30 border-t-[#285b8f]" />
+        </div>
+      </CandidateLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <CandidateLayout>
+        <div className="border border-red-200 bg-red-50 p-6 text-sm text-red-600">
+          {error}
+        </div>
+      </CandidateLayout>
+    )
+  }
+
+  const recommendations = preparation.weakTopics.map((topic, index) => {
+    const match = preparation.topicScores.find((t) => t.topic === topic)
+    return {
+      title: topic,
+      score: match?.score ?? 0,
+      priority: index === 0 ? 'High Priority' : 'Medium Priority',
+    }
+  })
 
   return (
     <CandidateLayout>
@@ -150,7 +129,7 @@ function CandidatePreparation() {
               </p>
 
               <h2 className="mt-2 text-3xl font-bold text-[#17324f]">
-                74%
+                {preparation.overallProgress}%
               </h2>
 
             </div>
@@ -165,7 +144,7 @@ function CandidatePreparation() {
 
             <div
               className="h-full bg-[#4b9bea]"
-              style={{ width: '74%' }}
+              style={{ width: `${preparation.overallProgress}%` }}
             />
 
           </div>
@@ -177,7 +156,9 @@ function CandidatePreparation() {
             </span>
 
             <span className="text-xs font-medium text-[#3972a7]">
-              Interview Ready
+              {levelForScore(preparation.overallProgress) === 'Strong'
+                ? 'Interview Ready'
+                : levelForScore(preparation.overallProgress)}
             </span>
 
           </div>
@@ -198,7 +179,7 @@ function CandidatePreparation() {
               </p>
 
               <h2 className="mt-2 text-3xl font-bold text-[#17324f]">
-                96
+                {preparation.questionsSolved}
               </h2>
 
             </div>
@@ -210,18 +191,13 @@ function CandidatePreparation() {
           </div>
 
           <p className="mt-5 text-xs text-slate-400">
-            14 questions this week
+            Across all your interviews
           </p>
-
-          <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[#3d8a60]">
-            <span>↑</span>
-            18% from last week
-          </div>
 
         </div>
 
 
-        {/* Practice Streak */}
+        {/* Interviews Completed */}
 
         <div className="border border-slate-200 bg-white p-7">
 
@@ -230,11 +206,11 @@ function CandidatePreparation() {
             <div>
 
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Practice Streak
+                Interviews Completed
               </p>
 
               <h2 className="mt-2 text-3xl font-bold text-[#17324f]">
-                7 days
+                {preparation.interviewsCompleted}
               </h2>
 
             </div>
@@ -246,23 +222,8 @@ function CandidatePreparation() {
           </div>
 
           <p className="mt-5 text-xs text-slate-400">
-            Keep practicing to extend your streak.
+            Keep completing interviews to sharpen your evaluation data.
           </p>
-
-          <div className="mt-4 flex gap-1.5">
-
-            {[true, true, true, true, true, true, true].map(
-              (active, index) => (
-                <div
-                  key={index}
-                  className={`h-2 flex-1 ${
-                    active ? 'bg-[#6fa9dc]' : 'bg-slate-100'
-                  }`}
-                />
-              )
-            )}
-
-          </div>
 
         </div>
 
@@ -292,22 +253,25 @@ function CandidatePreparation() {
 
         </div>
 
+        {recommendations.length > 0 ? (
+          <div className="grid gap-4 xl:grid-cols-3">
 
-        <div className="grid gap-4 xl:grid-cols-3">
+            {recommendations.map((item) => (
 
-          {recommendations.map((item) => (
+              <RecommendationCard
+                key={item.title}
+                recommendation={item}
+                onPractice={() => navigate('/candidate/interviews')}
+              />
 
-            <RecommendationCard
-              key={item.title}
-              recommendation={item}
-              onPractice={() => {
-                console.log(`Practice ${item.title}`)
-              }}
-            />
+            ))}
 
-          ))}
-
-        </div>
+          </div>
+        ) : (
+          <div className="border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400">
+            Complete an interview to get personalized focus areas.
+          </div>
+        )}
 
       </div>
 
@@ -332,43 +296,22 @@ function CandidatePreparation() {
 
           </div>
 
-          <button
-            type="button"
-            className="text-xs font-semibold text-[#3972a7] hover:underline"
-          >
-            View all topics →
-          </button>
-
         </div>
 
 
-        <div className="border border-slate-200 bg-white">
+        {preparation.topicScores.length > 0 ? (
+          <div className="border border-slate-200 bg-white">
 
-          {/* Table Header */}
-
-          <div className="hidden grid-cols-[2fr_1.2fr_2fr_80px_110px] gap-6 border-b border-slate-100 px-6 py-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400 md:grid">
-
-            <span>Topic</span>
-            <span>Category</span>
-            <span>Progress</span>
-            <span>Score</span>
-            <span>Status</span>
+            {preparation.topicScores.map((topic) => (
+              <TopicRow key={topic.topic} topic={topic} />
+            ))}
 
           </div>
-
-
-          {/* Rows */}
-
-          {topics.map((topic) => (
-
-            <TopicRow
-              key={topic.name}
-              topic={topic}
-            />
-
-          ))}
-
-        </div>
+        ) : (
+          <div className="border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400">
+            Complete an interview to see your topic breakdown.
+          </div>
+        )}
 
       </div>
 
@@ -403,9 +346,7 @@ function CandidatePreparation() {
             <PracticeCard
               key={set.title}
               practiceSet={set}
-              onStart={() => {
-                console.log(`Starting ${set.title}`)
-              }}
+              onStart={() => navigate('/candidate/interviews')}
             />
 
           ))}
@@ -430,13 +371,13 @@ function CandidatePreparation() {
             </p>
 
             <h2 className="mt-2 text-xl font-bold text-[#17324f]">
-              Your next 7 days
+              Your next steps
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-[#58728d]">
-              Spend the next few days strengthening Dynamic Programming,
-              Trees &amp; Graphs, and complexity analysis before your next
-              technical interview.
+              {preparation.weakTopics.length > 0
+                ? `Spend the next few days strengthening ${preparation.weakTopics.join(', ')} before your next technical interview.`
+                : 'Complete an interview to get a personalized preparation plan.'}
             </p>
 
           </div>
@@ -487,11 +428,6 @@ function RecommendationCard({ recommendation, onPractice }) {
 
       </div>
 
-      <p className="mt-3 text-xs leading-5 text-slate-500">
-        {recommendation.description}
-      </p>
-
-
       <div className="mt-4 h-1.5 bg-slate-100">
 
         <div
@@ -504,11 +440,7 @@ function RecommendationCard({ recommendation, onPractice }) {
       </div>
 
 
-      <div className="mt-4 flex items-center justify-between">
-
-        <span className="text-xs text-slate-400">
-          {recommendation.questions} recommended questions
-        </span>
+      <div className="mt-4 flex items-center justify-end">
 
         <button
           type="button"
@@ -530,6 +462,8 @@ function RecommendationCard({ recommendation, onPractice }) {
 ============================================================ */
 
 function TopicRow({ topic }) {
+  const level = levelForScore(topic.score)
+
   const statusStyles = {
     Strong: 'bg-[#edf7f1] text-[#3d8a60]',
     Good: 'bg-[#eaf5ff] text-[#3972a7]',
@@ -537,49 +471,24 @@ function TopicRow({ topic }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0 md:grid md:grid-cols-[2fr_1.2fr_2fr_80px_110px] md:items-center md:gap-6">
+    <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-5 last:border-b-0 md:grid md:grid-cols-[2fr_2fr_80px_110px] md:items-center md:gap-6">
 
       <div>
 
         <h3 className="text-sm font-semibold text-slate-700">
-          {topic.name}
+          {topic.topic}
         </h3>
-
-        <p className="mt-1 text-xs text-slate-400 md:hidden">
-          {topic.category}
-        </p>
 
       </div>
 
 
-      <span className="hidden text-xs text-slate-500 md:block">
-        {topic.category}
-      </span>
-
-
       <div>
-
-        <div className="mb-2 flex justify-between text-[10px] text-slate-400">
-
-          <span>
-            {topic.completed} / {topic.questions} completed
-          </span>
-
-          <span>
-            {Math.round(
-              (topic.completed / topic.questions) * 100
-            )}%
-          </span>
-
-        </div>
 
         <div className="h-1.5 bg-slate-100">
 
           <div
             className="h-full bg-[#6fa9dc]"
-            style={{
-              width: `${(topic.completed / topic.questions) * 100}%`,
-            }}
+            style={{ width: `${topic.score}%` }}
           />
 
         </div>
@@ -594,10 +503,10 @@ function TopicRow({ topic }) {
 
       <span
         className={`w-fit px-2 py-1 text-[10px] font-semibold ${
-          statusStyles[topic.level]
+          statusStyles[level]
         }`}
       >
-        {topic.level}
+        {level}
       </span>
 
     </div>

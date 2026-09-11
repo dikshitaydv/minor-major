@@ -1,5 +1,6 @@
 function QuestionItem({
   question,
+  index,
   isCurrent,
   onClick,
 }) {
@@ -29,7 +30,7 @@ function QuestionItem({
         {isCompleted ? (
           <CheckIcon />
         ) : (
-          String(question.id).padStart(2, '0')
+          String(index + 1).padStart(2, '0')
         )}
 
       </div>

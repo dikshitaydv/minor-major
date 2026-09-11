@@ -61,3 +61,38 @@ export type PasswordResetToken = Prisma.PasswordResetTokenModel
  * 
  */
 export type EmailVerificationToken = Prisma.EmailVerificationTokenModel
+/**
+ * Model Question
+ * 
+ */
+export type Question = Prisma.QuestionModel
+/**
+ * Model Interview
+ * 
+ */
+export type Interview = Prisma.InterviewModel
+/**
+ * Model InterviewQuestion
+ * 
+ */
+export type InterviewQuestion = Prisma.InterviewQuestionModel
+/**
+ * Model InterviewSession
+ * 
+ */
+export type InterviewSession = Prisma.InterviewSessionModel
+/**
+ * Model Message
+ * 
+ */
+export type Message = Prisma.MessageModel
+/**
+ * Model QuestionAttempt
+ * 
+ */
+export type QuestionAttempt = Prisma.QuestionAttemptModel
+/**
+ * Model Evaluation
+ * 
+ */
+export type Evaluation = Prisma.EvaluationModel

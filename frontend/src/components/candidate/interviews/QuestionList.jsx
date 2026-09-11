@@ -10,10 +10,11 @@ function QuestionList({
 
       <div className="space-y-1">
 
-        {questions.map((question) => (
+        {questions.map((question, index) => (
           <QuestionItem
             key={question.id}
             question={question}
+            index={index}
             isCurrent={question.id === currentQuestion}
             onClick={() => onQuestionSelect(question.id)}
           />

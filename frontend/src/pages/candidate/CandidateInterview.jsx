@@ -1,142 +1,241 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import InterviewLayout from '../../components/candidate/interviews/InterviewLayout'
+import * as candidateApi from '../../api/candidate.api.js'
+
+const mapQuestion = (question) => ({
+  ...question,
+  status: candidateApi.toLowerStatus(question.status),
+})
+
+const mapMessage = (message) => ({
+  id: message.id,
+  sender: candidateApi.toChatSender(message.sender),
+  message: message.message,
+  questionId: message.questionId,
+  time: new Date(message.createdAt).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }),
+})
 
 function CandidateInterview() {
-  const [currentQuestion, setCurrentQuestion] = useState(1)
+  const { id: interviewId } = useParams()
+  const navigate = useNavigate()
 
-  const questions = [
-    {
-      id: 1,
-      title: 'Two Sum',
-      difficulty: 'Easy',
-      topics: ['Arrays', 'Hash Map'],
-      status: 'completed',
-      description:
-        'Given an array of integers and a target value, find two numbers that add up to the target.',
-      examples: [
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const [sessionId, setSessionId] = useState(null)
+  const [title, setTitle] = useState('Interview')
+  const [questions, setQuestions] = useState([])
+  const [activeQuestionId, setActiveQuestionId] = useState(null)
+  const [viewedQuestionId, setViewedQuestionId] = useState(null)
+  const [messages, setMessages] = useState([])
+  const [sending, setSending] = useState(false)
+  const [ending, setEnding] = useState(false)
+  const [sessionEnded, setSessionEnded] = useState(false)
+
+  const [remainingSeconds, setRemainingSeconds] = useState(null)
+  const startedAtRef = useRef(null)
+  const durationSecondsRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const init = async () => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const interview = await candidateApi.getInterview(interviewId)
+        if (cancelled) return
+        setTitle(interview.title)
+
+        const started = await candidateApi.startInterview(interviewId)
+        if (cancelled) return
+
+        const [sessionData, messageData] = await Promise.all([
+          candidateApi.getSession(started.sessionId),
+          candidateApi.getMessages(started.sessionId),
+        ])
+
+        if (cancelled) return
+
+        const mappedQuestions = sessionData.questions.map(mapQuestion)
+
+        setSessionId(started.sessionId)
+        setQuestions(mappedQuestions)
+        setActiveQuestionId(sessionData.session.currentQuestionId)
+        setViewedQuestionId(sessionData.session.currentQuestionId)
+        setMessages(messageData.map(mapMessage))
+        setSessionEnded(sessionData.session.status === 'COMPLETED')
+
+        startedAtRef.current = new Date(sessionData.session.startedAt).getTime()
+        durationSecondsRef.current = sessionData.session.duration
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Unable to load this interview.')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    init()
+
+    return () => {
+      cancelled = true
+    }
+  }, [interviewId])
+
+  // Countdown timer, derived from session start time + duration.
+  useEffect(() => {
+    if (!durationSecondsRef.current || sessionEnded) return
+
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000)
+      const remaining = Math.max(0, durationSecondsRef.current - elapsed)
+      setRemainingSeconds(remaining)
+    }
+
+    tick()
+    const interval = setInterval(tick, 1000)
+
+    return () => clearInterval(interval)
+  }, [sessionId, sessionEnded])
+
+  const handleSendMessage = useCallback(
+    async (text) => {
+      if (!sessionId || !activeQuestionId || sending) return
+
+      setSending(true)
+
+      // Optimistically show the candidate's own message right away.
+      const optimisticId = `optimistic-${Date.now()}`
+      setMessages((prev) => [
+        ...prev,
         {
-          input: 'nums = [2,7,11,15], target = 9',
-          output: '[0,1]',
-          explanation: 'nums[0] + nums[1] = 2 + 7 = 9.',
+          id: optimisticId,
+          sender: 'candidate',
+          message: text,
+          questionId: activeQuestionId,
+          time: new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
         },
-      ],
-      constraints: [
-        '2 <= nums.length <= 10⁴',
-        '-10⁹ <= nums[i] <= 10⁹',
-        '-10⁹ <= target <= 10⁹',
-      ],
+      ])
+
+      try {
+        const result = await candidateApi.sendMessage(sessionId, {
+          questionId: activeQuestionId,
+          message: text,
+        })
+
+        setMessages((prev) => [
+          ...prev.filter((m) => m.id !== optimisticId),
+          mapMessage(result.candidateMessage),
+          mapMessage(result.aiMessage),
+        ])
+
+        if (result.currentQuestionId && result.currentQuestionId !== activeQuestionId) {
+          setActiveQuestionId(result.currentQuestionId)
+          setViewedQuestionId(result.currentQuestionId)
+
+          // Refresh question statuses (one just completed, next is now current).
+          const sessionData = await candidateApi.getSession(sessionId)
+          setQuestions(sessionData.questions.map(mapQuestion))
+        } else if (!result.currentQuestionId) {
+          // No more questions left - refresh statuses to show the last one completed.
+          const sessionData = await candidateApi.getSession(sessionId)
+          setQuestions(sessionData.questions.map(mapQuestion))
+        }
+      } catch (err) {
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
+        setError(err.message || 'Unable to send your message. Please try again.')
+      } finally {
+        setSending(false)
+      }
     },
-
-    {
-      id: 2,
-      title: 'Longest Substring Without Repeating Characters',
-      difficulty: 'Medium',
-      topics: ['Strings', 'Sliding Window'],
-      status: 'current',
-      description:
-        'Given a string s, find the length of the longest substring without repeating characters.',
-      examples: [
-        {
-          input: 's = "abcabcbb"',
-          output: '3',
-          explanation: 'The answer is "abc", with a length of 3.',
-        },
-        {
-          input: 's = "bbbbb"',
-          output: '1',
-          explanation: 'The answer is "b", with a length of 1.',
-        },
-        {
-          input: 's = "pwwkew"',
-          output: '3',
-          explanation: 'The answer is "wke", with a length of 3.',
-        },
-      ],
-      constraints: [
-        '0 <= s.length <= 5 × 10⁴',
-        's consists of English letters, digits, symbols and spaces.',
-        'The input string may contain duplicate characters.',
-      ],
-    },
-
-    {
-      id: 3,
-      title: 'Binary Tree Traversal',
-      difficulty: 'Medium',
-      topics: ['Trees', 'Recursion'],
-      status: 'pending',
-      description:
-        'Given the root of a binary tree, return the preorder traversal of its nodes.',
-      examples: [
-        {
-          input: 'root = [1,null,2,3]',
-          output: '[1,2,3]',
-          explanation:
-            'Visit the root first, followed by the left subtree and then the right subtree.',
-        },
-      ],
-      constraints: [
-        'The number of nodes is between 0 and 100.',
-        '-100 <= Node.val <= 100',
-      ],
-    },
-
-    {
-      id: 4,
-      title: 'Graph Traversal',
-      difficulty: 'Medium',
-      topics: ['Graphs', 'BFS', 'DFS'],
-      status: 'pending',
-      description:
-        'Given a graph, determine whether all nodes can be reached from a given starting node.',
-      examples: [
-        {
-          input: 'graph = [[1,2],[0,2],[0,1]]',
-          output: 'true',
-          explanation:
-            'All nodes are reachable from the starting node.',
-        },
-      ],
-      constraints: [
-        'The graph contains at least one node.',
-        'Nodes may have multiple connections.',
-      ],
-    },
-
-    {
-      id: 5,
-      title: 'Dynamic Programming',
-      difficulty: 'Hard',
-      topics: ['DP', 'Optimization'],
-      status: 'pending',
-      description:
-        'Solve the given optimization problem using an efficient dynamic programming approach.',
-      examples: [
-        {
-          input: 'Input depends on the selected problem.',
-          output: 'Optimal result',
-          explanation:
-            'Break the problem into overlapping subproblems and reuse computed results.',
-        },
-      ],
-      constraints: [
-        'The solution should be optimized.',
-        'Consider both time and space complexity.',
-      ],
-    },
-  ]
-
-  const selectedQuestion = questions.find(
-    (question) => question.id === currentQuestion
+    [sessionId, activeQuestionId, sending],
   )
 
+  const handleEndInterview = useCallback(async () => {
+    if (!sessionId || ending) return
+
+    const confirmed = window.confirm(
+      'Are you sure you want to end this interview? This cannot be undone.',
+    )
+    if (!confirmed) return
+
+    setEnding(true)
+    setError('')
+
+    try {
+      await candidateApi.endInterview(sessionId)
+      setSessionEnded(true)
+      navigate(`/candidate/results/${interviewId}`)
+    } catch (err) {
+      setError(err.message || 'Unable to end the interview. Please try again.')
+    } finally {
+      setEnding(false)
+    }
+  }, [sessionId, ending, interviewId, navigate])
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#f4f8fc]">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#285b8f]/30 border-t-[#285b8f]" />
+      </div>
+    )
+  }
+
+  if (error && !sessionId) {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-4 bg-[#f4f8fc] px-6 text-center">
+        <p className="max-w-md text-sm text-red-600">{error}</p>
+        <button
+          type="button"
+          onClick={() => navigate('/candidate/interviews')}
+          className="bg-[#285b8f] px-5 py-2.5 text-sm font-semibold text-white"
+        >
+          Back to Interviews
+        </button>
+      </div>
+    )
+  }
+
+  const timeLabel =
+    remainingSeconds === null
+      ? null
+      : `${String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:${String(
+          remainingSeconds % 60,
+        ).padStart(2, '0')}`
+
   return (
-    <InterviewLayout
-      questions={questions}
-      currentQuestion={currentQuestion}
-      selectedQuestion={selectedQuestion}
-      onQuestionSelect={setCurrentQuestion}
-    />
+    <>
+      {error && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-600 shadow-sm">
+          {error}
+        </div>
+      )}
+
+      <InterviewLayout
+        title={title}
+        questions={questions}
+        activeQuestionId={activeQuestionId}
+        viewedQuestionId={viewedQuestionId}
+        onQuestionSelect={setViewedQuestionId}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        sending={sending}
+        sessionEnded={sessionEnded}
+        timeLabel={timeLabel}
+        onEndInterview={handleEndInterview}
+        ending={ending}
+      />
+    </>
   )
 }
 

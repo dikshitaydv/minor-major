@@ -1,6 +1,11 @@
 import { NavLink } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext.jsx'
 
 function CandidateSidebar() {
+  const { user } = useAuth()
+  const initial = user?.firstName?.[0]?.toUpperCase() || 'C'
+  const fullName = user ? `${user.firstName} ${user.lastName}` : 'Candidate'
+
   const navigation = [
     {
       name: 'Dashboard',
@@ -114,13 +119,13 @@ function CandidateSidebar() {
         >
 
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#dcecff] text-sm font-semibold text-[#285b8f]">
-            A
+            {initial}
           </div>
 
           <div className="min-w-0">
 
             <p className="truncate text-sm font-semibold text-slate-700">
-              Candidate
+              {fullName}
             </p>
 
             <p className="truncate text-xs text-slate-400">
