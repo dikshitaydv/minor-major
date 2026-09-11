@@ -3,12 +3,12 @@ from typing import Optional
 from evaluation.extraction.extraction_service import (
     extract_candidate_features
 )
+
 from evaluation.persistence.candidate_state_store import (
     CandidateStateStore
 )
 
 from AI.adaptive.policy_engine import PolicyEngine
-
 from evaluation.scoring.candidate_state import (
     CandidateEvaluationState,
     CandidateNLPState
@@ -28,8 +28,9 @@ from evaluation.interviewer.followup_generator import (
 
 from AI.conversation.timer_service import TimerService
 
-from evaluation.problem_provider import ProblemProvider
-
+from evaluation.dataset_loader import (
+    load_evaluation_context
+)
 
 
 # ============================================================
@@ -154,8 +155,8 @@ class InterviewSession:
     def __init__(
     self,
     candidate_id: str,
-    question_id: Optional[str] = None,
-    problem: Optional[dict] = None,
+    question_id: str,
+    problem: dict,
     time_remaining: int = 600,
     candidate_level: str = "medium",
     state_store: Optional[CandidateStateStore] = None,
@@ -167,21 +168,10 @@ class InterviewSession:
                 "candidate_id cannot be empty."
             )
 
-        # ==================================================
-        # LOAD LIVE PROBLEM WHEN ONE IS NOT PROVIDED
-        # ==================================================
-        #
-        # LeetCode GraphQL is the source of the problem
-        # statement. ProblemProvider itself restricts random
-        # selection to problems that have reference solutions
-        # in the canonical Excel repository.
-        #
-        # Existing callers may still provide both `problem`
-        # and `question_id`; those callers remain unchanged.
-
-        if problem is None:
-            with ProblemProvider() as provider:
-                problem = provider.get_random_problem()
+        if not question_id:
+            raise ValueError(
+                "question_id cannot be empty."
+            )
 
         if not isinstance(
             problem,
@@ -189,24 +179,6 @@ class InterviewSession:
         ):
             raise TypeError(
                 "problem must be a dictionary."
-            )
-
-        if question_id is None:
-            question_id = (
-                problem.get("question_id")
-                or problem.get("id")
-            )
-
-        if question_id is None:
-            raise ValueError(
-                "question_id cannot be determined from the problem."
-            )
-
-        question_id = str(question_id).strip()
-
-        if not question_id:
-            raise ValueError(
-                "question_id cannot be empty."
             )
 
         self.problem = problem
@@ -256,7 +228,107 @@ class InterviewSession:
             PolicyEngine()
         )
 
-        self.finished = False
+        # ---------------------------------------------------------
+        # INITIAL INTERVIEWER QUESTION
+        # ---------------------------------------------------------
+
+        if self.state.current_interviewer_question is None:
+
+            problem_title = self.problem.get(
+                "title",
+                ""
+            ).strip()
+
+            problem_question = self.problem.get(
+                "question",
+                ""
+            )
+
+            if isinstance(problem_question, str):
+                problem_question = problem_question.strip()
+            else:
+                problem_question = ""
+
+            if problem_question:
+                self.state.current_interviewer_question = problem_question
+
+            elif problem_title:
+                self.state.current_interviewer_question = (
+                    f"Please explain your approach for solving "
+                    f"{problem_title}."
+                )
+
+            else:
+                self.state.current_interviewer_question = (
+                    "Please explain your approach for solving "
+                    "the problem."
+                )
+
+            self.state_store.save(self.state)
+
+        # ==================================================
+        # SELECT CANONICAL TARGET REFERENCE
+        # ==================================================
+        #
+        # Target selection is performed only when the
+        # problem contains an identifier that can be used
+        # by the reference-solution dataset.
+        #
+        # This keeps lightweight Conversation/Timer tests
+        # independent of the reference dataset.
+
+        if self.state.target_reference_id is None:
+
+            problem_id = (
+                self.problem.get("problem_id")
+                or self.problem.get("id")
+            )
+
+            if problem_id:
+
+                reference_solutions, _ = (
+                    load_evaluation_context(
+                        self.problem
+                    )
+                )
+
+                self.state.target_reference_id = (
+                    self.policy_engine.select_target_reference(
+                        reference_solutions
+                    )
+                )
+
+                if self.state.target_reference_id is None:
+                    raise RuntimeError(
+                        "Unable to select a target reference "
+                        "solution for this problem."
+                    )
+
+                self.state_store.save(
+                    self.state
+                )
+
+        print()
+        print(
+            f"Target Reference: "
+            f"{self.state.target_reference_id}"
+        )
+
+        # ---------------------------------------------------------
+        # SESSION COMPLETION STATE
+        # ---------------------------------------------------------
+        #
+        # A brand-new session has no completed candidate turns,
+        # so it must remain active even if should_continue has
+        # a default false-like value.
+        #
+        # A resumed session with existing history and
+        # should_continue=False represents a completed interview.
+
+        self.finished = bool(
+            self.state.history
+            and not self.state.should_continue
+        )
 
     # ========================================================
     # POLICY FOLLOW-UP GENERATION
@@ -495,29 +567,54 @@ class InterviewSession:
             f"{evaluation_path}"
         )
 
-        # ====================================================
+        # ----------------------------------------------------
         # 6. ADAPTIVE POLICY
-        # ====================================================
+        # ----------------------------------------------------
 
         self.time_remaining = (
             self.timer_service.get_time_remaining()
         )
 
-        policy_decision = (
-            self.policy_engine.decide(
-                scores=self.state.scores,
-                time_remaining=self.time_remaining,
-                candidate_level=self.candidate_level,
-                candidate_state=self.state,
-                turns_remaining=turns_remaining,
-                current_reference_id=(
-                    self.state.reference_answer_id
-                ),
-                target_reference_id=(
-                    self.state.target_reference_id
+        # Hard safety limits are enforced by the
+        # Conversation layer. The PolicyEngine decides
+        # the adaptive action only when another turn is
+        # actually possible.
+
+        turn_limit_reached = (
+            self.max_turns is not None
+            and current_turn >= self.max_turns
+        )
+
+        time_limit_reached = (
+            self.time_remaining <= 0
+        )
+
+        if turn_limit_reached or time_limit_reached:
+
+            policy_decision = {
+                "action": "STOP",
+                "reason": (
+                    "Interview limit reached."
+                )
+            }
+
+        else:
+
+            policy_decision = (
+                self.policy_engine.decide(
+                    scores=self.state.scores,
+                    time_remaining=self.time_remaining,
+                    candidate_level=self.candidate_level,
+                    candidate_state=self.state,
+                    turns_remaining=turns_remaining,
+                    current_reference_id=(
+                        self.state.reference_answer_id
+                    ),
+                    target_reference_id=(
+                        self.state.target_reference_id
+                    )
                 )
             )
-        )
 
         print()
         print("Policy Decision:")
@@ -544,7 +641,7 @@ class InterviewSession:
 
                 self.state.set_interviewer_question(
                     next_question
-            )
+                )
 
                 print()
                 print("Next Interviewer Question:")
@@ -552,8 +649,39 @@ class InterviewSession:
 
             else:
 
+                # If the follow-up generator cannot produce
+                # a valid question, fail closed rather than
+                # leaving the interview in a continuation
+                # state with no question.
+
                 self.state.should_continue = False
                 self.finished = True
+
+        # ----------------------------------------------------
+        # PERSIST FINAL TURN STATE
+        # ----------------------------------------------------
+        #
+        # This save happens AFTER policy/follow-up processing
+        # so that:
+        #
+        # - should_continue
+        # - finished-related state
+        # - current interviewer question
+        # - conversation history
+        #
+        # are persisted together.
+
+        final_state_path = (
+            self.state_store.save(
+                self.state
+            )
+        )
+
+        print()
+        print(
+            f"Final turn state saved: "
+            f"{final_state_path}"
+        )
 
         # ====================================================
         # 7. FINISH / CONTINUE
