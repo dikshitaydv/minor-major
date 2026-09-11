@@ -198,7 +198,7 @@ def test_end_to_end():
 
     assert (
         initial_state.target_reference_id
-        is None
+        is not None
     )
 
     # ========================================================
