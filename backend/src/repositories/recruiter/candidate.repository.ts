@@ -1,5 +1,6 @@
 import prisma from '../../lib/prisma.js'
 
+
 // ─────────────────────────────────────────────
 // FIND ALL CANDIDATES FOR A RECRUITER
 // ─────────────────────────────────────────────
@@ -23,6 +24,12 @@ export const findCandidatesByRecruiter = async (
       firstName: true,
       lastName: true,
       email: true,
+      createdAt: true,
+
+
+      // ─────────────────────────────────────────
+      // INTERVIEWS BELONGING TO THIS RECRUITER
+      // ─────────────────────────────────────────
 
       candidateInterviews: {
         where: {
@@ -35,11 +42,41 @@ export const findCandidatesByRecruiter = async (
           type: true,
           company: true,
           scheduledAt: true,
+          duration: true,
           status: true,
+
+
+          // ─────────────────────────────────────
+          // EVALUATION
+          // ─────────────────────────────────────
 
           evaluation: {
             select: {
+              id: true,
+
               overallScore: true,
+
+              algorithmCorrectness: true,
+
+              logicalReasoning: true,
+
+              conceptCoverage: true,
+
+              completeness: true,
+
+              dataStructure: true,
+
+              complexity: true,
+
+              edgeCases: true,
+
+              strengths: true,
+
+              improvements: true,
+
+              feedback: true,
+
+              createdAt: true,
             },
           },
         },
@@ -71,6 +108,10 @@ export const findCandidateByIdForRecruiter = async (
 
       role: 'CANDIDATE',
 
+      // Security:
+      // Recruiter can only access candidates
+      // who have interviews created by them.
+
       candidateInterviews: {
         some: {
           recruiterId,
@@ -80,10 +121,19 @@ export const findCandidateByIdForRecruiter = async (
 
     select: {
       id: true,
+
       firstName: true,
+
       lastName: true,
+
       email: true,
+
       createdAt: true,
+
+
+      // ─────────────────────────────────────────
+      // CANDIDATE INTERVIEWS
+      // ─────────────────────────────────────────
 
       candidateInterviews: {
         where: {
@@ -92,38 +142,71 @@ export const findCandidateByIdForRecruiter = async (
 
         select: {
           id: true,
+
           title: true,
+
           type: true,
+
           company: true,
+
           focusAreas: true,
+
           scheduledAt: true,
+
           duration: true,
+
           status: true,
+
+
+          // ─────────────────────────────────────
+          // INTERVIEW SESSION
+          // ─────────────────────────────────────
 
           session: {
             select: {
               id: true,
+
               status: true,
+
               startedAt: true,
+
               endedAt: true,
+
               durationSeconds: true,
             },
           },
 
+
+          // ─────────────────────────────────────
+          // AI EVALUATION
+          // ─────────────────────────────────────
+
           evaluation: {
             select: {
               id: true,
+
               overallScore: true,
+
               algorithmCorrectness: true,
+
               logicalReasoning: true,
+
               conceptCoverage: true,
+
               completeness: true,
+
               dataStructure: true,
+
               complexity: true,
+
               edgeCases: true,
+
               strengths: true,
+
               improvements: true,
+
               feedback: true,
+
               createdAt: true,
             },
           },

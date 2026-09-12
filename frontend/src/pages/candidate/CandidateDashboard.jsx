@@ -32,15 +32,23 @@ function CandidateDashboard() {
         setDashboard(dashboardData)
         setPreparation(preparationData)
 
-        const latestCompleted = dashboardData.recentInterviews[0]
+        const latestCompleted = dashboardData.recentInterviews?.[0]
+
         if (latestCompleted) {
           const detail = await candidateApi.getResultDetail(latestCompleted.id)
-          if (!cancelled) setLatestResult(detail)
+
+          if (!cancelled) {
+            setLatestResult(detail)
+          }
         }
       } catch (err) {
-        if (!cancelled) setError(err.message || 'Unable to load your dashboard.')
+        if (!cancelled) {
+          setError(err.message || 'Unable to load your dashboard.')
+        }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
 
@@ -51,448 +59,548 @@ function CandidateDashboard() {
     }
   }, [])
 
+  /* =====================================================
+     LOADING
+  ====================================================== */
+
   if (loading) {
     return (
       <CandidateLayout>
-        <div className="flex h-64 items-center justify-center">
-          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#285b8f]/30 border-t-[#285b8f]" />
+        <div className="flex min-h-[70vh] items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative h-12 w-12">
+              <div className="absolute inset-0 animate-spin rounded-full border-2 border-white/10 border-t-blue-400" />
+
+              <div className="absolute inset-2 rounded-full bg-blue-400/10 blur-md" />
+            </div>
+
+            <p className="text-sm text-zinc-500">
+              Loading your workspace...
+            </p>
+          </div>
         </div>
       </CandidateLayout>
     )
   }
+
+  /* =====================================================
+     ERROR
+  ====================================================== */
 
   if (error) {
     return (
       <CandidateLayout>
-        <div className="border border-red-200 bg-red-50 p-6 text-sm text-red-600">
-          {error}
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+          <p className="text-sm font-medium text-red-400">
+            Something went wrong
+          </p>
+
+          <p className="mt-2 text-sm text-zinc-500">
+            {error}
+          </p>
         </div>
       </CandidateLayout>
     )
   }
 
-  const upcoming = dashboard.upcomingInterviews[0]
+  const upcoming = dashboard?.upcomingInterviews?.[0]
+
   const dimensionEntries = latestResult
-    ? Object.entries(latestResult.dimensions)
+    ? Object.entries(latestResult.dimensions || {})
     : []
+
   const topRecommendation = preparation?.topicScores?.length
     ? [...preparation.topicScores].sort((a, b) => a.score - b.score)[0]
     : null
 
   return (
     <CandidateLayout>
+      <div className="min-h-screen pb-8 text-white">
 
-      {/* =====================================================
-          PAGE HEADER
-      ====================================================== */}
+        {/* =====================================================
+            HERO / HEADER
+        ====================================================== */}
 
-      <div className="mb-8">
+        <div className="relative mb-8 overflow-hidden rounded-3xl border border-white/[0.07] bg-gradient-to-br from-[#111827] via-[#090b10] to-black p-7 sm:p-10">
 
-        <p className="text-sm font-medium text-[#4b9bea]">
-          Candidate Dashboard
-        </p>
+          {/* Background Effects */}
 
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#17324f] lg:text-3xl">
-          Good morning, {user?.firstName || 'Candidate'}
-        </h1>
+          <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-blue-500/10 blur-[120px]" />
 
-        <p className="mt-2 text-sm text-slate-500">
-          Here's an overview of your interview progress.
-        </p>
+          <div className="pointer-events-none absolute bottom-0 left-1/4 h-40 w-96 rounded-full bg-blue-400/5 blur-[100px]" />
 
-      </div>
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
 
+          <div className="relative">
+            <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
 
-      {/* =====================================================
-          STAT CARDS
-      ====================================================== */}
+              {/* LEFT */}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div>
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_12px_#60a5fa]" />
 
-        <StatCard
-          label="Upcoming Interviews"
-          value={String(dashboard.stats.upcomingInterviews)}
-          description="Scheduled interviews"
-          icon={<CalendarIcon />}
-        />
-
-        <StatCard
-          label="Completed"
-          value={String(dashboard.stats.completedInterviews)}
-          description="Interviews completed"
-          icon={<CheckIcon />}
-        />
-
-        <StatCard
-          label="Average Score"
-          value={`${dashboard.stats.averageScore}%`}
-          description={`${dashboard.stats.totalInterviews} total interviews`}
-          icon={<ChartIcon />}
-        />
-
-        <StatCard
-          label="Preparation"
-          value={`${preparation?.overallProgress ?? 0}%`}
-          description="Overall progress"
-          icon={<BookIcon />}
-        />
-
-      </div>
-
-
-      {/* =====================================================
-          MAIN GRID
-      ====================================================== */}
-
-      <div className="mt-6 grid gap-6 xl:grid-cols-3">
-
-        {/* Upcoming Interview */}
-
-        <div className="xl:col-span-2">
-
-          <SectionHeader
-            title="Upcoming Interview"
-            action="View all"
-            onAction={() => navigate('/candidate/interviews')}
-          />
-
-          {upcoming ? (
-            <div className="border border-slate-200 bg-white">
-
-              <div className="p-6">
-
-                <div className="flex flex-col justify-between gap-5 sm:flex-row">
-
-                  <div>
-
-                    <div className="flex items-center gap-3">
-
-                      <div className="flex h-11 w-11 items-center justify-center bg-[#e7f2ff] text-[#285b8f]">
-                        <CodeIcon />
-                      </div>
-
-                      <div>
-
-                        <h3 className="font-semibold text-slate-800">
-                          {upcoming.title}
-                        </h3>
-
-                      </div>
-
-                    </div>
-
-
-                    <div className="mt-5 flex flex-wrap gap-4 text-xs text-slate-500">
-
-                      <span className="flex items-center gap-2">
-                        <CalendarIcon />
-                        {candidateApi.formatDate(upcoming.scheduledAt)}
-                      </span>
-
-                      <span className="flex items-center gap-2">
-                        <ClockIcon />
-                        {candidateApi.formatTime(upcoming.scheduledAt)}
-                      </span>
-
-                      <span className="flex items-center gap-2">
-                        <TimerIcon />
-                        {candidateApi.formatDuration(upcoming.duration)}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-
-                  <div className="flex items-start">
-
-                    <span className="bg-[#eaf5ff] px-3 py-1.5 text-xs font-semibold text-[#3972a7]">
-                      {candidateApi.toInterviewStatusLabel(upcoming.status)}
-                    </span>
-
-                  </div>
-
+                  <span className="text-xs font-medium text-blue-300">
+                    Candidate Workspace
+                  </span>
                 </div>
 
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Good morning,
+                  <span className="ml-2 text-blue-400">
+                    {user?.firstName || 'Candidate'}
+                  </span>
+                </h1>
 
-                <div className="mt-6 border-t border-slate-100 pt-5">
-
-                  <div className="flex items-center justify-between">
-
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/candidate/interview/${upcoming.id}`)}
-                      className="hidden bg-[#285b8f] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#214d79] sm:block"
-                    >
-                      View Interview →
-                    </button>
-
-                  </div>
-
-                </div>
-
+                <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-400">
+                  Track your interview performance, sharpen your skills,
+                  and stay prepared for your next opportunity.
+                </p>
               </div>
 
+              {/* CTA */}
+
+              <button
+                type="button"
+                onClick={() => navigate('/candidate/interviews')}
+                className="group flex items-center justify-center gap-2 rounded-xl bg-blue-400 px-5 py-3 text-sm font-semibold text-black transition-all duration-300 hover:bg-blue-300 hover:shadow-[0_0_30px_rgba(96,165,250,0.25)]"
+              >
+                View Interviews
+
+                <span className="transition-transform duration-300 group-hover:translate-x-1">
+                  →
+                </span>
+              </button>
+
             </div>
-          ) : (
-            <EmptyState message="No upcoming interviews scheduled." />
-          )}
+          </div>
+        </div>
+
+        {/* =====================================================
+            STATISTICS
+        ====================================================== */}
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+          <StatCard
+            label="Upcoming Interviews"
+            value={String(dashboard?.stats?.upcomingInterviews ?? 0)}
+            description="Scheduled sessions"
+            icon={<CalendarIcon />}
+            accent="blue"
+          />
+
+          <StatCard
+            label="Completed"
+            value={String(dashboard?.stats?.completedInterviews ?? 0)}
+            description="Interviews completed"
+            icon={<CheckIcon />}
+            accent="cyan"
+          />
+
+          <StatCard
+            label="Average Score"
+            value={`${dashboard?.stats?.averageScore ?? 0}%`}
+            description={`${dashboard?.stats?.totalInterviews ?? 0} total interviews`}
+            icon={<ChartIcon />}
+            accent="sky"
+          />
+
+          <StatCard
+            label="Preparation"
+            value={`${preparation?.overallProgress ?? 0}%`}
+            description="Overall readiness"
+            icon={<BookIcon />}
+            accent="indigo"
+          />
 
         </div>
 
+        {/* =====================================================
+            MAIN GRID
+        ====================================================== */}
 
-        {/* Preparation */}
+        <div className="mt-8 grid gap-6 xl:grid-cols-3">
 
-        <div>
+          {/* ================= UPCOMING ================= */}
 
-          <SectionHeader
-            title="Preparation"
-            action="Practice"
-            onAction={() => navigate('/candidate/preparation')}
-          />
+          <div className="xl:col-span-2">
 
-          <div className="border border-slate-200 bg-white p-6">
+            <SectionHeader
+              title="Upcoming Interview"
+              subtitle="Your next scheduled session"
+              action="View all"
+              onAction={() => navigate('/candidate/interviews')}
+            />
 
-            <p className="text-sm text-slate-500">
-              Your preparation progress
-            </p>
+            {upcoming ? (
+              <div className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0b0d12] transition-all duration-300 hover:border-blue-400/20 hover:bg-[#0e1118]">
 
-            <div className="mt-5 flex items-center gap-5">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/60 to-transparent" />
 
-              <div className="relative flex h-24 w-24 items-center justify-center">
+                <div className="p-6 sm:p-7">
 
-                <svg
-                  className="absolute h-24 w-24 -rotate-90"
-                  viewBox="0 0 100 100"
-                >
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="42"
-                    fill="none"
-                    stroke="#e5edf5"
-                    strokeWidth="8"
-                  />
+                  <div className="flex flex-col justify-between gap-8 md:flex-row">
 
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="42"
-                    fill="none"
-                    stroke="#4b9bea"
-                    strokeWidth="8"
-                    strokeDasharray="264"
-                    strokeDashoffset={264 - ((preparation?.overallProgress ?? 0) / 100) * 264}
-                    strokeLinecap="round"
-                  />
-                </svg>
+                    <div>
+                      <div className="flex items-center gap-4">
 
-                <span className="text-xl font-bold text-[#17324f]">
-                  {preparation?.overallProgress ?? 0}%
-                </span>
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-400/10 text-blue-400">
+                          <CodeIcon />
+                        </div>
 
+                        <div>
+                          <h3 className="text-lg font-semibold text-white">
+                            {upcoming.title}
+                          </h3>
+
+                          <p className="mt-1 text-sm text-zinc-500">
+                            Technical Interview Session
+                          </p>
+                        </div>
+
+                      </div>
+
+                      <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-zinc-400">
+
+                        <InterviewMeta
+                          icon={<CalendarIcon />}
+                          value={candidateApi.formatDate(upcoming.scheduledAt)}
+                        />
+
+                        <InterviewMeta
+                          icon={<ClockIcon />}
+                          value={candidateApi.formatTime(upcoming.scheduledAt)}
+                        />
+
+                        <InterviewMeta
+                          icon={<TimerIcon />}
+                          value={candidateApi.formatDuration(upcoming.duration)}
+                        />
+
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-start gap-5 md:items-end">
+
+                      <span className="rounded-full border border-blue-400/20 bg-blue-400/10 px-3 py-1.5 text-xs font-medium text-blue-300">
+                        {candidateApi.toInterviewStatusLabel(upcoming.status)}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(`/candidate/interview/${upcoming.id}`)
+                        }
+                        className="group/btn flex items-center gap-2 rounded-xl bg-blue-400 px-5 py-3 text-sm font-semibold text-black transition-all hover:bg-blue-300 hover:shadow-[0_0_30px_rgba(96,165,250,0.25)]"
+                      >
+                        View Interview
+
+                        <span className="transition-transform group-hover/btn:translate-x-1">
+                          →
+                        </span>
+                      </button>
+
+                    </div>
+                  </div>
+                </div>
               </div>
-
-
-              <div className="flex-1 space-y-3">
-
-                {(preparation?.topicScores ?? []).slice(0, 3).map((topic) => (
-                  <ProgressItem
-                    key={topic.topic}
-                    label={topic.topic}
-                    value={`${topic.score}%`}
-                    progress={topic.score}
-                  />
-                ))}
-
-                {(!preparation || preparation.topicScores.length === 0) && (
-                  <p className="text-xs text-slate-400">
-                    Complete an interview to see topic progress.
-                  </p>
-                )}
-
-              </div>
-
-            </div>
+            ) : (
+              <EmptyState
+                message="No upcoming interviews scheduled."
+                action="Browse interviews"
+                onAction={() => navigate('/candidate/interviews')}
+              />
+            )}
 
           </div>
 
+          {/* ================= PREPARATION ================= */}
+
+          <div>
+
+            <SectionHeader
+              title="Preparation"
+              subtitle="Your current progress"
+              action="Practice"
+              onAction={() => navigate('/candidate/preparation')}
+            />
+
+            <div className="rounded-2xl border border-white/[0.07] bg-[#0b0d12] p-6 transition hover:border-blue-400/20">
+
+              <div className="flex items-center gap-6">
+
+                {/* Progress Circle */}
+
+                <div className="relative flex h-28 w-28 shrink-0 items-center justify-center">
+
+                  <svg
+                    className="absolute h-28 w-28 -rotate-90"
+                    viewBox="0 0 100 100"
+                  >
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="42"
+                      fill="none"
+                      stroke="#27272a"
+                      strokeWidth="7"
+                    />
+
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="42"
+                      fill="none"
+                      stroke="#60a5fa"
+                      strokeWidth="7"
+                      strokeDasharray="264"
+                      strokeDashoffset={
+                        264 -
+                        ((preparation?.overallProgress ?? 0) / 100) * 264
+                      }
+                      strokeLinecap="round"
+                      className="transition-all duration-700"
+                    />
+                  </svg>
+
+                  <div className="text-center">
+
+                    <span className="block text-xl font-semibold text-white">
+                      {preparation?.overallProgress ?? 0}%
+                    </span>
+
+                    <span className="text-[10px] uppercase tracking-wider text-zinc-600">
+                      Progress
+                    </span>
+
+                  </div>
+                </div>
+
+                {/* Topics */}
+
+                <div className="min-w-0 flex-1 space-y-4">
+
+                  {(preparation?.topicScores ?? [])
+                    .slice(0, 3)
+                    .map((topic) => (
+                      <ProgressItem
+                        key={topic.topic}
+                        label={topic.topic}
+                        value={`${topic.score}%`}
+                        progress={topic.score}
+                      />
+                    ))}
+
+                  {(!preparation ||
+                    preparation.topicScores?.length === 0) && (
+                    <p className="text-xs leading-5 text-zinc-600">
+                      Complete an interview to unlock your preparation insights.
+                    </p>
+                  )}
+
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-      </div>
+        {/* =====================================================
+            PERFORMANCE
+        ====================================================== */}
 
+        <div className="mt-10">
 
-      {/* =====================================================
-          PERFORMANCE
-      ====================================================== */}
+          <SectionHeader
+            title="Performance Breakdown"
+            subtitle="Your latest interview evaluation"
+            action="View detailed results"
+            onAction={() => navigate('/candidate/results')}
+          />
 
-      <div className="mt-8">
+          {dimensionEntries.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
-        <SectionHeader
-          title="Your Performance"
-          action="View detailed results"
-          onAction={() => navigate('/candidate/results')}
-        />
-
-        {dimensionEntries.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-            {dimensionEntries.map(([key, score]) => (
-              <DimensionCard
-                key={key}
-                title={DIMENSION_LABELS[key] || key}
-                score={`${score}%`}
-                progress={score}
-              />
-            ))}
-
-            <div className="flex items-center justify-center border border-dashed border-slate-300 bg-white p-5">
+              {dimensionEntries.map(([key, score]) => (
+                <DimensionCard
+                  key={key}
+                  title={DIMENSION_LABELS[key] || key}
+                  score={`${score}%`}
+                  progress={score}
+                />
+              ))}
 
               <button
                 type="button"
                 onClick={() => navigate('/candidate/results')}
-                className="text-sm font-semibold text-[#285b8f] hover:underline"
+                className="group flex min-h-[145px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.015] p-5 transition-all hover:border-blue-400/40 hover:bg-blue-400/[0.04]"
               >
-                View full evaluation →
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition group-hover:border-blue-400/40 group-hover:text-blue-400">
+                  →
+                </span>
+
+                <span className="mt-3 text-sm font-medium text-zinc-400 group-hover:text-white">
+                  Full Evaluation
+                </span>
               </button>
 
             </div>
+          ) : (
+            <EmptyState
+              message="Complete an interview to unlock your performance insights."
+            />
+          )}
+
+        </div>
+
+        {/* =====================================================
+            BOTTOM SECTION
+        ====================================================== */}
+
+        <div className="mt-10 grid gap-6 xl:grid-cols-2">
+
+          {/* ================= FEEDBACK ================= */}
+
+          <div>
+
+            <SectionHeader
+              title="Recent Feedback"
+              subtitle="Insights from your latest interview"
+              action="View all"
+              onAction={() => navigate('/candidate/results')}
+            />
+
+            {latestResult ? (
+              <div className="rounded-2xl border border-white/[0.07] bg-[#0b0d12] p-6">
+
+                <div className="flex gap-4">
+
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-400/10 text-blue-400">
+                    <MessageIcon />
+                  </div>
+
+                  <div>
+                    <p className="text-sm leading-7 text-zinc-400">
+                      {latestResult.feedback}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/candidate/results/${latestResult.interviewId}`
+                        )
+                      }
+                      className="group mt-5 inline-flex items-center gap-2 text-sm font-medium text-white"
+                    >
+                      View full feedback
+
+                      <span className="text-blue-400 transition-transform group-hover:translate-x-1">
+                        →
+                      </span>
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            ) : (
+              <EmptyState
+                message="Feedback will appear after your first completed interview."
+              />
+            )}
 
           </div>
-        ) : (
-          <EmptyState message="Complete an interview to see your performance breakdown." />
-        )}
 
-      </div>
+          {/* ================= RECOMMENDATION ================= */}
 
+          <div>
 
-      {/* =====================================================
-          BOTTOM SECTION
-      ====================================================== */}
+            <SectionHeader
+              title="Recommended for You"
+              subtitle="Your highest priority improvement area"
+              action="View preparation"
+              onAction={() => navigate('/candidate/preparation')}
+            />
 
-      <div className="mt-8 grid gap-6 xl:grid-cols-2">
+            {topRecommendation ? (
+              <div className="relative overflow-hidden rounded-2xl border border-blue-400/15 bg-gradient-to-br from-blue-400/[0.09] via-[#0b0d12] to-[#0b0d12] p-6">
 
-        {/* Recent Feedback */}
+                <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-400/10 blur-[70px]" />
 
-        <div>
+                <div className="relative">
 
-          <SectionHeader
-            title="Recent Feedback"
-            action="View all"
-            onAction={() => navigate('/candidate/results')}
-          />
+                  <div className="flex items-start justify-between gap-6">
 
-          {latestResult ? (
-            <div className="border border-slate-200 bg-white p-6">
+                    <div>
 
-              <div className="flex gap-4">
+                      <div className="inline-flex rounded-full bg-blue-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-blue-300">
+                        Focus Area
+                      </div>
 
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-[#e7f2ff] text-[#3972a7]">
-                  <MessageIcon />
+                      <h3 className="mt-4 text-xl font-semibold text-white">
+                        {topRecommendation.topic}
+                      </h3>
+
+                      <p className="mt-2 text-sm text-zinc-500">
+                        This is the area where focused practice can make
+                        the biggest difference.
+                      </p>
+
+                    </div>
+
+                    <div className="text-right">
+
+                      <p className="text-3xl font-semibold text-white">
+                        {topRecommendation.score}%
+                      </p>
+
+                      <p className="mt-1 text-xs text-zinc-600">
+                        Current score
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="mt-7 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 via-blue-400 to-cyan-400 transition-all duration-700"
+                      style={{
+                        width: `${topRecommendation.score}%`,
+                      }}
+                    />
+
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate('/candidate/preparation')
+                    }
+                    className="mt-6 rounded-xl bg-blue-400 px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-blue-300"
+                  >
+                    Start Practice →
+                  </button>
+
                 </div>
-
-                <div>
-
-                  <p className="text-sm leading-6 text-slate-600">
-                    {latestResult.feedback}
-                  </p>
-
-                </div>
-
               </div>
+            ) : (
+              <EmptyState
+                message="Complete an interview to receive a personalized recommendation."
+              />
+            )}
 
-              <button
-                type="button"
-                onClick={() => navigate(`/candidate/results/${latestResult.interviewId}`)}
-                className="mt-5 text-sm font-semibold text-[#285b8f] hover:underline"
-              >
-                View full feedback →
-              </button>
-
-            </div>
-          ) : (
-            <EmptyState message="Feedback will appear after your first completed interview." />
-          )}
-
+          </div>
         </div>
-
-
-        {/* Recommended */}
-
-        <div>
-
-          <SectionHeader
-            title="Recommended for You"
-            action="View preparation"
-            onAction={() => navigate('/candidate/preparation')}
-          />
-
-          {topRecommendation ? (
-            <div className="border border-slate-200 bg-white p-6">
-
-              <div className="flex items-center justify-between">
-
-                <div>
-
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#4b9bea]">
-                    Focus Area
-                  </p>
-
-                  <h3 className="mt-2 text-lg font-semibold text-[#17324f]">
-                    {topRecommendation.topic}
-                  </h3>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Improve your problem-solving performance.
-                  </p>
-
-                </div>
-
-                <div className="text-right">
-
-                  <p className="text-2xl font-bold text-[#17324f]">
-                    {topRecommendation.score}%
-                  </p>
-
-                  <p className="text-xs text-slate-400">
-                    Current score
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div className="mt-5 h-2 overflow-hidden bg-slate-100">
-
-                <div
-                  className="h-full bg-[#4b9bea]"
-                  style={{ width: `${topRecommendation.score}%` }}
-                />
-
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate('/candidate/preparation')}
-                className="mt-5 bg-[#eaf3fc] px-4 py-2.5 text-sm font-semibold text-[#285b8f] transition hover:bg-[#dcecff]"
-              >
-                Start Practice →
-
-              </button>
-
-            </div>
-          ) : (
-            <EmptyState message="Complete an interview to get a recommendation." />
-          )}
-
-        </div>
-
       </div>
-
     </CandidateLayout>
   )
 }
 
+/* ============================================================
+   LABELS
+============================================================ */
 
 const DIMENSION_LABELS = {
   algorithmCorrectness: 'Algorithmic Correctness',
@@ -504,36 +612,48 @@ const DIMENSION_LABELS = {
   edgeCases: 'Edge Cases',
 }
 
-
 /* ============================================================
    COMPONENTS
 ============================================================ */
 
-function StatCard({ label, value, description, icon }) {
+function StatCard({
+  label,
+  value,
+  description,
+  icon,
+  accent = 'blue',
+}) {
+  const accentStyles = {
+    blue: 'bg-blue-400/10 text-blue-400 border-blue-400/20',
+    cyan: 'bg-cyan-400/10 text-cyan-400 border-cyan-400/20',
+    sky: 'bg-sky-400/10 text-sky-400 border-sky-400/20',
+    indigo: 'bg-blue-600/10 text-blue-300 border-blue-500/20',
+  }
+
   return (
-    <div className="border border-slate-200 bg-white p-5">
+    <div className="group rounded-2xl border border-white/[0.07] bg-[#0b0d12] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-blue-400/20 hover:bg-[#0e1118]">
 
       <div className="flex items-start justify-between">
 
         <div>
-
-          <p className="text-xs font-medium text-slate-400">
+          <p className="text-xs font-medium text-zinc-500">
             {label}
           </p>
 
-          <p className="mt-2 text-3xl font-bold tracking-tight text-[#17324f]">
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-white">
             {value}
           </p>
-
         </div>
 
-        <div className="flex h-10 w-10 items-center justify-center bg-[#eaf3fc] text-[#3972a7]">
+        <div
+          className={`flex h-11 w-11 items-center justify-center rounded-xl border ${accentStyles[accent]}`}
+        >
           {icon}
         </div>
 
       </div>
 
-      <p className="mt-4 text-xs text-slate-400">
+      <p className="mt-5 text-xs text-zinc-600">
         {description}
       </p>
 
@@ -541,58 +661,98 @@ function StatCard({ label, value, description, icon }) {
   )
 }
 
-
-function SectionHeader({ title, action, onAction }) {
+function SectionHeader({
+  title,
+  subtitle,
+  action,
+  onAction,
+}) {
   return (
-    <div className="mb-3 flex items-center justify-between">
+    <div className="mb-4 flex items-end justify-between gap-4">
 
-      <h2 className="text-sm font-semibold text-slate-700">
-        {title}
-      </h2>
+      <div>
+        <h2 className="text-base font-semibold text-white">
+          {title}
+        </h2>
 
-      <button
-        type="button"
-        onClick={onAction}
-        className="text-xs font-medium text-[#3972a7] hover:underline"
-      >
-        {action} →
-      </button>
+        {subtitle && (
+          <p className="mt-1 text-xs text-zinc-600">
+            {subtitle}
+          </p>
+        )}
+      </div>
+
+      {action && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="group whitespace-nowrap text-xs font-medium text-zinc-500 transition hover:text-blue-300"
+        >
+          {action}
+
+          <span className="ml-1 inline-block text-blue-400 transition-transform group-hover:translate-x-1">
+            →
+          </span>
+        </button>
+      )}
 
     </div>
   )
 }
 
-
-function EmptyState({ message }) {
+function EmptyState({
+  message,
+  action,
+  onAction,
+}) {
   return (
-    <div className="border border-dashed border-slate-300 bg-white p-6 text-center text-xs text-slate-400">
-      {message}
+    <div className="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.015] px-6 py-10 text-center">
+
+      <p className="text-sm text-zinc-600">
+        {message}
+      </p>
+
+      {action && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-4 text-sm font-medium text-blue-400 hover:text-blue-300"
+        >
+          {action} →
+        </button>
+      )}
+
     </div>
   )
 }
 
-
-function DimensionCard({ title, score, progress }) {
+function DimensionCard({
+  title,
+  score,
+  progress,
+}) {
   return (
-    <div className="border border-slate-200 bg-white p-5">
+    <div className="group rounded-2xl border border-white/[0.07] bg-[#0b0d12] p-5 transition-all duration-300 hover:border-blue-400/20 hover:bg-[#0e1118]">
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
 
-        <p className="text-xs font-medium leading-5 text-slate-500">
+        <p className="max-w-[150px] text-xs font-medium leading-5 text-zinc-500">
           {title}
         </p>
 
-        <span className="text-sm font-bold text-[#285b8f]">
+        <span className="text-sm font-semibold text-blue-300">
           {score}
         </span>
 
       </div>
 
-      <div className="mt-4 h-1.5 bg-slate-100">
+      <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
 
         <div
-          className="h-full bg-[#6fa9dc]"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-full bg-gradient-to-r from-blue-600 via-blue-400 to-cyan-400 transition-all duration-700"
+          style={{
+            width: `${progress}%`,
+          }}
         />
 
       </div>
@@ -601,28 +761,33 @@ function DimensionCard({ title, score, progress }) {
   )
 }
 
-
-function ProgressItem({ label, value, progress }) {
+function ProgressItem({
+  label,
+  value,
+  progress,
+}) {
   return (
     <div>
 
-      <div className="mb-1 flex justify-between">
+      <div className="mb-2 flex justify-between gap-3">
 
-        <span className="text-[11px] text-slate-500">
+        <span className="truncate text-[11px] text-zinc-500">
           {label}
         </span>
 
-        <span className="text-[11px] font-semibold text-slate-600">
+        <span className="text-[11px] font-medium text-blue-200">
           {value}
         </span>
 
       </div>
 
-      <div className="h-1.5 bg-slate-100">
+      <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
 
         <div
-          className="h-full bg-[#6fa9dc]"
-          style={{ width: `${progress}%` }}
+          className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400"
+          style={{
+            width: `${progress}%`,
+          }}
         />
 
       </div>
@@ -631,6 +796,22 @@ function ProgressItem({ label, value, progress }) {
   )
 }
 
+function InterviewMeta({
+  icon,
+  value,
+}) {
+  return (
+    <span className="flex items-center gap-2">
+
+      <span className="text-blue-400/70">
+        {icon}
+      </span>
+
+      {value}
+
+    </span>
+  )
+}
 
 /* ============================================================
    ICONS

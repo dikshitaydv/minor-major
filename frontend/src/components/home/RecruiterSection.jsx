@@ -4,7 +4,7 @@ function RecruiterSection() {
     return (
         <section
             id="recruiters"
-            className="relative min-h-screen overflow-hidden bg-black text-white"
+            className="relative min-h-screen overflow-hidden bg-white text-white"
         >
             {/* ============================================
                 VIDEO BACKGROUND
@@ -16,7 +16,7 @@ function RecruiterSection() {
                     loop
                     muted
                     playsInline
-                    className="h-full w-full object-cover opacity-45"
+                    className="h-full w-full object-cover opacity-90"
                 >
                     <source
                         src="/videos/recruiter-bg.mp4"
@@ -26,7 +26,7 @@ function RecruiterSection() {
 
                 {/* DARK OVERLAY */}
 
-                <div className="absolute inset-0 bg-black/70" />
+                <div className="absolute inset-0 bg-black/45" />
 
                 {/* Darker edges */}
 

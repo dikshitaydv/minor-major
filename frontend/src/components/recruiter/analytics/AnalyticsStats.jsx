@@ -1,61 +1,185 @@
+import { useEffect, useState } from 'react'
+import { getRecruiterAnalytics } from '../../../api/interview.api.js'
+
 function AnalyticsStats() {
-  const stats = [
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [stats, setStats] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadAnalytics = async () => {
+      try {
+        setLoading(true)
+        setError('')
+
+        const data = await getRecruiterAnalytics()
+
+        if (!cancelled) {
+          setStats(data)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err.message || 'Unable to load analytics.'
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    loadAnalytics()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+
+  /* ============================================================
+     LOADING
+  ============================================================ */
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-px border border-zinc-800 bg-zinc-800 sm:grid-cols-2 xl:grid-cols-4">
+
+        {[1, 2, 3, 4].map((item) => (
+          <div
+            key={item}
+            className="bg-[#111111] p-6"
+          >
+            <div className="h-3 w-28 animate-pulse bg-zinc-800" />
+
+            <div className="mt-5 h-8 w-20 animate-pulse bg-zinc-800" />
+
+            <div className="mt-4 h-3 w-32 animate-pulse bg-zinc-800" />
+          </div>
+        ))}
+
+      </div>
+    )
+  }
+
+
+  /* ============================================================
+     ERROR
+  ============================================================ */
+
+  if (error) {
+    return (
+      <div className="border border-zinc-800 bg-[#111111] p-5">
+
+        <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Analytics unavailable
+        </p>
+
+        <p className="mt-2 text-sm text-zinc-400">
+          {error}
+        </p>
+
+      </div>
+    )
+  }
+
+
+  /* ============================================================
+     DATA
+  ============================================================ */
+
+  const analyticsStats = [
     {
       label: 'Interviews Completed',
-      value: '146',
-      change: '+18%',
-      description: 'vs previous period',
+      value: stats?.interviewsCompleted ?? 0,
+      change: stats?.interviewsCompletedChange,
+      description: 'Completed interviews',
     },
     {
       label: 'Average AI Score',
-      value: '78.4',
-      change: '+4.2%',
-      description: 'vs previous period',
+      value: stats?.averageScore
+        ? `${stats.averageScore}%`
+        : '0%',
+      change: stats?.averageScoreChange,
+      description: 'Average candidate performance',
     },
     {
       label: 'Pass Rate',
-      value: '64%',
-      change: '+7%',
-      description: 'vs previous period',
+      value: stats?.passRate
+        ? `${stats.passRate}%`
+        : '0%',
+      change: stats?.passRateChange,
+      description: 'Candidates meeting requirements',
     },
     {
-      label: 'Avg. Interview Time',
-      value: '38m',
-      change: '-6%',
-      description: 'vs previous period',
+      label: 'Average Interview Time',
+      value: stats?.averageInterviewTime
+        ? `${stats.averageInterviewTime}m`
+        : '0m',
+      change: stats?.averageInterviewTimeChange,
+      description: 'Average completion duration',
     },
   ]
 
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
 
-      {stats.map((stat) => (
+  return (
+    <div className="grid grid-cols-1 gap-px border border-zinc-800 bg-zinc-800 sm:grid-cols-2 xl:grid-cols-4">
+
+      {analyticsStats.map((stat) => (
+
         <div
           key={stat.label}
-          className="border border-slate-200 bg-white p-5"
+          className="group bg-[#111111] p-6 transition hover:bg-[#151515]"
         >
 
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          {/* Label */}
+
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
             {stat.label}
           </p>
 
-          <div className="mt-3 flex items-end justify-between">
 
-            <p className="text-2xl font-bold tracking-tight text-[#17324f]">
+          {/* Value */}
+
+          <div className="mt-5 flex items-end justify-between gap-4">
+
+            <p className="text-3xl font-semibold tracking-tight text-zinc-100">
               {stat.value}
             </p>
 
-            <span className="text-[10px] font-semibold text-[#3d8a60]">
-              {stat.change}
-            </span>
+            {stat.change !== undefined &&
+              stat.change !== null && (
+
+                <span
+                  className={`text-xs font-medium ${
+                    String(stat.change).startsWith('-')
+                      ? 'text-zinc-500'
+                      : 'text-zinc-300'
+                  }`}
+                >
+                  {stat.change}
+                </span>
+
+              )}
 
           </div>
 
-          <p className="mt-2 text-[10px] text-slate-400">
-            {stat.description}
-          </p>
+
+          {/* Footer */}
+
+          <div className="mt-5 border-t border-zinc-800 pt-4">
+
+            <p className="text-[11px] text-zinc-600">
+              {stat.description}
+            </p>
+
+          </div>
 
         </div>
+
       ))}
 
     </div>

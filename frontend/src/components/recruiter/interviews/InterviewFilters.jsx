@@ -8,15 +8,26 @@ function InterviewFilters({
     sort: 'recent',
     type: 'all',
   },
-  onFiltersChange = () => { },
+
+  onFiltersChange = () => {},
+
   jobs = [],
 }) {
+  // ============================================================
+  // UPDATE FILTER
+  // ============================================================
+
   const updateFilter = (key, value) => {
     onFiltersChange({
       ...filters,
       [key]: value,
     })
   }
+
+
+  // ============================================================
+  // CLEAR FILTERS
+  // ============================================================
 
   const clearFilters = () => {
     onFiltersChange({
@@ -26,8 +37,14 @@ function InterviewFilters({
       date: 'all',
       score: 'all',
       sort: 'recent',
+      type: 'all',
     })
   }
+
+
+  // ============================================================
+  // ACTIVE FILTER CHECK
+  // ============================================================
 
   const hasActiveFilters =
     filters.search ||
@@ -35,26 +52,30 @@ function InterviewFilters({
     filters.job !== 'all' ||
     filters.date !== 'all' ||
     filters.score !== 'all' ||
-    filters.sort !== 'recent'
+    filters.sort !== 'recent' ||
+    filters.type !== 'all'
+
 
   return (
-    <div className="border border-slate-200 bg-white">
+    <div className="overflow-hidden border border-white/10 bg-[#111111]">
 
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
-      <div className="border-b border-slate-100 px-4 py-3">
+      <div className="border-b border-white/10 px-6 py-5">
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-6">
 
           <div>
 
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3972a7]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
               Interview Filters
             </p>
 
-            <p className="mt-1 text-[10px] text-slate-400">
+            <p className="mt-2 text-xs leading-relaxed text-slate-500">
               Search and filter interviews by candidate,
-              job, schedule, status, and evaluation score.
+              schedule, status, and evaluation score.
             </p>
 
           </div>
@@ -64,7 +85,25 @@ function InterviewFilters({
             type="button"
             onClick={clearFilters}
             disabled={!hasActiveFilters}
-            className="shrink-0 text-[10px] font-semibold text-slate-400 transition hover:text-[#3972a7] disabled:cursor-not-allowed disabled:opacity-40"
+            className="
+              shrink-0
+              border
+              border-white/10
+              bg-transparent
+              px-4
+              py-2
+              text-[10px]
+              font-semibold
+              uppercase
+              tracking-wider
+              text-slate-400
+              transition
+              hover:border-white/30
+              hover:bg-white/5
+              hover:text-white
+              disabled:cursor-not-allowed
+              disabled:opacity-30
+            "
           >
             Clear All
           </button>
@@ -74,25 +113,60 @@ function InterviewFilters({
       </div>
 
 
-      {/* MAIN FILTERS */}
+      {/* =====================================================
+          MAIN FILTERS
+      ===================================================== */}
 
-      <div className="grid gap-3 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-5 p-6 md:grid-cols-2 xl:grid-cols-3">
+
 
         {/* SEARCH */}
 
-        <div className="flex min-w-0 items-center border border-slate-200 bg-slate-50 px-3 xl:col-span-2">
+        <div className="xl:col-span-2">
 
-          <SearchIcon />
+          <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Search
+          </label>
 
-          <input
-            type="text"
-            value={filters.search}
-            onChange={(event) =>
-              updateFilter('search', event.target.value)
-            }
-            placeholder="Search candidate, email, company, title..."
-            className="ml-2 w-full bg-transparent py-2.5 text-xs text-slate-600 outline-none placeholder:text-slate-400"
-          />
+
+          <div
+            className="
+              flex
+              items-center
+              border
+              border-white/10
+              bg-[#0a0a0a]
+              px-4
+              transition
+              focus-within:border-white/30
+            "
+          >
+
+            <SearchIcon />
+
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(event) =>
+                updateFilter(
+                  'search',
+                  event.target.value,
+                )
+              }
+              placeholder="Search candidate, email, company, title..."
+              className="
+                ml-3
+                w-full
+                bg-transparent
+                py-3.5
+                text-xs
+                text-slate-200
+                outline-none
+                placeholder:text-slate-600
+              "
+            />
+
+          </div>
 
         </div>
 
@@ -134,7 +208,7 @@ function InterviewFilters({
         />
 
 
-        {/* JOB / INTERVIEW TITLE */}
+        {/* INTERVIEW */}
 
         <FilterSelect
           label="Interview"
@@ -232,11 +306,14 @@ function InterviewFilters({
       </div>
 
 
-      {/* SECONDARY FILTERS */}
+      {/* =====================================================
+          SECONDARY FILTERS
+      ===================================================== */}
 
-      <div className="border-t border-slate-100 bg-slate-50/50 px-4 py-3">
+      <div className="border-t border-white/10 bg-[#0a0a0a] px-6 py-5">
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
+
 
           {/* SORT */}
 
@@ -292,6 +369,18 @@ function InterviewFilters({
                 value: 'Technical Interview',
                 label: 'Technical Interview',
               },
+              {
+                value: 'Coding Interview',
+                label: 'Coding Interview',
+              },
+              {
+                value: 'DSA Interview',
+                label: 'DSA Interview',
+              },
+              {
+                value: 'LeetCode Easy Interview',
+                label: 'LeetCode Easy Interview',
+              },
             ]}
           />
 
@@ -300,58 +389,138 @@ function InterviewFilters({
       </div>
 
 
-      {/* ACTIVE FILTERS */}
+      {/* =====================================================
+          ACTIVE FILTERS
+      ===================================================== */}
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 px-4 py-3">
+      <div className="border-t border-white/10 px-6 py-4">
 
-        <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-          Active Filters
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
 
-
-        {!hasActiveFilters && (
-          <span className="bg-[#edf5fc] px-2 py-1 text-[9px] font-medium text-[#3972a7]">
-            All Interviews
+          <span className="mr-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">
+            Active Filters
           </span>
-        )}
 
 
-        {filters.search && (
-          <ActiveFilter
-            label={`Search: ${filters.search}`}
-            onRemove={() => updateFilter('search', '')}
-          />
-        )}
+          {!hasActiveFilters && (
+
+            <span className="border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[9px] font-medium text-slate-500">
+              All Interviews
+            </span>
+
+          )}
 
 
-        {filters.status !== 'all' && (
-          <ActiveFilter
-            label={`Status: ${formatStatus(filters.status)}`}
-            onRemove={() =>
-              updateFilter('status', 'all')
-            }
-          />
-        )}
+          {/* SEARCH */}
+
+          {filters.search && (
+
+            <ActiveFilter
+              label={`Search: ${filters.search}`}
+              onRemove={() =>
+                updateFilter('search', '')
+              }
+            />
+
+          )}
 
 
-        {filters.date !== 'all' && (
-          <ActiveFilter
-            label={`Date: ${formatDateFilter(filters.date)}`}
-            onRemove={() =>
-              updateFilter('date', 'all')
-            }
-          />
-        )}
+          {/* STATUS */}
+
+          {filters.status !== 'all' && (
+
+            <ActiveFilter
+              label={`Status: ${formatStatus(
+                filters.status,
+              )}`}
+              onRemove={() =>
+                updateFilter('status', 'all')
+              }
+            />
+
+          )}
 
 
-        {filters.score !== 'all' && (
-          <ActiveFilter
-            label={`Score: ${filters.score}`}
-            onRemove={() =>
-              updateFilter('score', 'all')
-            }
-          />
-        )}
+          {/* INTERVIEW */}
+
+          {filters.job !== 'all' && (
+
+            <ActiveFilter
+              label={`Interview: ${
+                jobs.find(
+                  (job) => job.id === filters.job,
+                )?.title || 'Selected Interview'
+              }`}
+              onRemove={() =>
+                updateFilter('job', 'all')
+              }
+            />
+
+          )}
+
+
+          {/* DATE */}
+
+          {filters.date !== 'all' && (
+
+            <ActiveFilter
+              label={`Date: ${formatDateFilter(
+                filters.date,
+              )}`}
+              onRemove={() =>
+                updateFilter('date', 'all')
+              }
+            />
+
+          )}
+
+
+          {/* SCORE */}
+
+          {filters.score !== 'all' && (
+
+            <ActiveFilter
+              label={`Score: ${formatScoreFilter(
+                filters.score,
+              )}`}
+              onRemove={() =>
+                updateFilter('score', 'all')
+              }
+            />
+
+          )}
+
+
+          {/* TYPE */}
+
+          {filters.type !== 'all' && (
+
+            <ActiveFilter
+              label={`Type: ${filters.type}`}
+              onRemove={() =>
+                updateFilter('type', 'all')
+              }
+            />
+
+          )}
+
+
+          {/* SORT */}
+
+          {filters.sort !== 'recent' && (
+
+            <ActiveFilter
+              label={`Sort: ${formatSortFilter(
+                filters.sort,
+              )}`}
+              onRemove={() =>
+                updateFilter('sort', 'recent')
+              }
+            />
+
+          )}
+
+        </div>
 
       </div>
 
@@ -373,29 +542,57 @@ function FilterSelect({
   return (
     <div className="min-w-0">
 
-      <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+      <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-500">
         {label}
       </label>
 
 
-      <select
-        value={value}
-        onChange={(event) =>
-          onChange(event.target.value)
-        }
-        className="w-full border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600 outline-none transition focus:border-[#8eb9df]"
-      >
+      <div className="relative">
 
-        {options.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-          >
-            {option.label}
-          </option>
-        ))}
+        <select
+          value={value}
+          onChange={(event) =>
+            onChange(event.target.value)
+          }
+          className="
+            w-full
+            cursor-pointer
+            appearance-none
+            border
+            border-white/10
+            bg-[#0a0a0a]
+            px-4
+            py-3.5
+            pr-10
+            text-xs
+            text-slate-300
+            outline-none
+            transition
+            hover:border-white/20
+            focus:border-white/35
+          "
+        >
 
-      </select>
+          {options.map((option) => (
+
+            <option
+              key={option.value}
+              value={option.value}
+              className="bg-[#111111] text-slate-200"
+            >
+              {option.label}
+            </option>
+
+          ))}
+
+        </select>
+
+
+        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+          <ChevronDownIcon />
+        </div>
+
+      </div>
 
     </div>
   )
@@ -414,12 +611,30 @@ function ActiveFilter({
     <button
       type="button"
       onClick={onRemove}
-      className="flex items-center gap-1 bg-[#edf5fc] px-2 py-1 text-[9px] font-medium text-[#3972a7] transition hover:bg-[#dcecf9]"
+      className="
+        flex
+        items-center
+        gap-2
+        border
+        border-white/10
+        bg-white/[0.03]
+        px-3
+        py-1.5
+        text-[9px]
+        font-medium
+        text-slate-400
+        transition
+        hover:border-white/25
+        hover:bg-white/[0.06]
+        hover:text-white
+      "
     >
 
-      {label}
+      <span className="max-w-[200px] truncate">
+        {label}
+      </span>
 
-      <span className="ml-1 text-[#3972a7]">
+      <span className="text-xs leading-none text-slate-600">
         ×
       </span>
 
@@ -439,7 +654,7 @@ function formatStatus(status) {
     .map(
       (word) =>
         word.charAt(0).toUpperCase() +
-        word.slice(1)
+        word.slice(1),
     )
     .join(' ')
 }
@@ -457,14 +672,42 @@ function formatDateFilter(date) {
 }
 
 
+function formatScoreFilter(score) {
+  const labels = {
+    90: '90 – 100',
+    80: '80 – 89',
+    70: '70 – 79',
+    60: '60 – 69',
+    below60: 'Below 60',
+    pending: 'Not Evaluated',
+  }
+
+  return labels[score] || score
+}
+
+
+function formatSortFilter(sort) {
+  const labels = {
+    recent: 'Most Recent',
+    'scheduled-soon': 'Scheduled Soon',
+    'scheduled-late': 'Scheduled Later',
+    'score-high': 'Highest Score',
+    'score-low': 'Lowest Score',
+    candidate: 'Candidate Name',
+  }
+
+  return labels[sort] || sort
+}
+
+
 /* ============================================================
-   SEARCH ICON
+   ICONS
 ============================================================ */
 
 function SearchIcon() {
   return (
     <svg
-      className="h-4 w-4 shrink-0 text-slate-400"
+      className="h-4 w-4 shrink-0 text-slate-500"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -478,6 +721,21 @@ function SearchIcon() {
 
       <path d="m20 20-4-4" />
 
+    </svg>
+  )
+}
+
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m6 9 6 6 6-6" />
     </svg>
   )
 }

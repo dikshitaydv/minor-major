@@ -59,3 +59,18 @@ export const deleteInterview = async (
 
   return result.data
 }
+
+
+/* ============================================================
+   ANALYTICS
+============================================================ */
+
+export const getRecruiterAnalytics = async () => {
+  const result = await apiClient.get(
+    '/recruiter/analytics'
+  )
+
+  return result.data
+}
+
+

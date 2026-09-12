@@ -1,16 +1,24 @@
 function InterviewRow({ interview, onClick }) {
   const formattedStatus = formatStatus(interview.status)
 
+  // ============================================================
+  // STATUS STYLING — MONOCHROME / PROFESSIONAL
+  // ============================================================
+
   const statusClass =
     interview.status === 'COMPLETED'
-      ? 'bg-[#edf7f1] text-[#3d8a60]'
+      ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
       : interview.status === 'IN_PROGRESS'
-        ? 'bg-[#fff7e8] text-[#a06b19]'
+        ? 'border border-white/15 bg-white/[0.06] text-white'
         : interview.status === 'CANCELLED'
-          ? 'bg-[#fdf0f0] text-[#b64b4b]'
+          ? 'border border-red-500/20 bg-red-500/10 text-red-400'
           : interview.status === 'EXPIRED'
-            ? 'bg-slate-100 text-slate-500'
-            : 'bg-[#edf5fc] text-[#3972a7]'
+            ? 'border border-white/10 bg-white/[0.03] text-zinc-500'
+            : 'border border-white/15 bg-white/[0.05] text-zinc-300'
+
+  // ============================================================
+  // DATE FORMATTING
+  // ============================================================
 
   const scheduledDate = new Date(interview.scheduledAt)
 
@@ -26,29 +34,70 @@ function InterviewRow({ interview, onClick }) {
     hour12: true,
   })
 
+  // ============================================================
+  // UI
+  // ============================================================
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className="grid w-full grid-cols-[1.5fr_1.2fr_1.2fr_1fr_0.7fr_0.9fr_40px] items-center border-b border-slate-100 px-5 py-4 text-left transition hover:bg-slate-50"
+      className="
+        grid
+        w-full
+        grid-cols-[1.5fr_1.2fr_1.2fr_1fr_0.7fr_0.9fr_40px]
+        items-center
+        border-b
+        border-white/[0.07]
+        bg-[#0d0d0d]
+        px-5
+        py-4
+        text-left
+        transition
+        hover:bg-[#151515]
+      "
     >
 
-      {/* CANDIDATE */}
+      {/* ======================================================
+          CANDIDATE
+      ====================================================== */}
 
       <div className="flex min-w-0 items-center gap-3">
 
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#eaf3fc] text-[10px] font-semibold text-[#3972a7]">
+        {/* Initials */}
+
+        <div
+          className="
+            flex
+            h-10
+            w-10
+            shrink-0
+            items-center
+            justify-center
+            border
+            border-white/10
+            bg-[#171717]
+            text-[10px]
+            font-semibold
+            text-zinc-300
+          "
+        >
           {interview.candidate?.initials || '--'}
         </div>
 
+
+        {/* Candidate Info */}
+
         <div className="min-w-0">
 
-          <p className="truncate text-xs font-semibold text-slate-700">
-            {interview.candidate?.name || 'Unknown Candidate'}
+          <p className="truncate text-xs font-semibold text-zinc-200">
+            {interview.candidate?.name ||
+              'Unknown Candidate'}
           </p>
 
-          <p className="mt-1 truncate text-[10px] text-slate-400">
-            {interview.candidate?.email || 'No email available'}
+          <p className="mt-1 truncate text-[10px] text-zinc-500">
+            {interview.candidate?.email ||
+              'No email available'}
           </p>
 
         </div>
@@ -56,87 +105,113 @@ function InterviewRow({ interview, onClick }) {
       </div>
 
 
-      {/* INTERVIEW */}
+      {/* ======================================================
+          INTERVIEW
+      ====================================================== */}
 
       <div className="min-w-0 pr-4">
 
-        <p className="truncate text-xs font-medium text-slate-600">
+        <p className="truncate text-xs font-medium text-zinc-300">
           {interview.title}
         </p>
 
-        <p className="mt-1 truncate text-[9px] text-slate-400">
+        <p className="mt-1 truncate text-[9px] text-zinc-500">
           {interview.type}
         </p>
 
       </div>
 
 
-      {/* COMPANY / FOCUS */}
+      {/* ======================================================
+          COMPANY / FOCUS AREA
+      ====================================================== */}
 
       <div className="min-w-0 pr-4">
 
-        <p className="truncate text-xs font-medium text-slate-600">
+        <p className="truncate text-xs font-medium text-zinc-400">
           {interview.company || 'No Company'}
         </p>
 
-        <p className="mt-1 truncate text-[9px] text-slate-400">
-          {interview.focusAreas?.join(', ') || 'General Interview'}
+        <p className="mt-1 truncate text-[9px] text-zinc-600">
+          {interview.focusAreas?.length > 0
+            ? interview.focusAreas.join(', ')
+            : 'General Interview'}
         </p>
 
       </div>
 
 
-      {/* SCHEDULE */}
+      {/* ======================================================
+          SCHEDULE
+      ====================================================== */}
 
       <div>
 
-        <p className="text-xs font-medium text-slate-600">
+        <p className="text-xs font-medium text-zinc-300">
           {date}
         </p>
 
-        <p className="mt-1 text-[9px] text-slate-400">
+        <p className="mt-1 text-[9px] text-zinc-500">
           {time}
         </p>
 
-        <p className="mt-0.5 text-[9px] text-slate-400">
+        <p className="mt-0.5 text-[9px] text-zinc-600">
           {interview.duration} mins
         </p>
 
       </div>
 
 
-      {/* SCORE */}
+      {/* ======================================================
+          SCORE
+      ====================================================== */}
 
       <div>
 
         {interview.score !== null &&
         interview.score !== undefined ? (
-          <div>
 
-            <span className="text-sm font-bold text-[#17324f]">
+          <div className="flex items-baseline">
+
+            <span className="text-sm font-bold text-zinc-100">
               {interview.score}
             </span>
 
-            <span className="text-[9px] text-slate-400">
+            <span className="ml-0.5 text-[9px] text-zinc-600">
               /100
             </span>
 
           </div>
+
         ) : (
-          <span className="text-[10px] text-slate-400">
+
+          <span className="text-sm text-zinc-600">
             —
           </span>
+
         )}
 
       </div>
 
 
-      {/* STATUS */}
+      {/* ======================================================
+          STATUS
+      ====================================================== */}
 
       <div>
 
         <span
-          className={`inline-block px-2 py-1 text-[9px] font-semibold ${statusClass}`}
+          className={`
+            inline-flex
+            border
+            px-2.5
+            py-1
+            text-[9px]
+            font-semibold
+            uppercase
+            tracking-wide
+            ${statusClass}
+          `}
         >
           {formattedStatus}
         </span>
@@ -144,9 +219,11 @@ function InterviewRow({ interview, onClick }) {
       </div>
 
 
-      {/* ARROW */}
+      {/* ======================================================
+          ARROW
+      ====================================================== */}
 
-      <div className="flex justify-end text-slate-300">
+      <div className="flex justify-end text-zinc-600 transition group-hover:text-zinc-300">
 
         <ArrowIcon />
 
@@ -156,6 +233,10 @@ function InterviewRow({ interview, onClick }) {
   )
 }
 
+
+/* ============================================================
+   FORMAT STATUS
+============================================================ */
 
 function formatStatus(status) {
   return status
@@ -169,6 +250,10 @@ function formatStatus(status) {
     .join(' ')
 }
 
+
+/* ============================================================
+   ARROW ICON
+============================================================ */
 
 function ArrowIcon() {
   return (

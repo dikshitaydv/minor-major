@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { getRecruiterInterviewById } from '../../../api/interview.api.js'
 
-
 function InterviewDetails({ interviewId, onClose }) {
   const [interview, setInterview] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!interviewId) return
@@ -20,14 +20,11 @@ function InterviewDetails({ interviewId, onClose }) {
 
         setInterview(data)
       } catch (error) {
-        console.error(
-          'Fetch interview error:',
-          error,
-        )
+        console.error('Fetch interview error:', error)
 
         setError(
           error.message ||
-            'Failed to fetch interview',
+          'Failed to fetch interview',
         )
       } finally {
         setLoading(false)
@@ -36,6 +33,7 @@ function InterviewDetails({ interviewId, onClose }) {
 
     fetchInterview()
   }, [interviewId])
+
 
   const handleCopy = async () => {
     if (!interview) return
@@ -56,58 +54,62 @@ function InterviewDetails({ interviewId, onClose }) {
     }
   }
 
-  // ─────────────────────────────────────────────
+
+  // ============================================================
   // LOADING
-  // ─────────────────────────────────────────────
+  // ============================================================
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex justify-end bg-[#07111f]/40 backdrop-blur-[1px]">
-        <div className="flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
+      <div className="fixed inset-0 z-50 flex justify-end bg-black/70">
 
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="flex h-full w-full max-w-xl flex-col border-l border-zinc-800 bg-[#0d0d0d] shadow-2xl">
 
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
+
+            <div className="flex items-center gap-4">
 
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-9 w-9 items-center justify-center border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#3972a7]"
-                aria-label="Go back"
+                className="flex h-9 w-9 items-center justify-center border border-zinc-700 text-zinc-400 transition hover:border-zinc-500 hover:text-white"
               >
                 <BackIcon />
               </button>
 
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3972a7]">
+
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
                   Interview Details
                 </p>
 
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-zinc-400">
                   Loading information
                 </p>
+
               </div>
 
             </div>
 
+
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-              aria-label="Close"
+              className="flex h-9 w-9 items-center justify-center border border-zinc-800 text-zinc-500 transition hover:border-zinc-600 hover:text-white"
             >
               <CloseIcon />
             </button>
 
           </div>
 
+
           <div className="flex flex-1 items-center justify-center">
 
             <div className="text-center">
 
-              <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-[#3972a7]" />
+              <div className="mx-auto h-8 w-8 animate-spin border-2 border-zinc-700 border-t-white" />
 
-              <p className="mt-4 text-sm text-slate-500">
+              <p className="mt-4 text-xs text-zinc-500">
                 Loading interview details...
               </p>
 
@@ -116,76 +118,68 @@ function InterviewDetails({ interviewId, onClose }) {
           </div>
 
         </div>
+
       </div>
     )
   }
 
-  // ─────────────────────────────────────────────
+
+  // ============================================================
   // ERROR
-  // ─────────────────────────────────────────────
+  // ============================================================
 
   if (error) {
     return (
-      <div className="fixed inset-0 z-50 flex justify-end bg-[#07111f]/40 backdrop-blur-[1px]">
+      <div className="fixed inset-0 z-50 flex justify-end bg-black/70">
 
-        <div className="flex h-full w-full max-w-lg flex-col bg-white shadow-2xl">
+        <div className="flex h-full w-full max-w-xl flex-col border-l border-zinc-800 bg-[#0d0d0d]">
 
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5">
 
-            <div className="flex items-center gap-3">
+            <div>
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex h-9 w-9 items-center justify-center border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#3972a7]"
-              >
-                <BackIcon />
-              </button>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                Interview Details
+              </p>
 
-              <div>
-
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3972a7]">
-                  Interview Details
-                </p>
-
-                <p className="mt-1 text-xs text-slate-400">
-                  Unable to load interview
-                </p>
-
-              </div>
+              <h2 className="mt-1 text-sm font-semibold text-white">
+                Unable to load interview
+              </h2>
 
             </div>
+
 
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+              className="flex h-9 w-9 items-center justify-center border border-zinc-800 text-zinc-500 transition hover:border-zinc-600 hover:text-white"
             >
               <CloseIcon />
             </button>
 
           </div>
 
+
           <div className="flex flex-1 items-center justify-center px-8">
 
             <div className="max-w-sm text-center">
 
-              <div className="mx-auto flex h-12 w-12 items-center justify-center bg-red-50 text-red-500">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center border border-zinc-700 text-zinc-400">
                 <ErrorIcon />
               </div>
 
-              <p className="mt-4 text-sm font-semibold text-slate-700">
+              <p className="mt-5 text-sm font-semibold text-white">
                 Failed to load interview
               </p>
 
-              <p className="mt-2 text-xs leading-relaxed text-slate-400">
+              <p className="mt-2 text-xs leading-relaxed text-zinc-500">
                 {error}
               </p>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-6 bg-[#285b8f] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#214d79]"
+                className="mt-6 border border-zinc-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-zinc-800"
               >
                 Go Back
               </button>
@@ -200,30 +194,35 @@ function InterviewDetails({ interviewId, onClose }) {
     )
   }
 
+
   if (!interview) return null
 
-  // ─────────────────────────────────────────────
+
+  // ============================================================
   // FORMAT DATA
-  // ─────────────────────────────────────────────
+  // ============================================================
 
   const scheduledDate = new Date(interview.scheduledAt)
 
-  const date = scheduledDate.toLocaleDateString(
-    'en-IN',
-    {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    },
-  )
+  const date =
+    scheduledDate.toLocaleDateString(
+      'en-IN',
+      {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      },
+    )
 
-  const time = scheduledDate.toLocaleTimeString(
-    'en-IN',
-    {
-      hour: '2-digit',
-      minute: '2-digit',
-    },
-  )
+  const time =
+    scheduledDate.toLocaleTimeString(
+      'en-IN',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+      },
+    )
+
 
   const statusMap = {
     SCHEDULED: 'Upcoming',
@@ -233,8 +232,11 @@ function InterviewDetails({ interviewId, onClose }) {
     CANCELLED: 'Cancelled',
   }
 
+
   const displayStatus =
-    statusMap[interview.status] || interview.status
+    statusMap[interview.status] ||
+    interview.status
+
 
   const isUpcoming =
     interview.status === 'SCHEDULED'
@@ -245,126 +247,126 @@ function InterviewDetails({ interviewId, onClose }) {
   const isCompleted =
     interview.status === 'COMPLETED'
 
+
   const candidate = interview.candidate
+
 
   const candidateName = candidate
     ? `${candidate.firstName} ${candidate.lastName}`
     : 'Candidate'
 
+
   const initials = candidate
-    ? `${candidate.firstName?.[0] || ''}${
-        candidate.lastName?.[0] || ''
-      }`.toUpperCase()
+    ? `${candidate.firstName?.[0] || ''}${candidate.lastName?.[0] || ''}`.toUpperCase()
     : 'C'
+
 
   const score =
     interview.evaluation?.overallScore ?? null
 
-  const statusColor =
-    isCompleted
-      ? 'bg-[#3d8a60]'
-      : isProgress
-        ? 'bg-[#c88a28]'
-        : isUpcoming
-          ? 'bg-[#3972a7]'
-          : 'bg-slate-400'
 
   const interviewLink =
     `${window.location.origin}/candidate/interviews/${interview.id}`
 
-  // ─────────────────────────────────────────────
-  // UI
-  // ─────────────────────────────────────────────
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-[#07111f]/40 backdrop-blur-[1px]"
+      className="fixed inset-0 z-50 flex justify-end bg-black/70"
       onClick={onClose}
     >
 
       <div
-        className="flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
+        className="flex h-full w-full max-w-xl flex-col border-l border-zinc-800 bg-[#0d0d0d] shadow-2xl"
+        onClick={(event) =>
+          event.stopPropagation()
+        }
       >
 
-        {/* Header */}
 
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4">
+        {/* =====================================================
+            HEADER
+        ====================================================== */}
 
-          <div className="flex min-w-0 items-center gap-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 px-6 py-5">
 
-            {/* Back Button */}
+          <div className="flex min-w-0 items-center gap-4">
 
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 shrink-0 items-center justify-center border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-[#3972a7]"
-              aria-label="Go back"
+              className="flex h-9 w-9 shrink-0 items-center justify-center border border-zinc-700 text-zinc-400 transition hover:border-zinc-500 hover:text-white"
             >
               <BackIcon />
             </button>
 
+
             <div className="min-w-0">
 
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3972a7]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
                 Interview Details
               </p>
 
-              <h2 className="mt-1 truncate text-base font-bold text-[#17324f]">
+              <h2 className="mt-1 truncate text-base font-semibold text-white">
                 {interview.title}
               </h2>
 
-              <p className="mt-1 truncate text-[10px] text-slate-400">
-                ID: {interview.id}
+              <p className="mt-1 truncate font-mono text-[10px] text-zinc-600">
+                {interview.id}
               </p>
 
             </div>
 
           </div>
 
-          {/* Close Button */}
 
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center text-slate-400 transition hover:bg-red-50 hover:text-red-500"
-            aria-label="Close"
+            className="flex h-9 w-9 shrink-0 items-center justify-center border border-zinc-800 text-zinc-500 transition hover:border-zinc-600 hover:text-white"
           >
             <CloseIcon />
           </button>
 
         </div>
 
-        {/* Content */}
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        {/* =====================================================
+            CONTENT
+        ====================================================== */}
+
+        <div className="dark-scrollbar min-h-0 flex-1 overflow-y-auto">
+
 
           {/* Candidate */}
 
-          <section className="border-b border-slate-100 px-6 py-6">
+          <section className="border-b border-zinc-800 px-6 py-6">
 
             <SectionLabel>
               Candidate
             </SectionLabel>
 
-            <div className="mt-4 flex items-center gap-4">
 
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center bg-[#eaf3fc] text-sm font-bold text-[#3972a7]">
+            <div className="mt-5 flex items-center gap-4">
+
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center border border-zinc-700 bg-zinc-900 text-sm font-semibold text-white">
                 {initials}
               </div>
 
+
               <div className="min-w-0">
 
-                <h3 className="truncate text-sm font-bold text-slate-700">
+                <h3 className="truncate text-sm font-semibold text-zinc-100">
                   {candidateName}
                 </h3>
 
-                <p className="mt-1 truncate text-xs text-slate-400">
-                  {candidate?.email || 'No email available'}
+                <p className="mt-1 truncate text-xs text-zinc-500">
+                  {candidate?.email ||
+                    'No email available'}
                 </p>
 
-                <p className="mt-2 text-[10px] font-medium text-[#3972a7]">
-                  {interview.type || 'Technical Interview'}
+                <p className="mt-2 text-[10px] uppercase tracking-wider text-zinc-400">
+                  {interview.type ||
+                    'Technical Interview'}
                 </p>
 
               </div>
@@ -373,21 +375,21 @@ function InterviewDetails({ interviewId, onClose }) {
 
           </section>
 
+
           {/* Status */}
 
-          <section className="border-b border-slate-100 px-6 py-6">
+          <section className="border-b border-zinc-800 px-6 py-6">
 
             <SectionLabel>
               Interview Status
             </SectionLabel>
 
+
             <div className="mt-4 flex items-center gap-3">
 
-              <span
-                className={`h-2.5 w-2.5 rounded-full ${statusColor}`}
-              />
+              <span className="h-2 w-2 bg-white" />
 
-              <span className="text-sm font-semibold text-slate-700">
+              <span className="text-sm font-medium text-zinc-200">
                 {displayStatus}
               </span>
 
@@ -395,15 +397,17 @@ function InterviewDetails({ interviewId, onClose }) {
 
           </section>
 
+
           {/* Schedule */}
 
-          <section className="border-b border-slate-100 px-6 py-6">
+          <section className="border-b border-zinc-800 px-6 py-6">
 
             <SectionLabel>
               Schedule
             </SectionLabel>
 
-            <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5">
+
+            <div className="mt-5 grid grid-cols-2 gap-x-8 gap-y-6">
 
               <Info
                 label="Date"
@@ -422,42 +426,55 @@ function InterviewDetails({ interviewId, onClose }) {
 
               <Info
                 label="Company"
-                value={interview.company || 'Not specified'}
+                value={
+                  interview.company ||
+                  'Not specified'
+                }
               />
 
             </div>
 
           </section>
 
+
           {/* Focus Areas */}
 
           {interview.focusAreas?.length > 0 && (
-            <section className="border-b border-slate-100 px-6 py-6">
+
+            <section className="border-b border-zinc-800 px-6 py-6">
 
               <SectionLabel>
                 Focus Areas
               </SectionLabel>
 
+
               <div className="mt-4 flex flex-wrap gap-2">
 
-                {interview.focusAreas.map((area) => (
-                  <span
-                    key={area}
-                    className="bg-[#edf5fc] px-3 py-1.5 text-[10px] font-semibold text-[#3972a7]"
-                  >
-                    {area}
-                  </span>
-                ))}
+                {interview.focusAreas.map(
+                  (area) => (
+
+                    <span
+                      key={area}
+                      className="border border-zinc-700 px-3 py-1.5 text-[10px] font-medium text-zinc-300"
+                    >
+                      {area}
+                    </span>
+
+                  ),
+                )}
 
               </div>
 
             </section>
+
           )}
+
 
           {/* Questions */}
 
           {interview.questions?.length > 0 && (
-            <section className="border-b border-slate-100 px-6 py-6">
+
+            <section className="border-b border-zinc-800 px-6 py-6">
 
               <div className="flex items-center justify-between">
 
@@ -465,153 +482,208 @@ function InterviewDetails({ interviewId, onClose }) {
                   Questions
                 </SectionLabel>
 
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-zinc-500">
                   {interview.questions.length} assigned
                 </span>
 
               </div>
 
-              <div className="mt-4 space-y-2">
 
-                {interview.questions.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-3 border border-slate-100 bg-slate-50 px-3 py-3"
-                  >
+              <div className="mt-5 space-y-2">
 
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-white text-[9px] font-bold text-[#3972a7]">
-                      {index + 1}
-                    </span>
+                {interview.questions.map(
+                  (item, index) => (
 
-                    <div className="min-w-0">
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-4 border border-zinc-800 bg-[#111111] px-4 py-4"
+                    >
 
-                      <p className="truncate text-xs font-medium text-slate-600">
-                        {item.question?.title || 'Question'}
-                      </p>
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center border border-zinc-700 font-mono text-[10px] text-zinc-400">
+                        {String(index + 1).padStart(
+                          2,
+                          '0',
+                        )}
+                      </span>
 
-                      <p className="mt-1 text-[9px] text-slate-400">
-                        {item.question?.difficulty}
-                      </p>
+
+                      <div className="min-w-0">
+
+                        <p className="truncate text-xs font-medium text-zinc-200">
+                          {item.question?.title ||
+                            'Question'}
+                        </p>
+
+                        <p className="mt-1 text-[9px] uppercase tracking-wider text-zinc-500">
+                          {item.question?.difficulty}
+                        </p>
+
+                      </div>
 
                     </div>
 
-                  </div>
-                ))}
+                  ),
+                )}
 
               </div>
 
             </section>
+
           )}
+
 
           {/* AI Evaluation */}
 
           {isCompleted && (
-            <section className="border-b border-slate-100 px-6 py-6">
+
+            <section className="border-b border-zinc-800 px-6 py-6">
 
               <SectionLabel>
                 AI Evaluation
               </SectionLabel>
 
-              <div className="mt-5 flex items-end gap-2">
 
-                <span className="text-5xl font-bold tracking-tight text-[#17324f]">
+              <div className="mt-5 flex items-end gap-3">
+
+                <span className="font-mono text-5xl font-semibold tracking-tight text-white">
                   {score ?? '—'}
                 </span>
 
-                <span className="mb-2 text-sm text-slate-400">
+                <span className="mb-2 text-sm text-zinc-600">
                   / 100
                 </span>
 
               </div>
 
-              <p className="mt-2 text-xs text-slate-400">
+
+              <div className="mt-5 h-px w-full bg-zinc-800">
+
+                {score !== null && (
+
+                  <div
+                    className="h-full bg-white"
+                    style={{
+                      width: `${score}%`,
+                    }}
+                  />
+
+                )}
+
+              </div>
+
+
+              <p className="mt-3 text-xs text-zinc-500">
                 Overall candidate performance
               </p>
 
             </section>
+
           )}
+
 
           {/* Candidate Link */}
 
           {isUpcoming && (
+
             <section className="px-6 py-6">
 
               <SectionLabel>
                 Candidate Interview Link
               </SectionLabel>
 
-              <div className="mt-4 flex border border-slate-200">
+
+              <div className="mt-4 flex border border-zinc-700">
 
                 <input
                   readOnly
                   value={interviewLink}
-                  className="min-w-0 flex-1 bg-slate-50 px-3 py-3 text-[10px] text-slate-500 outline-none"
+                  className="min-w-0 flex-1 bg-[#111111] px-4 py-3 font-mono text-[10px] text-zinc-500 outline-none"
                 />
+
 
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className="min-w-[72px] border-l border-slate-200 px-4 text-[10px] font-semibold text-[#3972a7] transition hover:bg-slate-50"
+                  className="border-l border-zinc-700 px-5 text-[10px] font-semibold uppercase tracking-wider text-white transition hover:bg-zinc-800"
                 >
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied
+                    ? 'Copied'
+                    : 'Copy'}
                 </button>
 
               </div>
 
             </section>
+
           )}
 
         </div>
 
-        {/* Footer */}
 
-        <div className="flex shrink-0 gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+        {/* =====================================================
+            FOOTER
+        ====================================================== */}
+
+        <div className="flex shrink-0 gap-3 border-t border-zinc-800 bg-[#111111] px-6 py-5">
 
           {isCompleted && (
+
             <button
               type="button"
-              className="flex-1 bg-[#285b8f] px-4 py-3 text-xs font-semibold text-white transition hover:bg-[#214d79]"
+              className="flex-1 bg-white px-4 py-3 text-xs font-semibold text-black transition hover:bg-zinc-200"
             >
               View Evaluation
             </button>
+
           )}
 
+
           {isUpcoming && (
+
             <>
               <button
                 type="button"
-                className="flex-1 border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                className="flex-1 border border-zinc-700 px-4 py-3 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800"
               >
                 Reschedule
               </button>
 
               <button
                 type="button"
-                className="flex-1 bg-[#285b8f] px-4 py-3 text-xs font-semibold text-white transition hover:bg-[#214d79]"
+                className="flex-1 bg-white px-4 py-3 text-xs font-semibold text-black transition hover:bg-zinc-200"
               >
                 Send Reminder
               </button>
             </>
+
           )}
 
+
           {isProgress && (
+
             <button
               type="button"
-              className="flex-1 bg-[#285b8f] px-4 py-3 text-xs font-semibold text-white transition hover:bg-[#214d79]"
+              className="flex-1 bg-white px-4 py-3 text-xs font-semibold text-black transition hover:bg-zinc-200"
             >
               Open Interview
             </button>
+
           )}
 
-          {!isCompleted && !isUpcoming && !isProgress && (
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
-              Close
-            </button>
-          )}
+
+          {!isCompleted &&
+            !isUpcoming &&
+            !isProgress && (
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 border border-zinc-700 px-4 py-3 text-xs font-semibold text-zinc-300 transition hover:bg-zinc-800"
+              >
+                Close
+              </button>
+
+            )}
 
         </div>
 
@@ -621,29 +693,32 @@ function InterviewDetails({ interviewId, onClose }) {
   )
 }
 
+
 function SectionLabel({ children }) {
   return (
-    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+    <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
       {children}
     </p>
   )
 }
 
+
 function Info({ label, value }) {
   return (
     <div>
 
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-600">
         {label}
       </p>
 
-      <p className="mt-1.5 break-all text-xs font-semibold text-slate-600">
+      <p className="mt-2 break-all text-xs font-medium text-zinc-300">
         {value}
       </p>
 
     </div>
   )
 }
+
 
 function BackIcon() {
   return (
@@ -660,6 +735,7 @@ function BackIcon() {
   )
 }
 
+
 function CloseIcon() {
   return (
     <svg
@@ -673,6 +749,7 @@ function CloseIcon() {
     </svg>
   )
 }
+
 
 function ErrorIcon() {
   return (
@@ -689,5 +766,6 @@ function ErrorIcon() {
     </svg>
   )
 }
+
 
 export default InterviewDetails

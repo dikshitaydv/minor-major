@@ -7,13 +7,24 @@ function InterviewTable({ onInterviewSelect, onCreateInterview }) {
   const [interviews, setInterviews] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] =
+    useState(false)
+
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // ============================================================
+  // OPEN CREATE INTERVIEW MODAL
+  // ============================================================
 
   const handleCreateInterview = () => {
     setIsCreateModalOpen(true)
+
     onCreateInterview?.()
   }
+
+  // ============================================================
+  // FETCH INTERVIEWS
+  // ============================================================
 
   useEffect(() => {
     const fetchInterviews = async () => {
@@ -21,11 +32,19 @@ function InterviewTable({ onInterviewSelect, onCreateInterview }) {
         setLoading(true)
         setError(null)
 
-        const interviews = await getRecruiterInterviews()
-        setInterviews(interviews || [])
+        const data = await getRecruiterInterviews()
+
+        setInterviews(data || [])
       } catch (error) {
-        console.error('Fetch interviews error:', error)
-        setError(error.message)
+        console.error(
+          'Fetch interviews error:',
+          error,
+        )
+
+        setError(
+          error.message ||
+          'Failed to load interviews',
+        )
       } finally {
         setLoading(false)
       }
@@ -35,30 +54,47 @@ function InterviewTable({ onInterviewSelect, onCreateInterview }) {
   }, [refreshKey])
 
   return (
-    <div>
+    <div className="w-full">
 
       {/* =====================================================
           TOP SECTION
-      ====================================================== */}
+      ===================================================== */}
 
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-5">
 
         <div>
 
-          <h2 className="text-lg font-bold text-[#17324f]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+            Recruitment Management
+          </p>
+
+          <h2 className="mt-2 text-xl font-semibold tracking-tight text-zinc-100">
             Interviews
           </h2>
 
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-zinc-500">
             Manage and monitor candidate interviews
           </p>
 
         </div>
 
+
+        {/* CREATE BUTTON */}
+
         <button
           type="button"
           onClick={handleCreateInterview}
-          className="flex items-center gap-2 bg-[#285b8f] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#214d79]"
+          className="
+            flex items-center gap-2
+            border border-white/20
+            bg-white
+            px-4 py-2.5
+            text-xs font-semibold
+            text-black
+            transition
+            hover:bg-zinc-200
+            active:bg-zinc-300
+          "
         >
           <PlusIcon />
 
@@ -69,14 +105,25 @@ function InterviewTable({ onInterviewSelect, onCreateInterview }) {
 
 
       {/* =====================================================
-          TABLE
-      ====================================================== */}
+          TABLE CONTAINER
+      ===================================================== */}
 
-      <div className="overflow-hidden border border-slate-200 bg-white">
+      <div className="border border-white/10 bg-[#111111]">
 
-        {/* Header */}
+        {/* ===================================================
+            TABLE HEADER
+        =================================================== */}
 
-        <div className="grid grid-cols-[1.6fr_1.4fr_1fr_0.9fr_0.7fr_40px] border-b border-slate-200 bg-slate-50 px-5 py-3">
+        <div
+          className="
+            hidden
+            grid-cols-[1.6fr_1.4fr_1fr_0.9fr_0.7fr_40px]
+            border-b border-white/10
+            bg-[#171717]
+            px-5 py-3.5
+            lg:grid
+          "
+        >
 
           <Heading>
             Candidate
@@ -103,102 +150,206 @@ function InterviewTable({ onInterviewSelect, onCreateInterview }) {
         </div>
 
 
-        {/* Loading */}
+        {/* ===================================================
+            LOADING
+        =================================================== */}
 
         {loading && (
-          <div className="flex items-center justify-center py-16">
+
+          <div className="flex min-h-[320px] items-center justify-center">
 
             <div className="text-center">
 
-              <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-[#3972a7]" />
+              <div
+                className="
+                  mx-auto
+                  h-8 w-8
+                  animate-spin
+                  border-2 border-zinc-700
+                  border-t-white
+                "
+              />
 
-              <p className="mt-3 text-xs text-slate-400">
+              <p className="mt-4 text-xs text-zinc-500">
                 Loading interviews...
               </p>
 
             </div>
 
           </div>
+
         )}
 
 
-        {/* Error */}
+        {/* ===================================================
+            ERROR
+        =================================================== */}
 
         {!loading && error && (
-          <div className="flex items-center justify-center py-16">
 
-            <div className="text-center">
+          <div className="flex min-h-[320px] items-center justify-center px-6">
 
-              <p className="text-sm font-semibold text-red-500">
+            <div className="max-w-sm text-center">
+
+              <div
+                className="
+                  mx-auto
+                  flex h-12 w-12
+                  items-center justify-center
+                  border border-red-500/30
+                  text-red-400
+                "
+              >
+                <ErrorIcon />
+              </div>
+
+
+              <p className="mt-5 text-sm font-semibold text-zinc-200">
                 Failed to load interviews
               </p>
 
-              <p className="mt-2 text-xs text-slate-400">
+
+              <p className="mt-2 text-xs leading-relaxed text-zinc-500">
                 {error}
               </p>
+
+
+              <button
+                type="button"
+                onClick={() =>
+                  setRefreshKey(
+                    (key) => key + 1,
+                  )
+                }
+                className="
+                  mt-5
+                  border border-white/15
+                  px-4 py-2
+                  text-xs font-medium
+                  text-zinc-300
+                  transition
+                  hover:bg-white/5
+                  hover:text-white
+                "
+              >
+                Try Again
+              </button>
 
             </div>
 
           </div>
+
         )}
 
 
-        {/* Empty State */}
+        {/* ===================================================
+            EMPTY STATE
+        =================================================== */}
 
         {!loading &&
           !error &&
           interviews.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16">
 
-              <EmptyIcon />
+            <div className="flex min-h-[380px] flex-col items-center justify-center px-6 text-center">
 
-              <p className="mt-4 text-sm font-semibold text-slate-600">
+              <div
+                className="
+                  flex h-14 w-14
+                  items-center justify-center
+                  border border-white/10
+                  bg-[#171717]
+                  text-zinc-500
+                "
+              >
+                <EmptyIcon />
+              </div>
+
+
+              <p className="mt-5 text-sm font-semibold text-zinc-200">
                 No interviews yet
               </p>
 
-              <p className="mt-1 text-xs text-slate-400">
-                Create an interview to get started.
+
+              <p className="mt-2 max-w-sm text-xs leading-relaxed text-zinc-500">
+                Create your first interview to begin
+                evaluating candidates.
               </p>
+
 
               <button
                 type="button"
                 onClick={handleCreateInterview}
-                className="mt-5 bg-[#285b8f] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#214d79]"
+                className="
+                  mt-6
+                  border border-white
+                  bg-white
+                  px-5 py-2.5
+                  text-xs font-semibold
+                  text-black
+                  transition
+                  hover:bg-zinc-200
+                "
               >
                 Create Interview
               </button>
 
             </div>
+
           )}
 
 
-        {/* Rows */}
+        {/* ===================================================
+            INTERVIEW ROWS
+        =================================================== */}
 
         {!loading &&
           !error &&
           interviews.length > 0 && (
-            <div className="divide-y divide-slate-100">
+
+            <div className="divide-y divide-white/10">
 
               {interviews.map((interview) => (
+
                 <InterviewRow
                   key={interview.id}
                   interview={interview}
                   onClick={() =>
-                    onInterviewSelect(interview.id)
+                    onInterviewSelect?.(
+                      interview.id,
+                    )
                   }
                 />
+
               ))}
 
             </div>
+
           )}
 
       </div>
 
+
+      {/* =====================================================
+          CREATE INTERVIEW MODAL
+      ===================================================== */}
+
       {isCreateModalOpen && (
+
         <CreateInterviewModal
-          onClose={() => setIsCreateModalOpen(false)}
-          onSuccess={() => setRefreshKey((key) => key + 1)}
+          onClose={() =>
+            setIsCreateModalOpen(false)
+          }
+          onSuccess={() => {
+
+            setRefreshKey(
+              (key) => key + 1,
+            )
+
+            setIsCreateModalOpen(false)
+
+          }}
         />
+
       )}
 
     </div>
@@ -212,7 +363,15 @@ function InterviewTable({ onInterviewSelect, onCreateInterview }) {
 
 function Heading({ children }) {
   return (
-    <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+    <span
+      className="
+        text-[9px]
+        font-semibold
+        uppercase
+        tracking-[0.16em]
+        text-zinc-500
+      "
+    >
       {children}
     </span>
   )
@@ -245,21 +404,49 @@ function PlusIcon() {
 function EmptyIcon() {
   return (
     <svg
-      className="h-10 w-10 text-slate-300"
+      className="h-6 w-6"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="1.6"
     >
       <rect
         x="3"
         y="5"
         width="18"
         height="16"
-        rx="1"
       />
 
       <path d="M8 3v4M16 3v4M3 10h18" />
+
+      <path d="M8 14h2M14 14h2M8 18h2" />
+    </svg>
+  )
+}
+
+
+/* ============================================================
+   ERROR ICON
+============================================================ */
+
+function ErrorIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+      />
+
+      <path d="M12 8v5" />
+
+      <path d="M12 16h.01" />
     </svg>
   )
 }

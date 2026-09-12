@@ -30,17 +30,26 @@ function CandidateInterviews() {
             duration: candidateApi.formatDuration(interview.duration),
             status: candidateApi.toInterviewStatusLabel(interview.status),
             score: interview.score,
-            topics: interview.topics,
+            topics: interview.topics || [],
           })),
         )
       })
-      .catch((err) => !cancelled && setError(err.message || 'Unable to load interviews.'))
+      .catch(
+        (err) =>
+          !cancelled &&
+          setError(err.message || 'Unable to load interviews.'),
+      )
       .finally(() => !cancelled && setLoading(false))
 
     return () => {
       cancelled = true
     }
   }, [])
+
+
+  /* =====================================================
+     DATA
+  ====================================================== */
 
   const tabs = ['All', 'Upcoming', 'Completed', 'Expired']
 
@@ -50,191 +59,327 @@ function CandidateInterviews() {
       : interviews.filter((interview) => interview.status === activeTab)
 
   const upcomingCount = interviews.filter(
-    (interview) => interview.status === 'Upcoming'
+    (interview) => interview.status === 'Upcoming',
   ).length
 
   const completedCount = interviews.filter(
-    (interview) => interview.status === 'Completed'
+    (interview) => interview.status === 'Completed',
   ).length
+
+  const expiredCount = interviews.filter(
+    (interview) => interview.status === 'Expired',
+  ).length
+
 
   return (
     <CandidateLayout>
 
-      {/* =====================================================
-          PAGE HEADER
-      ====================================================== */}
-
-      <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-
-        <div>
-
-          <p className="text-sm font-medium text-[#4b9bea]">
-            Interview Workspace
-          </p>
-
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#17324f] lg:text-3xl">
-            My Interviews
-          </h1>
-
-          <p className="mt-2 text-sm text-slate-500">
-            View and manage your upcoming and previous interviews.
-          </p>
-
-        </div>
-
-        <button
-          type="button"
-          onClick={() => navigate('/candidate/preparation')}
-          className="w-fit bg-[#285b8f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#214d79]"
-        >
-          Prepare for Interview →
-        </button>
-
-      </div>
-
-      {error && (
-        <div className="mb-6 border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex h-48 items-center justify-center">
-          <span className="h-8 w-8 animate-spin rounded-full border-2 border-[#285b8f]/30 border-t-[#285b8f]" />
-        </div>
-      ) : (
-        <>
-
-          {/* =====================================================
-              SUMMARY
-          ====================================================== */}
-
-          <div className="mb-6 grid gap-4 sm:grid-cols-3">
-
-            <SummaryCard
-              label="Total Interviews"
-              value={interviews.length}
-              description="All assigned interviews"
-            />
-
-            <SummaryCard
-              label="Upcoming"
-              value={upcomingCount}
-              description="Interviews waiting for you"
-            />
-
-            <SummaryCard
-              label="Completed"
-              value={completedCount}
-              description="Interviews you've finished"
-            />
-
-          </div>
+      <div className="min-h-full text-white">
 
 
-          {/* =====================================================
-              FILTERS
-          ====================================================== */}
+        {/* =====================================================
+            PAGE HERO
+        ====================================================== */}
 
-          <div className="mb-4 flex items-center justify-between border-b border-slate-200">
+        <div className="relative mb-8 overflow-hidden rounded-3xl border border-white/[0.06] bg-gradient-to-br from-[#10151d] via-[#0b0d11] to-[#07090d] p-7 sm:p-9">
 
-            <div className="flex gap-6">
+          {/* Ambient blue glow */}
 
-              {tabs.map((tab) => (
+          <div className="pointer-events-none absolute -right-24 -top-32 h-72 w-72 rounded-full bg-blue-400/[0.07] blur-[100px]" />
 
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative pb-3 text-sm font-medium transition ${
-                    activeTab === tab
-                      ? 'text-[#285b8f]'
-                      : 'text-slate-400 hover:text-slate-700'
-                  }`}
-                >
-
-                  {tab}
-
-                  {tab !== 'All' && (
-                    <span
-                      className={`ml-2 text-xs ${
-                        activeTab === tab
-                          ? 'text-[#4b9bea]'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      {
-                        interviews.filter(
-                          (interview) => interview.status === tab
-                        ).length
-                      }
-                    </span>
-                  )}
-
-                  {activeTab === tab && (
-                    <span className="absolute bottom-0 left-0 h-0.5 w-full bg-[#285b8f]" />
-                  )}
-
-                </button>
-
-              ))}
-
-            </div>
-
-          </div>
+          <div className="pointer-events-none absolute bottom-0 left-[20%] h-40 w-80 rounded-full bg-blue-500/[0.035] blur-[90px]" />
 
 
-          {/* =====================================================
-              INTERVIEW LIST
-          ====================================================== */}
-
-          <div className="space-y-3">
-
-            {filteredInterviews.map((interview) => (
-
-              <InterviewListItem
-                key={interview.id}
-                interview={interview}
-                onOpen={() => {
-                  if (interview.status === 'Upcoming') {
-                    navigate(`/candidate/interview/${interview.id}`)
-                  }
-
-                  if (interview.status === 'Completed') {
-                    navigate(`/candidate/results/${interview.id}`)
-                  }
-                }}
-              />
-
-            ))}
-
-          </div>
+          <div className="relative flex flex-col justify-between gap-7 md:flex-row md:items-end">
 
 
-          {/* =====================================================
-              EMPTY STATE
-          ====================================================== */}
+            {/* Left */}
 
-          {filteredInterviews.length === 0 && (
-            <div className="border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+            <div>
 
-              <div className="mx-auto flex h-12 w-12 items-center justify-center bg-[#eaf3fc] text-[#3972a7]">
-                <CalendarIcon />
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-400/[0.08] px-3 py-1.5">
+
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_12px_rgba(96,165,250,0.9)]" />
+
+                <span className="text-xs font-medium text-blue-300">
+                  Interview Workspace
+                </span>
+
               </div>
 
-              <h3 className="mt-4 text-sm font-semibold text-slate-700">
-                No interviews found
-              </h3>
 
-              <p className="mt-1 text-xs text-slate-400">
-                There are no interviews in this category.
+              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                My Interviews
+              </h1>
+
+
+              <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-500">
+                Manage your interview sessions, track progress, and review
+                your completed evaluations.
               </p>
 
             </div>
-          )}
 
-        </>
-      )}
+
+            {/* CTA */}
+
+            <button
+              type="button"
+              onClick={() => navigate('/candidate/preparation')}
+              className="group flex w-fit items-center gap-2 rounded-xl bg-blue-400 px-5 py-3 text-sm font-semibold text-[#071018] transition-all duration-300 hover:bg-blue-300 hover:shadow-[0_0_30px_rgba(96,165,250,0.25)]"
+            >
+
+              Prepare Now
+
+              <span className="transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+
+            </button>
+
+          </div>
+
+        </div>
+
+
+        {/* =====================================================
+            ERROR
+        ====================================================== */}
+
+        {error && (
+
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.06] p-5">
+
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-400">
+              <AlertIcon />
+            </div>
+
+            <div>
+
+              <p className="text-sm font-medium text-red-300">
+                Unable to load interviews
+              </p>
+
+              <p className="mt-1 text-sm text-zinc-500">
+                {error}
+              </p>
+
+            </div>
+
+          </div>
+
+        )}
+
+
+        {/* =====================================================
+            LOADING
+        ====================================================== */}
+
+        {loading ? (
+
+          <div className="flex min-h-[55vh] items-center justify-center">
+
+            <div className="flex flex-col items-center gap-4">
+
+              <div className="relative h-12 w-12">
+
+                <div className="absolute inset-0 animate-spin rounded-full border-2 border-white/[0.08] border-t-blue-400" />
+
+                <div className="absolute inset-3 rounded-full bg-blue-400/10 blur-md" />
+
+              </div>
+
+              <p className="text-sm text-zinc-600">
+                Loading your interviews...
+              </p>
+
+            </div>
+
+          </div>
+
+        ) : (
+
+          <>
+
+
+            {/* =====================================================
+                SUMMARY CARDS
+            ====================================================== */}
+
+            <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+
+              <SummaryCard
+                label="Total Interviews"
+                value={interviews.length}
+                description="All assigned interviews"
+                icon={<GridIcon />}
+                accent="blue"
+              />
+
+              <SummaryCard
+                label="Upcoming"
+                value={upcomingCount}
+                description="Waiting for you"
+                icon={<CalendarIcon />}
+                accent="cyan"
+              />
+
+              <SummaryCard
+                label="Completed"
+                value={completedCount}
+                description="Successfully finished"
+                icon={<CheckIcon />}
+                accent="green"
+              />
+
+              <SummaryCard
+                label="Expired"
+                value={expiredCount}
+                description="No longer available"
+                icon={<ClockIcon />}
+                accent="zinc"
+              />
+
+            </div>
+
+
+            {/* =====================================================
+                INTERVIEW AREA
+            ====================================================== */}
+
+            <div className="rounded-3xl border border-white/[0.06] bg-[#0b0d11]">
+
+
+              {/* =====================================================
+                  TABS
+              ====================================================== */}
+
+              <div className="flex flex-col justify-between gap-5 border-b border-white/[0.06] px-5 pt-5 sm:px-7 sm:pt-6 md:flex-row md:items-center">
+
+
+                <div>
+
+                  <h2 className="text-base font-semibold text-white">
+                    Interview Sessions
+                  </h2>
+
+                  <p className="mt-1 text-xs text-zinc-600">
+                    Browse and manage your interview activity
+                  </p>
+
+                </div>
+
+
+                <div className="flex gap-1 overflow-x-auto rounded-xl border border-white/[0.06] bg-white/[0.025] p-1">
+
+                  {tabs.map((tab) => {
+
+                    const count =
+                      tab === 'All'
+                        ? interviews.length
+                        : interviews.filter(
+                            (interview) => interview.status === tab,
+                          ).length
+
+                    const isActive = activeTab === tab
+
+                    return (
+
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 ${
+                          isActive
+                            ? 'bg-blue-400 text-[#061018] shadow-sm'
+                            : 'text-zinc-500 hover:bg-white/[0.05] hover:text-zinc-200'
+                        }`}
+                      >
+
+                        {tab}
+
+                        <span
+                          className={`flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-[10px] ${
+                            isActive
+                              ? 'bg-black/10 text-[#061018]'
+                              : 'bg-white/[0.05] text-zinc-600'
+                          }`}
+                        >
+                          {count}
+                        </span>
+
+                      </button>
+
+                    )
+                  })}
+
+                </div>
+
+              </div>
+
+
+              {/* =====================================================
+                  LIST
+              ====================================================== */}
+
+              <div className="divide-y divide-white/[0.05]">
+
+                {filteredInterviews.map((interview) => (
+
+                  <InterviewListItem
+                    key={interview.id}
+                    interview={interview}
+                    onOpen={() => {
+
+                      if (interview.status === 'Upcoming') {
+                        navigate(`/candidate/interview/${interview.id}`)
+                      }
+
+                      if (interview.status === 'Completed') {
+                        navigate(`/candidate/results/${interview.id}`)
+                      }
+
+                    }}
+                  />
+
+                ))}
+
+
+                {/* =====================================================
+                    EMPTY STATE
+                ====================================================== */}
+
+                {filteredInterviews.length === 0 && (
+
+                  <div className="px-6 py-20 text-center">
+
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-400/10 bg-blue-400/[0.06] text-blue-400">
+
+                      <CalendarIcon />
+
+                    </div>
+
+                    <h3 className="mt-5 text-sm font-semibold text-zinc-300">
+                      No interviews found
+                    </h3>
+
+                    <p className="mt-2 text-sm text-zinc-600">
+                      There are currently no interviews in this category.
+                    </p>
+
+                  </div>
+
+                )}
+
+              </div>
+
+            </div>
+
+          </>
+
+        )}
+
+      </div>
 
     </CandidateLayout>
   )
@@ -245,189 +390,276 @@ function CandidateInterviews() {
    SUMMARY CARD
 ============================================================ */
 
-function SummaryCard({ label, value, description }) {
+function SummaryCard({
+  label,
+  value,
+  description,
+  icon,
+  accent = 'blue',
+}) {
+
+  const accentStyles = {
+
+    blue:
+      'border-blue-400/15 bg-blue-400/[0.07] text-blue-400',
+
+    cyan:
+      'border-cyan-400/15 bg-cyan-400/[0.07] text-cyan-400',
+
+    green:
+      'border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-400',
+
+    zinc:
+      'border-white/[0.08] bg-white/[0.04] text-zinc-500',
+
+  }
+
+
   return (
-    <div className="border border-slate-200 bg-white p-5">
 
-      <p className="text-xs font-medium text-slate-400">
-        {label}
-      </p>
+    <div className="group rounded-2xl border border-white/[0.06] bg-[#0b0d11] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-white/[0.11] hover:bg-[#0e1116]">
 
-      <p className="mt-2 text-2xl font-bold text-[#17324f]">
-        {value}
-      </p>
 
-      <p className="mt-1 text-xs text-slate-400">
+      <div className="flex items-start justify-between">
+
+
+        <div>
+
+          <p className="text-xs font-medium text-zinc-500">
+            {label}
+          </p>
+
+          <p className="mt-3 text-3xl font-semibold tracking-tight text-white">
+            {value}
+          </p>
+
+        </div>
+
+
+        <div
+          className={`flex h-11 w-11 items-center justify-center rounded-xl border ${accentStyles[accent]}`}
+        >
+          {icon}
+        </div>
+
+      </div>
+
+
+      <p className="mt-5 text-xs text-zinc-600">
         {description}
       </p>
 
     </div>
+
   )
 }
 
 
 /* ============================================================
-   INTERVIEW ITEM
+   INTERVIEW LIST ITEM
 ============================================================ */
 
 function InterviewListItem({ interview, onOpen }) {
+
   const isUpcoming = interview.status === 'Upcoming'
   const isCompleted = interview.status === 'Completed'
   const isExpired = interview.status === 'Expired'
 
+
   return (
-    <div className="border border-slate-200 bg-white p-5 transition hover:border-[#b7d3ee]">
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="group px-5 py-6 transition-all duration-300 hover:bg-white/[0.02] sm:px-7">
 
-        {/* Left */}
 
-        <div className="flex min-w-0 items-start gap-4">
+      <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+
+
+        {/* =====================================================
+            LEFT
+        ====================================================== */}
+
+        <div className="flex min-w-0 flex-1 items-start gap-4">
+
 
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center ${
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition ${
               isUpcoming
-                ? 'bg-[#e7f2ff] text-[#3972a7]'
+                ? 'border-blue-400/15 bg-blue-400/[0.08] text-blue-400'
                 : isCompleted
-                  ? 'bg-[#edf7f1] text-[#3d8a60]'
-                  : 'bg-slate-100 text-slate-400'
+                  ? 'border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-400'
+                  : 'border-white/[0.06] bg-white/[0.03] text-zinc-600'
             }`}
           >
+
             <CodeIcon />
+
           </div>
 
 
           <div className="min-w-0">
 
-            <div className="flex flex-wrap items-center gap-2">
 
-              <h3 className="font-semibold text-slate-800">
+            <div className="flex flex-wrap items-center gap-2.5">
+
+
+              <h3 className="truncate text-sm font-semibold text-zinc-200 transition group-hover:text-white">
                 {interview.title}
               </h3>
+
 
               <StatusBadge status={interview.status} />
 
             </div>
 
-            <p className="mt-1 text-xs text-slate-400">
-              {interview.type}{interview.company ? ` · ${interview.company}` : ''}
+
+            <p className="mt-1.5 text-xs text-zinc-600">
+
+              {interview.type}
+
+              {interview.company
+                ? ` · ${interview.company}`
+                : ''}
+
             </p>
 
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            {/* Topics */}
 
-              {interview.topics.map((topic) => (
+            {interview.topics?.length > 0 && (
 
-                <span
-                  key={topic}
-                  className="bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-500"
-                >
-                  {topic}
-                </span>
+              <div className="mt-4 flex flex-wrap gap-2">
 
-              ))}
+                {interview.topics.slice(0, 5).map((topic) => (
 
-            </div>
+                  <span
+                    key={topic}
+                    className="rounded-md border border-white/[0.06] bg-white/[0.025] px-2.5 py-1 text-[10px] font-medium text-zinc-500"
+                  >
+                    {topic}
+                  </span>
+
+                ))}
+
+
+                {interview.topics.length > 5 && (
+
+                  <span className="rounded-md border border-white/[0.06] bg-white/[0.025] px-2.5 py-1 text-[10px] text-zinc-600">
+
+                    +{interview.topics.length - 5}
+
+                  </span>
+
+                )}
+
+              </div>
+
+            )}
 
           </div>
 
         </div>
 
 
-        {/* Middle */}
+        {/* =====================================================
+            META INFORMATION
+        ====================================================== */}
 
-        <div className="flex shrink-0 flex-wrap gap-6 text-xs text-slate-500">
-
-          <div>
-
-            <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-400">
-              Date
-            </p>
-
-            <p className="font-medium text-slate-600">
-              {interview.date}
-            </p>
-
-          </div>
+        <div className="flex shrink-0 flex-wrap gap-x-7 gap-y-4 xl:justify-end">
 
 
-          <div>
-
-            <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-400">
-              Time
-            </p>
-
-            <p className="font-medium text-slate-600">
-              {interview.time}
-            </p>
-
-          </div>
+          <InterviewMeta
+            label="Date"
+            value={interview.date}
+            icon={<CalendarIcon />}
+          />
 
 
-          <div>
+          <InterviewMeta
+            label="Time"
+            value={interview.time}
+            icon={<ClockIcon />}
+          />
 
-            <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-400">
-              Duration
-            </p>
 
-            <p className="font-medium text-slate-600">
-              {interview.duration}
-            </p>
-
-          </div>
+          <InterviewMeta
+            label="Duration"
+            value={interview.duration}
+            icon={<TimerIcon />}
+          />
 
         </div>
 
 
-        {/* Right */}
+        {/* =====================================================
+            ACTION
+        ====================================================== */}
 
-        <div className="flex shrink-0 items-center gap-4">
+        <div className="flex shrink-0 items-center gap-4 xl:min-w-[150px] xl:justify-end">
+
 
           {isCompleted && (
-            <div className="text-right">
 
-              <p className="text-[10px] uppercase tracking-wider text-slate-400">
+            <div className="hidden text-right sm:block">
+
+              <p className="text-[9px] font-medium uppercase tracking-[0.12em] text-zinc-600">
                 Score
               </p>
 
-              <p className="text-xl font-bold text-[#285b8f]">
-                {interview.score}%
+              <p className="mt-1 text-xl font-semibold text-blue-400">
+                {interview.score ?? 0}%
               </p>
 
             </div>
+
           )}
 
 
           {isUpcoming && (
+
             <button
               type="button"
               onClick={onOpen}
-              className="bg-[#285b8f] px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-[#214d79]"
+              className="group/btn flex items-center gap-2 rounded-xl bg-blue-400 px-4 py-2.5 text-xs font-semibold text-[#061018] transition-all hover:bg-blue-300 hover:shadow-[0_0_25px_rgba(96,165,250,0.2)]"
             >
-              View Interview
+
+              Open Interview
+
+              <span className="transition-transform group-hover/btn:translate-x-1">
+                →
+              </span>
+
             </button>
+
           )}
 
 
           {isCompleted && (
+
             <button
               type="button"
               onClick={onOpen}
-              className="border border-slate-200 px-4 py-2.5 text-xs font-semibold text-[#285b8f] transition hover:bg-slate-50"
+              className="group/btn flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.025] px-4 py-2.5 text-xs font-medium text-zinc-400 transition-all hover:border-blue-400/30 hover:bg-blue-400/[0.06] hover:text-blue-300"
             >
-              View Results
+
+              Results
+
+              <span className="text-blue-400 transition-transform group-hover/btn:translate-x-1">
+                →
+              </span>
+
             </button>
+
           )}
 
 
           {isExpired && (
-            <button
-              type="button"
-              className="border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-400"
-              disabled
-            >
+
+            <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-zinc-600">
+
               Expired
-            </button>
+
+            </div>
+
           )}
 
         </div>
@@ -435,6 +667,41 @@ function InterviewListItem({ interview, onOpen }) {
       </div>
 
     </div>
+
+  )
+}
+
+
+/* ============================================================
+   INTERVIEW META
+============================================================ */
+
+function InterviewMeta({ label, value, icon }) {
+
+  return (
+
+    <div className="min-w-[80px]">
+
+
+      <div className="flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.12em] text-zinc-600">
+
+        <span className="text-zinc-600">
+          {icon}
+        </span>
+
+        {label}
+
+      </div>
+
+
+      <p className="mt-2 whitespace-nowrap text-xs font-medium text-zinc-400">
+
+        {value}
+
+      </p>
+
+    </div>
+
   )
 }
 
@@ -444,20 +711,33 @@ function InterviewListItem({ interview, onOpen }) {
 ============================================================ */
 
 function StatusBadge({ status }) {
+
   const styles = {
-    Upcoming: 'bg-[#eaf5ff] text-[#3972a7]',
-    Completed: 'bg-[#edf7f1] text-[#3d8a60]',
-    Expired: 'bg-slate-100 text-slate-400',
+
+    Upcoming:
+      'border-blue-400/20 bg-blue-400/[0.08] text-blue-300',
+
+    Completed:
+      'border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-300',
+
+    Expired:
+      'border-white/[0.06] bg-white/[0.03] text-zinc-500',
+
   }
 
+
   return (
+
     <span
-      className={`px-2 py-1 text-[10px] font-semibold ${
-        styles[status]
+      className={`rounded-full border px-2.5 py-1 text-[10px] font-medium ${
+        styles[status] || styles.Expired
       }`}
     >
+
       {status}
+
     </span>
+
   )
 }
 
@@ -466,7 +746,7 @@ function StatusBadge({ status }) {
    ICONS
 ============================================================ */
 
-function CalendarIcon() {
+function GridIcon() {
   return (
     <svg
       className="h-5 w-5"
@@ -475,8 +755,74 @@ function CalendarIcon() {
       stroke="currentColor"
       strokeWidth="1.8"
     >
+      <rect x="4" y="4" width="6" height="6" rx="1" />
+      <rect x="14" y="4" width="6" height="6" rx="1" />
+      <rect x="4" y="14" width="6" height="6" rx="1" />
+      <rect x="14" y="14" width="6" height="6" rx="1" />
+    </svg>
+  )
+}
+
+
+function CalendarIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
       <rect x="3" y="4" width="18" height="17" rx="2" />
       <path d="M7 2v4M17 2v4M3 10h18" />
+    </svg>
+  )
+}
+
+
+function CheckIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  )
+}
+
+
+function ClockIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  )
+}
+
+
+function TimerIcon() {
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 5V2M9 2h6" />
+      <path d="m12 9 3 4" />
     </svg>
   )
 }
@@ -494,6 +840,23 @@ function CodeIcon() {
       <path d="m8 9-4 3 4 3" />
       <path d="m16 9 4 3-4 3" />
       <path d="m14 5-4 14" />
+    </svg>
+  )
+}
+
+
+function AlertIcon() {
+  return (
+    <svg
+      className="h-5 w-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v5" />
+      <path d="M12 16h.01" />
     </svg>
   )
 }

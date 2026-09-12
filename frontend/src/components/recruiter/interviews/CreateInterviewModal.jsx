@@ -1,959 +1,1277 @@
 import { useEffect, useMemo, useState } from 'react'
+
 import { createInterview } from '../../../api/interview.api.js'
 import { getRecruiterQuestions } from '../../../api/question.api.js'
+import {
+  getRecruiterCandidates,
+} from '../../../api/recruiterCandidate.api.js'
+
 
 function CreateInterviewModal({ onClose, onSuccess }) {
-    const [title, setTitle] = useState('')
-    const [type, setType] = useState('Technical Interview')
-    const [company, setCompany] = useState('')
-    const [candidateId, setCandidateId] = useState('')
-    const [scheduledAt, setScheduledAt] = useState('')
-    const [focusAreas, setFocusAreas] = useState([])
+  // ============================================================
+  // FORM STATE
+  // ============================================================
 
-    const [questions, setQuestions] = useState([])
-    const [selectedQuestions, setSelectedQuestions] = useState([])
-
-    const [difficulty, setDifficulty] = useState('ALL')
-    const [showDifficultyMenu, setShowDifficultyMenu] =
-        useState(false)
-
-    const [loadingQuestions, setLoadingQuestions] =
-        useState(false)
-
-    const [questionError, setQuestionError] =
-        useState(null)
-
-    const [currentPage, setCurrentPage] = useState(1)
-
-    const [creating, setCreating] = useState(false)
-    const [error, setError] = useState(null)
-
-    const QUESTIONS_PER_PAGE = 5
+  const [title, setTitle] = useState('')
+  const [type, setType] = useState('Technical Interview')
+  const [company, setCompany] = useState('')
+  const [candidateId, setCandidateId] = useState('')
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [focusAreas, setFocusAreas] = useState([])
 
 
-    // ============================================================
-    // FETCH QUESTIONS FROM THE BACKEND QUESTION BANK
-    // ============================================================
+  // ============================================================
+  // CANDIDATES STATE
+  // ============================================================
 
-    useEffect(() => {
-        const fetchQuestions = async () => {
-            try {
-                setLoadingQuestions(true)
-                setQuestionError(null)
+  const [candidates, setCandidates] = useState([])
+  const [loadingCandidates, setLoadingCandidates] =
+    useState(false)
 
-                const questionList = await getRecruiterQuestions(
-                    difficulty === 'ALL' ? undefined : difficulty,
-                )
-
-                setQuestions(questionList || [])
-
-                setCurrentPage(1)
-            } catch (error) {
-                console.error(
-                    'Question fetch error:',
-                    error,
-                )
-
-                setQuestionError(error.message)
-            } finally {
-                setLoadingQuestions(false)
-            }
-        }
-
-        fetchQuestions()
-    }, [difficulty])
+  const [candidateError, setCandidateError] =
+    useState(null)
 
 
-    // ============================================================
-    // NORMALIZE QUESTION DATA
-    // ============================================================
+  // ============================================================
+  // QUESTIONS STATE
+  // ============================================================
 
-    const normalizedQuestions = useMemo(() => {
-        return questions.map((question) => ({
-            id:
-                question.questionFrontendId ||
-                question.id ||
-                question.titleSlug ||
-                question.title,
+  const [questions, setQuestions] = useState([])
+  const [selectedQuestions, setSelectedQuestions] =
+    useState([])
 
-            title:
-                question.title ||
-                'Untitled Question',
+  const [difficulty, setDifficulty] =
+    useState('ALL')
 
-            slug:
-                question.titleSlug ||
-                question.slug ||
-                '',
+  const [showDifficultyMenu, setShowDifficultyMenu] =
+    useState(false)
 
-            difficulty:
-                question.difficulty ||
-                'UNKNOWN',
+  const [loadingQuestions, setLoadingQuestions] =
+    useState(false)
 
-            topics:
-                question.topicTags ||
-                question.tags ||
-                [],
-        }))
-    }, [questions])
+  const [questionError, setQuestionError] =
+    useState(null)
 
 
-    // ============================================================
-    // PAGINATION
-    // ============================================================
+  // ============================================================
+  // PAGINATION
+  // ============================================================
 
-    const totalPages = Math.max(
-        1,
-        Math.ceil(
-            normalizedQuestions.length /
-            QUESTIONS_PER_PAGE,
-        ),
-    )
+  const [currentPage, setCurrentPage] =
+    useState(1)
 
-    const paginatedQuestions =
-        normalizedQuestions.slice(
-            (currentPage - 1) * QUESTIONS_PER_PAGE,
-            currentPage * QUESTIONS_PER_PAGE,
+  const QUESTIONS_PER_PAGE = 5
+
+
+  // ============================================================
+  // CREATE STATE
+  // ============================================================
+
+  const [creating, setCreating] =
+    useState(false)
+
+  const [error, setError] =
+    useState(null)
+
+
+  // ============================================================
+  // FETCH CANDIDATES
+  // ============================================================
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchCandidates = async () => {
+      try {
+        setLoadingCandidates(true)
+        setCandidateError(null)
+
+        const data =
+          await getRecruiterCandidates()
+
+        console.log(
+          'RECRUITER CANDIDATES:',
+          data,
         )
 
+        if (!cancelled) {
+          setCandidates(
+            Array.isArray(data)
+              ? data
+              : [],
+          )
+        }
 
-    // ============================================================
-    // SELECT / REMOVE QUESTION
-    // ============================================================
-
-    const toggleQuestion = (question) => {
-        setSelectedQuestions((previous) => {
-            const exists = previous.some(
-                (item) => item.id === question.id,
-            )
-
-            if (exists) {
-                return previous.filter(
-                    (item) => item.id !== question.id,
-                )
-            }
-
-            return [
-                ...previous,
-                {
-                    ...question,
-                    time: 10,
-                },
-            ]
-        })
-    }
-
-
-    // ============================================================
-    // UPDATE QUESTION TIMER
-    // ============================================================
-
-    const updateQuestionTime = (
-        questionId,
-        value,
-    ) => {
-        const time = Number(value)
-
-        setSelectedQuestions((previous) =>
-            previous.map((question) =>
-                question.id === questionId
-                    ? {
-                        ...question,
-                        time:
-                            Number.isNaN(time) || time < 1
-                                ? 1
-                                : time,
-                    }
-                    : question,
-            ),
+      } catch (err) {
+        console.error(
+          'Candidate fetch error:',
+          err,
         )
+
+        if (!cancelled) {
+          setCandidateError(
+            err?.response?.data?.message ||
+            err?.message ||
+            'Failed to load candidates.',
+          )
+        }
+
+      } finally {
+        if (!cancelled) {
+          setLoadingCandidates(false)
+        }
+      }
     }
 
+    fetchCandidates()
 
-    // ============================================================
-    // TOTAL TIME
-    // ============================================================
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
-    const totalTime = selectedQuestions.reduce(
-        (total, question) =>
-            total + Number(question.time || 0),
-        0,
+
+  // ============================================================
+  // FETCH QUESTIONS
+  // ============================================================
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchQuestions = async () => {
+      try {
+        setLoadingQuestions(true)
+        setQuestionError(null)
+
+        const questionList =
+          await getRecruiterQuestions(
+            difficulty === 'ALL'
+              ? undefined
+              : difficulty,
+          )
+
+        if (!cancelled) {
+          setQuestions(
+            Array.isArray(questionList)
+              ? questionList
+              : [],
+          )
+
+          setCurrentPage(1)
+        }
+
+      } catch (err) {
+        console.error(
+          'Question fetch error:',
+          err,
+        )
+
+        if (!cancelled) {
+          setQuestionError(
+            err?.response?.data?.message ||
+            err?.message ||
+            'Failed to load questions.',
+          )
+        }
+
+      } finally {
+        if (!cancelled) {
+          setLoadingQuestions(false)
+        }
+      }
+    }
+
+    fetchQuestions()
+
+    return () => {
+      cancelled = true
+    }
+  }, [difficulty])
+
+
+  // ============================================================
+  // NORMALIZE QUESTIONS
+  // ============================================================
+
+  const normalizedQuestions = useMemo(() => {
+    return questions.map((question) => ({
+      id:
+        question.questionFrontendId ||
+        question.id ||
+        question.titleSlug ||
+        question.slug ||
+        question.title,
+
+      title:
+        question.title ||
+        'Untitled Question',
+
+      slug:
+        question.titleSlug ||
+        question.slug ||
+        '',
+
+      difficulty:
+        question.difficulty ||
+        'UNKNOWN',
+
+      topics:
+        question.topicTags ||
+        question.tags ||
+        [],
+    }))
+  }, [questions])
+
+
+  // ============================================================
+  // PAGINATION
+  // ============================================================
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(
+      normalizedQuestions.length /
+        QUESTIONS_PER_PAGE,
+    ),
+  )
+
+  const paginatedQuestions =
+    normalizedQuestions.slice(
+      (currentPage - 1) *
+        QUESTIONS_PER_PAGE,
+
+      currentPage *
+        QUESTIONS_PER_PAGE,
     )
 
 
-    // ============================================================
-    // DIFFICULTY COLOR
-    // ============================================================
+  // ============================================================
+  // SELECT / REMOVE QUESTION
+  // ============================================================
 
-    const getDifficultyClass = (difficulty) => {
-        if (difficulty === 'EASY') {
-            return 'bg-emerald-50 text-emerald-600'
-        }
+  const toggleQuestion = (question) => {
+    setSelectedQuestions((previous) => {
+      const exists = previous.some(
+        (item) =>
+          item.id === question.id,
+      )
 
-        if (difficulty === 'MEDIUM') {
-            return 'bg-amber-50 text-amber-600'
-        }
+      if (exists) {
+        return previous.filter(
+          (item) =>
+            item.id !== question.id,
+        )
+      }
 
-        if (difficulty === 'HARD') {
-            return 'bg-red-50 text-red-600'
-        }
+      return [
+        ...previous,
+        {
+          ...question,
+          time: 10,
+        },
+      ]
+    })
+  }
 
-        return 'bg-slate-100 text-slate-500'
-    }
 
+  // ============================================================
+  // UPDATE QUESTION TIME
+  // ============================================================
 
-    // ============================================================
-    // CREATE INTERVIEW
-    // ============================================================
+  const updateQuestionTime = (
+    questionId,
+    value,
+  ) => {
+    const time = Number(value)
 
-    const handleCreateInterview = async (event) => {
-        event.preventDefault()
+    setSelectedQuestions((previous) =>
+      previous.map((question) =>
+        question.id === questionId
+          ? {
+              ...question,
 
-        if (!title.trim() || !candidateId.trim() || !scheduledAt) {
-            setError('Title, candidate ID, and schedule are required.')
-            return
-        }
-
-        try {
-            setCreating(true)
-            setError(null)
-
-            const payload = {
-                title: title.trim(),
-                type,
-                company: company.trim() || undefined,
-                focusAreas,
-                scheduledAt: new Date(scheduledAt).toISOString(),
-                duration: totalTime,
-                candidateId: candidateId.trim(),
-                questionIds: selectedQuestions.map(
-                    (question) => question.id,
-                ),
+              time:
+                Number.isNaN(time) ||
+                time < 1
+                  ? 1
+                  : time,
             }
+          : question,
+      ),
+    )
+  }
 
-            await createInterview(payload)
 
-            onSuccess?.()
-            onClose()
-        } catch (error) {
-            console.error('Create interview error:', error)
-            setError(
-                error.message ||
-                'Failed to create interview',
-            )
-        } finally {
-            setCreating(false)
-        }
+  // ============================================================
+  // TOTAL TIME
+  // ============================================================
+
+  const totalTime =
+    selectedQuestions.reduce(
+      (total, question) =>
+        total +
+        Number(question.time || 0),
+      0,
+    )
+
+
+  // ============================================================
+  // DIFFICULTY STYLING
+  // ============================================================
+
+  const getDifficultyClass = (
+    questionDifficulty,
+  ) => {
+    const value =
+      questionDifficulty?.toUpperCase()
+
+    if (value === 'EASY') {
+      return 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
+    }
+
+    if (value === 'MEDIUM') {
+      return 'border border-amber-500/20 bg-amber-500/10 text-amber-400'
+    }
+
+    if (value === 'HARD') {
+      return 'border border-red-500/20 bg-red-500/10 text-red-400'
+    }
+
+    return 'border border-zinc-700 bg-zinc-800 text-zinc-400'
+  }
+
+
+  // ============================================================
+  // CREATE INTERVIEW
+  // ============================================================
+
+  const handleCreateInterview = async (
+    event,
+  ) => {
+    event.preventDefault()
+
+    setError(null)
+
+
+    if (!title.trim()) {
+      setError(
+        'Please enter an interview title.',
+      )
+      return
     }
 
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#07111f]/40 p-4">
+    if (!candidateId) {
+      setError(
+        'Please select a candidate.',
+      )
+      return
+    }
 
-            <div className="my-8 flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden bg-white shadow-2xl">
+
+    if (!scheduledAt) {
+      setError(
+        'Please select an interview schedule.',
+      )
+      return
+    }
 
 
-                {/* =====================================================
+    if (selectedQuestions.length === 0) {
+      setError(
+        'Please select at least one question.',
+      )
+      return
+    }
+
+
+    try {
+      setCreating(true)
+
+      const payload = {
+        title: title.trim(),
+
+        type,
+
+        company:
+          company.trim() || undefined,
+
+        candidateId,
+
+        focusAreas,
+
+        scheduledAt:
+          new Date(
+            scheduledAt,
+          ).toISOString(),
+
+        duration: totalTime,
+
+        questionIds:
+          selectedQuestions.map(
+            (question) => question.id,
+          ),
+      }
+
+
+      console.log(
+        'CREATE INTERVIEW PAYLOAD:',
+        payload,
+      )
+
+
+      await createInterview(payload)
+
+
+      onSuccess?.()
+
+      onClose()
+
+    } catch (err) {
+      console.error(
+        'Create interview error:',
+        err,
+      )
+
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to create interview.',
+      )
+
+    } finally {
+      setCreating(false)
+    }
+  }
+
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm">
+
+      <div className="my-8 flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden border border-zinc-800 bg-[#111111] shadow-2xl">
+
+
+        {/* =====================================================
             HEADER
         ====================================================== */}
 
-                <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-5">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 px-6 py-5">
 
-                    <div>
+          <div>
 
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3972a7]">
-                            Recruiter Dashboard
-                        </p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-400">
+              Recruiter Dashboard
+            </p>
 
-                        <h2 className="mt-1 text-xl font-bold text-[#17324f]">
-                            Create Interview
-                        </h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-tight text-white">
+              Create Interview
+            </h2>
 
-                    </div>
+            <p className="mt-1 text-xs text-zinc-500">
+              Configure the candidate, questions and interview schedule.
+            </p>
 
+          </div>
+
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center text-zinc-500 transition hover:bg-zinc-800 hover:text-white"
+          >
+            <CloseIcon />
+          </button>
+
+        </div>
+
+
+        {/* =====================================================
+            FORM
+        ====================================================== */}
+
+        <form
+          onSubmit={handleCreateInterview}
+          className="min-h-0 flex-1 overflow-y-auto"
+        >
+
+          <div className="space-y-8 p-6">
+
+
+            {/* =================================================
+                INTERVIEW DETAILS
+            ================================================== */}
+
+            <section>
+
+              <SectionTitle>
+                Interview Details
+              </SectionTitle>
+
+
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+
+
+                {/* TITLE */}
+
+                <Field
+                  label="Interview Title"
+                  required
+                >
+
+                  <input
+                    value={title}
+                    onChange={(event) =>
+                      setTitle(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="e.g. Full Stack Developer Interview"
+                    className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+                  />
+
+                </Field>
+
+
+                {/* TYPE */}
+
+                <Field label="Interview Type">
+
+                  <select
+                    value={type}
+                    onChange={(event) =>
+                      setType(
+                        event.target.value,
+                      )
+                    }
+                    className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500"
+                  >
+
+                    <option value="Technical Interview">
+                      Technical Interview
+                    </option>
+
+                    <option value="Coding Interview">
+                      Coding Interview
+                    </option>
+
+                    <option value="DSA Interview">
+                      DSA Interview
+                    </option>
+
+                  </select>
+
+                </Field>
+
+
+                {/* COMPANY */}
+
+                <Field label="Company">
+
+                  <input
+                    value={company}
+                    onChange={(event) =>
+                      setCompany(
+                        event.target.value,
+                      )
+                    }
+                    placeholder="e.g. InterviewAI"
+                    className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
+                  />
+
+                </Field>
+
+
+                {/* CANDIDATE DROPDOWN */}
+
+                <Field
+                  label="Candidate"
+                  required
+                >
+
+                  <select
+                    value={candidateId}
+                    onChange={(event) =>
+                      setCandidateId(
+                        event.target.value,
+                      )
+                    }
+                    disabled={loadingCandidates}
+                    className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+
+                    <option value="">
+                      {loadingCandidates
+                        ? 'Loading candidates...'
+                        : 'Select a candidate'}
+                    </option>
+
+
+                    {candidates.map(
+                      (candidate) => {
+
+                        const name =
+                          candidate.name ||
+                          `${candidate.firstName || ''} ${
+                            candidate.lastName || ''
+                          }`.trim()
+
+                        return (
+                          <option
+                            key={candidate.id}
+                            value={candidate.id}
+                          >
+                            {name} — {candidate.email}
+                          </option>
+                        )
+                      },
+                    )}
+
+                  </select>
+
+
+                  {candidateError && (
+
+                    <p className="mt-2 text-[10px] text-red-400">
+                      {candidateError}
+                    </p>
+
+                  )}
+
+                </Field>
+
+
+                {/* SCHEDULE */}
+
+                <Field
+                  label="Schedule"
+                  required
+                >
+
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(event) =>
+                      setScheduledAt(
+                        event.target.value,
+                      )
+                    }
+                    className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500"
+                  />
+
+                </Field>
+
+
+                {/* FOCUS AREA */}
+
+                <Field label="Focus Area">
+
+                  <select
+                    value=""
+                    onChange={(event) => {
+                      const value =
+                        event.target.value
+
+                      if (
+                        value &&
+                        !focusAreas.includes(
+                          value,
+                        )
+                      ) {
+                        setFocusAreas([
+                          ...focusAreas,
+                          value,
+                        ])
+                      }
+                    }}
+                    className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-zinc-300 outline-none transition focus:border-blue-500"
+                  >
+
+                    <option value="">
+                      Select a topic
+                    </option>
+
+                    <option value="Arrays">
+                      Arrays
+                    </option>
+
+                    <option value="Strings">
+                      Strings
+                    </option>
+
+                    <option value="Trees">
+                      Trees
+                    </option>
+
+                    <option value="Graphs">
+                      Graphs
+                    </option>
+
+                    <option value="Dynamic Programming">
+                      Dynamic Programming
+                    </option>
+
+                    <option value="Binary Search">
+                      Binary Search
+                    </option>
+
+                    <option value="Linked Lists">
+                      Linked Lists
+                    </option>
+
+                    <option value="Stacks">
+                      Stacks
+                    </option>
+
+                    <option value="Queues">
+                      Queues
+                    </option>
+
+                  </select>
+
+                </Field>
+
+              </div>
+
+
+              {/* SELECTED FOCUS AREAS */}
+
+              {focusAreas.length > 0 && (
+
+                <div className="mt-4 flex flex-wrap gap-2">
+
+                  {focusAreas.map((area) => (
 
                     <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                      key={area}
+                      type="button"
+                      onClick={() =>
+                        setFocusAreas(
+                          focusAreas.filter(
+                            (item) =>
+                              item !== area,
+                          ),
+                        )
+                      }
+                      className="flex items-center gap-2 border border-blue-500/20 bg-blue-500/10 px-3 py-1.5 text-[10px] font-medium text-blue-400 transition hover:bg-red-500/10 hover:text-red-400"
                     >
-                        <CloseIcon />
+
+                      {area}
+
+                      <span className="text-sm">
+                        ×
+                      </span>
+
                     </button>
+
+                  ))}
+
+                </div>
+
+              )}
+
+            </section>
+
+
+            {/* =================================================
+                SELECTED QUESTIONS
+            ================================================== */}
+
+            <section className="overflow-hidden border border-zinc-800 bg-[#151515]">
+
+              <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
+
+                <div>
+
+                  <SectionTitle>
+                    Selected Questions
+                  </SectionTitle>
+
+                  <p className="mt-2 text-[10px] text-zinc-500">
+                    Configure an individual time limit for every question.
+                  </p>
 
                 </div>
 
 
-                {/* =====================================================
-            CONTENT
-        ====================================================== */}
+                <div className="text-right">
 
-                <form
-                    onSubmit={handleCreateInterview}
-                    className="min-h-0 flex-1 overflow-y-auto"
-                >
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600">
+                    Total Duration
+                  </p>
 
-                    <div className="space-y-8 p-6">
+                  <p className="mt-1 text-lg font-semibold text-white">
+                    {totalTime} min
+                  </p>
 
+                </div>
 
-                        {/* =================================================
-                BASIC DETAILS
-            ================================================== */}
+              </div>
 
-                        <section>
 
-                            <SectionTitle>
-                                Interview Details
-                            </SectionTitle>
+              {selectedQuestions.length === 0 ? (
 
+                <div className="px-5 py-10 text-center">
 
-                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <p className="text-xs text-zinc-500">
+                    No questions selected yet.
+                  </p>
 
-                                <Field
-                                    label="Interview Title"
-                                    required
-                                >
+                </div>
 
-                                    <input
-                                        value={title}
-                                        onChange={(event) =>
-                                            setTitle(event.target.value)
-                                        }
-                                        placeholder="Technical Interview"
-                                        className="Input"
-                                    />
-
-                                </Field>
+              ) : (
 
-
-                                <Field label="Interview Type">
+                <div className="divide-y divide-zinc-800">
 
-                                    <select
-                                        value={type}
-                                        onChange={(event) =>
-                                            setType(event.target.value)
-                                        }
-                                        className="Input"
-                                    >
-                                        <option>
-                                            Technical Interview
-                                        </option>
-
-                                        <option>
-                                            Coding Interview
-                                        </option>
-
-                                        <option>
-                                            DSA Interview
-                                        </option>
-
-                                    </select>
+                  {selectedQuestions.map(
+                    (question, index) => (
 
-                                </Field>
-
+                      <div
+                        key={question.id}
+                        className="flex items-center gap-4 px-5 py-4"
+                      >
 
-                                <Field label="Company">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center bg-blue-500/10 text-[10px] font-semibold text-blue-400">
+                          {index + 1}
+                        </span>
 
-                                    <input
-                                        value={company}
-                                        onChange={(event) =>
-                                            setCompany(event.target.value)
-                                        }
-                                        placeholder="Optional"
-                                        className="Input"
-                                    />
 
-                                </Field>
+                        <div className="min-w-0 flex-1">
 
+                          <p className="truncate text-xs font-medium text-zinc-200">
+                            {question.title}
+                          </p>
 
-                                <Field
-                                    label="Candidate ID"
-                                    required
-                                >
+                          <span
+                            className={`mt-2 inline-block px-2 py-1 text-[9px] font-semibold ${getDifficultyClass(
+                              question.difficulty,
+                            )}`}
+                          >
+                            {question.difficulty}
+                          </span>
 
-                                    <input
-                                        value={candidateId}
-                                        onChange={(event) =>
-                                            setCandidateId(event.target.value)
-                                        }
-                                        placeholder="Enter candidate ID"
-                                        className="Input"
-                                    />
+                        </div>
 
-                                </Field>
 
+                        <div className="flex items-center gap-2">
 
-                                <Field
-                                    label="Schedule"
-                                    required
-                                >
-
-                                    <input
-                                        type="datetime-local"
-                                        value={scheduledAt}
-                                        onChange={(event) =>
-                                            setScheduledAt(
-                                                event.target.value,
-                                            )
-                                        }
-                                        className="Input"
-                                    />
+                          <input
+                            type="number"
+                            min="1"
+                            value={question.time}
+                            onChange={(event) =>
+                              updateQuestionTime(
+                                question.id,
+                                event.target.value,
+                              )
+                            }
+                            className="w-16 border border-zinc-700 bg-[#0d0d0d] px-2 py-2 text-center text-xs text-white outline-none focus:border-blue-500"
+                          />
 
-                                </Field>
+                          <span className="text-[10px] text-zinc-500">
+                            min
+                          </span>
 
 
-                                <Field label="Focus Area">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              toggleQuestion(
+                                question,
+                              )
+                            }
+                            className="ml-2 text-lg text-zinc-500 transition hover:text-red-400"
+                          >
+                            ×
+                          </button>
 
-                                    <select
-                                        value=""
-                                        onChange={(event) => {
-                                            const value =
-                                                event.target.value
+                        </div>
 
-                                            if (
-                                                value &&
-                                                !focusAreas.includes(value)
-                                            ) {
-                                                setFocusAreas([
-                                                    ...focusAreas,
-                                                    value,
-                                                ])
-                                            }
-                                        }}
-                                        className="Input"
-                                    >
+                      </div>
 
-                                        <option value="">
-                                            Select topic
-                                        </option>
+                    ),
+                  )}
 
-                                        <option value="Arrays">
-                                            Arrays
-                                        </option>
+                </div>
 
-                                        <option value="Strings">
-                                            Strings
-                                        </option>
+              )}
 
-                                        <option value="Trees">
-                                            Trees
-                                        </option>
+            </section>
 
-                                        <option value="Graphs">
-                                            Graphs
-                                        </option>
 
-                                        <option value="Dynamic Programming">
-                                            Dynamic Programming
-                                        </option>
-
-                                        <option value="Binary Search">
-                                            Binary Search
-                                        </option>
-
-                                    </select>
-
-                                </Field>
-
-                            </div>
-
-
-                            {/* Selected Topics */}
-
-                            {focusAreas.length > 0 && (
-
-                                <div className="mt-3 flex flex-wrap gap-2">
-
-                                    {focusAreas.map((area) => (
-
-                                        <button
-                                            key={area}
-                                            type="button"
-                                            onClick={() =>
-                                                setFocusAreas(
-                                                    focusAreas.filter(
-                                                        (item) =>
-                                                            item !== area,
-                                                    ),
-                                                )
-                                            }
-                                            className="flex items-center gap-2 bg-[#edf5fc] px-3 py-1.5 text-[10px] font-semibold text-[#3972a7]"
-                                        >
-
-                                            {area}
-
-                                            <span className="text-xs">
-                                                ×
-                                            </span>
-
-                                        </button>
-
-                                    ))}
-
-                                </div>
-
-                            )}
-
-                        </section>
-
-
-                        {/* =================================================
-                SELECTED QUESTIONS
-            ================================================== */}
-
-                        <section className="border border-slate-200">
-
-                            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
-
-                                <div>
-
-                                    <SectionTitle>
-                                        Selected Questions
-                                    </SectionTitle>
-
-                                    <p className="mt-1 text-[10px] text-slate-400">
-                                        Add individual time limits for
-                                        each question.
-                                    </p>
-
-                                </div>
-
-
-                                <div className="text-right">
-
-                                    <p className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">
-                                        Total Time
-                                    </p>
-
-                                    <p className="mt-1 text-lg font-bold text-[#17324f]">
-                                        {totalTime} min
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-
-                            {selectedQuestions.length === 0 ? (
-
-                                <div className="px-5 py-8 text-center">
-
-                                    <p className="text-xs text-slate-400">
-                                        No questions selected yet.
-                                    </p>
-
-                                </div>
-
-                            ) : (
-
-                                <div className="divide-y divide-slate-100">
-
-                                    {selectedQuestions.map(
-                                        (question, index) => (
-
-                                            <div
-                                                key={question.id}
-                                                className="flex items-center gap-4 px-5 py-4"
-                                            >
-
-                                                <span className="flex h-7 w-7 shrink-0 items-center justify-center bg-[#edf5fc] text-[10px] font-bold text-[#3972a7]">
-                                                    {index + 1}
-                                                </span>
-
-
-                                                <div className="min-w-0 flex-1">
-
-                                                    <p className="truncate text-xs font-semibold text-slate-700">
-                                                        {question.title}
-                                                    </p>
-
-                                                    <span
-                                                        className={`mt-1 inline-block px-2 py-0.5 text-[9px] font-semibold ${getDifficultyClass(
-                                                            question.difficulty,
-                                                        )}`}
-                                                    >
-                                                        {question.difficulty}
-                                                    </span>
-
-                                                </div>
-
-
-                                                <div className="flex items-center gap-2">
-
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        value={question.time}
-                                                        onChange={(event) =>
-                                                            updateQuestionTime(
-                                                                question.id,
-                                                                event.target.value,
-                                                            )
-                                                        }
-                                                        className="w-16 border border-slate-200 px-2 py-2 text-center text-xs outline-none focus:border-[#8eb9df]"
-                                                    />
-
-                                                    <span className="text-[10px] text-slate-400">
-                                                        min
-                                                    </span>
-
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            toggleQuestion(question)
-                                                        }
-                                                        className="ml-2 text-sm text-slate-400 hover:text-red-500"
-                                                    >
-                                                        ×
-                                                    </button>
-
-                                                </div>
-
-                                            </div>
-
-                                        ),
-                                    )}
-
-                                </div>
-
-                            )}
-
-                        </section>
-
-
-                        {/* =================================================
+            {/* =================================================
                 QUESTION LIBRARY
             ================================================== */}
 
-                        <section className="border border-slate-200">
+            <section className="overflow-hidden border border-zinc-800 bg-[#151515]">
 
 
-                            {/* Header */}
+              {/* HEADER */}
 
-                            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-5 py-4">
 
-                                <div>
+                <div>
 
-                                    <SectionTitle>
-                                        Question Library
-                                    </SectionTitle>
+                  <SectionTitle>
+                    Question Library
+                  </SectionTitle>
 
-                                    <p className="mt-1 text-[10px] text-slate-400">
-                                        Select questions for this
-                                        interview.
-                                    </p>
+                  <p className="mt-2 text-[10px] text-zinc-500">
+                    Select questions from your backend question bank.
+                  </p>
 
-                                </div>
-
-
-                                {/* Difficulty Filter */}
-
-                                <div className="relative">
-
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowDifficultyMenu(
-                                                !showDifficultyMenu,
-                                            )
-                                        }
-                                        className="flex h-9 w-9 items-center justify-center border border-slate-200 text-slate-500 transition hover:bg-slate-50"
-                                        title="Filter difficulty"
-                                    >
-                                        <SortIcon />
-                                    </button>
+                </div>
 
 
-                                    {showDifficultyMenu && (
+                {/* DIFFICULTY FILTER */}
 
-                                        <div className="absolute right-0 top-11 z-20 w-36 border border-slate-200 bg-white py-1 shadow-lg">
+                <div className="relative">
 
-                                            {[
-                                                'ALL',
-                                                'EASY',
-                                                'MEDIUM',
-                                                'HARD',
-                                            ].map((item) => (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowDifficultyMenu(
+                        !showDifficultyMenu,
+                      )
+                    }
+                    className="flex h-9 items-center gap-2 border border-zinc-700 px-3 text-[10px] font-medium text-zinc-400 transition hover:border-zinc-600 hover:text-white"
+                  >
 
-                                                <button
-                                                    key={item}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setDifficulty(item)
-                                                        setShowDifficultyMenu(
-                                                            false,
-                                                        )
-                                                    }}
-                                                    className={`block w-full px-4 py-2 text-left text-[10px] font-medium hover:bg-slate-50 ${difficulty === item
-                                                        ? 'text-[#3972a7]'
-                                                        : 'text-slate-500'
-                                                        }`}
-                                                >
-                                                    {item === 'ALL'
-                                                        ? 'All Questions'
-                                                        : item}
-                                                </button>
+                    <SortIcon />
 
-                                            ))}
+                    {difficulty}
 
-                                        </div>
+                  </button>
 
-                                    )}
 
-                                </div>
+                  {showDifficultyMenu && (
+
+                    <div className="absolute right-0 top-11 z-30 w-40 overflow-hidden border border-zinc-700 bg-[#181818] shadow-2xl">
+
+                      {[
+                        'ALL',
+                        'EASY',
+                        'MEDIUM',
+                        'HARD',
+                      ].map((item) => (
+
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => {
+                            setDifficulty(item)
+
+                            setShowDifficultyMenu(
+                              false,
+                            )
+                          }}
+                          className={`block w-full px-4 py-3 text-left text-[10px] transition hover:bg-zinc-800 ${
+                            difficulty === item
+                              ? 'text-blue-400'
+                              : 'text-zinc-400'
+                          }`}
+                        >
+
+                          {item === 'ALL'
+                            ? 'All Questions'
+                            : item}
+
+                        </button>
+
+                      ))}
+
+                    </div>
+
+                  )}
+
+                </div>
+
+              </div>
+
+
+              {/* LOADING */}
+
+              {loadingQuestions && (
+
+                <div className="px-5 py-14 text-center">
+
+                  <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-zinc-700 border-t-blue-400" />
+
+                  <p className="mt-4 text-xs text-zinc-500">
+                    Loading questions...
+                  </p>
+
+                </div>
+
+              )}
+
+
+              {/* QUESTION ERROR */}
+
+              {questionError &&
+                !loadingQuestions && (
+
+                  <div className="px-5 py-12 text-center">
+
+                    <p className="text-xs font-medium text-red-400">
+                      Failed to load questions
+                    </p>
+
+                    <p className="mt-2 text-[10px] text-zinc-500">
+                      {questionError}
+                    </p>
+
+                  </div>
+
+                )}
+
+
+              {/* QUESTIONS */}
+
+              {!loadingQuestions &&
+                !questionError && (
+
+                  <div className="divide-y divide-zinc-800">
+
+                    {paginatedQuestions.map(
+                      (question) => {
+
+                        const selected =
+                          selectedQuestions.some(
+                            (item) =>
+                              item.id ===
+                              question.id,
+                          )
+
+                        return (
+
+                          <div
+                            key={question.id}
+                            className="flex items-center gap-4 px-5 py-5 transition hover:bg-zinc-900/50"
+                          >
+
+                            <div className="min-w-0 flex-1">
+
+                              <p className="text-sm font-medium text-zinc-200">
+                                {question.title}
+                              </p>
+
+
+                              <div className="mt-3 flex flex-wrap gap-2">
+
+                                <span
+                                  className={`px-2 py-1 text-[9px] font-semibold ${getDifficultyClass(
+                                    question.difficulty,
+                                  )}`}
+                                >
+                                  {question.difficulty}
+                                </span>
+
+
+                                {question.topics
+                                  ?.slice(0, 3)
+                                  .map(
+                                    (topic, index) => {
+
+                                      const topicName =
+                                        typeof topic ===
+                                        'string'
+                                          ? topic
+                                          : topic?.name ||
+                                            topic?.slug ||
+                                            `Topic ${index + 1}`
+
+                                      return (
+
+                                        <span
+                                          key={`${topicName}-${index}`}
+                                          className="border border-zinc-800 bg-zinc-900 px-2 py-1 text-[9px] text-zinc-500"
+                                        >
+                                          {topicName}
+                                        </span>
+
+                                      )
+                                    },
+                                  )}
+
+                              </div>
 
                             </div>
 
 
-                            {/* Loading */}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleQuestion(
+                                  question,
+                                )
+                              }
+                              className={`min-w-[80px] px-4 py-2 text-[10px] font-semibold transition ${
+                                selected
+                                  ? 'border border-red-500/20 bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                  : 'border border-blue-500/20 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20'
+                              }`}
+                            >
+                              {selected
+                                ? 'Remove'
+                                : 'Add'}
+                            </button>
 
-                            {loadingQuestions && (
+                          </div>
 
-                                <div className="px-5 py-10 text-center">
-
-                                    <div className="mx-auto h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-[#3972a7]" />
-
-                                    <p className="mt-3 text-xs text-slate-400">
-                                        Loading questions...
-                                    </p>
-
-                                </div>
-
-                            )}
-
-
-                            {/* Error */}
-
-                            {questionError && !loadingQuestions && (
-
-                                <div className="px-5 py-10 text-center">
-
-                                    <p className="text-xs font-medium text-red-500">
-                                        Failed to load questions
-                                    </p>
-
-                                    <p className="mt-2 text-[10px] text-slate-400">
-                                        {questionError}
-                                    </p>
-
-                                </div>
-
-                            )}
+                        )
+                      },
+                    )}
 
 
-                            {/* Questions */}
+                    {paginatedQuestions.length ===
+                      0 && (
 
-                            {!loadingQuestions &&
-                                !questionError && (
+                      <div className="px-5 py-14 text-center">
 
-                                    <div className="divide-y divide-slate-100">
+                        <p className="text-xs text-zinc-500">
+                          No questions found.
+                        </p>
 
-                                        {paginatedQuestions.map(
-                                            (question) => {
+                      </div>
 
-                                                const selected =
-                                                    selectedQuestions.some(
-                                                        (item) =>
-                                                            item.id === question.id,
-                                                    )
+                    )}
 
-                                                return (
+                  </div>
 
-                                                    <div
-                                                        key={question.id}
-                                                        className="flex items-center gap-4 px-5 py-4"
-                                                    >
-
-                                                        <div className="min-w-0 flex-1">
-
-                                                            <p className="text-xs font-semibold text-slate-700">
-                                                                {question.title}
-                                                            </p>
+                )}
 
 
-                                                            <div className="mt-2 flex flex-wrap gap-2">
+              {/* PAGINATION */}
 
-                                                                <span
-                                                                    className={`px-2 py-0.5 text-[9px] font-semibold ${getDifficultyClass(
-                                                                        question.difficulty,
-                                                                    )}`}
-                                                                >
-                                                                    {question.difficulty}
-                                                                </span>
+              {!loadingQuestions &&
+                !questionError &&
+                normalizedQuestions.length > 0 && (
 
+                  <div className="flex items-center justify-between border-t border-zinc-800 bg-[#111111] px-5 py-4">
 
-                                                                {question.topics
-                                                                    ?.slice(0, 3)
-                                                                    .map((topic) => {
-
-                                                                        const topicName =
-                                                                            typeof topic ===
-                                                                                'string'
-                                                                                ? topic
-                                                                                : topic.name
-
-                                                                        return (
-
-                                                                            <span
-                                                                                key={topicName}
-                                                                                className="bg-slate-100 px-2 py-0.5 text-[9px] text-slate-500"
-                                                                            >
-                                                                                {topicName}
-                                                                            </span>
-
-                                                                        )
-                                                                    })}
-
-                                                            </div>
-
-                                                        </div>
+                    <p className="text-[10px] text-zinc-500">
+                      Page {currentPage} of{' '}
+                      {totalPages}
+                    </p>
 
 
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                toggleQuestion(question)
-                                                            }
-                                                            className={`px-4 py-2 text-[10px] font-semibold transition ${selected
-                                                                ? 'bg-red-50 text-red-500'
-                                                                : 'bg-[#edf5fc] text-[#3972a7] hover:bg-[#dfeefa]'
-                                                                }`}
-                                                        >
-                                                            {selected
-                                                                ? 'Remove'
-                                                                : 'Add'}
-                                                        </button>
+                    <div className="flex gap-2">
 
-                                                    </div>
-
-                                                )
-                                            },
-                                        )}
+                      <button
+                        type="button"
+                        disabled={
+                          currentPage === 1
+                        }
+                        onClick={() =>
+                          setCurrentPage(
+                            (previous) =>
+                              previous - 1,
+                          )
+                        }
+                        className="border border-zinc-700 px-4 py-2 text-[10px] text-zinc-400 transition hover:border-zinc-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Previous
+                      </button>
 
 
-                                        {paginatedQuestions.length === 0 && (
+                      <button
+                        type="button"
+                        disabled={
+                          currentPage ===
+                          totalPages
+                        }
+                        onClick={() =>
+                          setCurrentPage(
+                            (previous) =>
+                              previous + 1,
+                          )
+                        }
+                        className="border border-zinc-700 px-4 py-2 text-[10px] text-zinc-400 transition hover:border-zinc-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next
+                      </button>
 
-                                            <div className="px-5 py-10 text-center">
+                    </div>
 
-                                                <p className="text-xs text-slate-400">
-                                                    No questions found.
-                                                </p>
+                  </div>
 
-                                            </div>
+                )}
 
-                                        )}
-
-                                    </div>
-
-                                )}
-
-
-                            {/* =================================================
-                  PAGINATION
-              ================================================== */}
-
-                            {!loadingQuestions &&
-                                !questionError &&
-                                normalizedQuestions.length > 0 && (
-
-                                    <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3">
-
-                                        <p className="text-[10px] text-slate-400">
-                                            Page {currentPage} of {totalPages}
-                                        </p>
+            </section>
 
 
-                                        <div className="flex gap-2">
-
-                                            <button
-                                                type="button"
-                                                disabled={currentPage === 1}
-                                                onClick={() =>
-                                                    setCurrentPage(
-                                                        currentPage - 1,
-                                                    )
-                                                }
-                                                className="border border-slate-200 bg-white px-3 py-1.5 text-[10px] text-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
-                                            >
-                                                Previous
-                                            </button>
-
-
-                                            <button
-                                                type="button"
-                                                disabled={
-                                                    currentPage === totalPages
-                                                }
-                                                onClick={() =>
-                                                    setCurrentPage(
-                                                        currentPage + 1,
-                                                    )
-                                                }
-                                                className="border border-slate-200 bg-white px-3 py-1.5 text-[10px] text-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
-                                            >
-                                                Next
-                                            </button>
-
-                                        </div>
-
-                                    </div>
-
-                                )}
-
-                        </section>
-
-
-                        {/* =================================================
+            {/* =================================================
                 ERROR
             ================================================== */}
 
-                        {error && (
+            {error && (
 
-                            <div className="border border-red-100 bg-red-50 px-4 py-3">
+              <div className="border border-red-500/20 bg-red-500/10 px-5 py-4">
 
-                                <p className="text-xs font-medium text-red-500">
-                                    {error}
-                                </p>
+                <p className="text-xs font-medium text-red-400">
+                  {error}
+                </p>
 
-                            </div>
+              </div>
 
-                        )}
+            )}
 
-                    </div>
+          </div>
 
 
-                    {/* ===================================================
+          {/* ===================================================
               FOOTER
           ==================================================== */}
 
-                    <div className="sticky bottom-0 flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">
+          <div className="sticky bottom-0 flex shrink-0 items-center justify-between border-t border-zinc-800 bg-[#111111] px-6 py-4">
 
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="border border-slate-200 px-5 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50"
-                        >
-                            Cancel
-                        </button>
+            <div className="text-[10px] text-zinc-500">
 
-
-                        <button
-                            type="submit"
-                            disabled={creating}
-                            className="bg-[#285b8f] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[#214d79] disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {creating
-                                ? 'Creating...'
-                                : `Create Interview (${totalTime} min)`}
-                        </button>
-
-                    </div>
-
-                </form>
+              {selectedQuestions.length}{' '}
+              question
+              {selectedQuestions.length !== 1
+                ? 's'
+                : ''}{' '}
+              selected
 
             </div>
 
-        </div>
-    )
+
+            <div className="flex gap-3">
+
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={creating}
+                className="border border-zinc-700 px-5 py-2.5 text-xs font-semibold text-zinc-400 transition hover:border-zinc-600 hover:text-white disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+
+              <button
+                type="submit"
+                disabled={
+                  creating ||
+                  loadingCandidates
+                }
+                className="bg-blue-600 px-6 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {creating
+                  ? 'Creating Interview...'
+                  : `Create Interview (${totalTime} min)`}
+              </button>
+
+            </div>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+  )
 }
 
 
@@ -962,38 +1280,38 @@ function CreateInterviewModal({ onClose, onSuccess }) {
 ============================================================ */
 
 function SectionTitle({ children }) {
-    return (
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#3972a7]">
-            {children}
-        </p>
-    )
+  return (
+    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-400">
+      {children}
+    </p>
+  )
 }
 
 
 function Field({
-    label,
-    required,
-    children,
+  label,
+  required,
+  children,
 }) {
-    return (
-        <div>
+  return (
+    <div>
 
-            <label className="mb-1.5 block text-[9px] font-semibold uppercase tracking-wider text-slate-400">
+      <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-500">
 
-                {label}
+        {label}
 
-                {required && (
-                    <span className="ml-1 text-red-400">
-                        *
-                    </span>
-                )}
+        {required && (
+          <span className="ml-1 text-red-400">
+            *
+          </span>
+        )}
 
-            </label>
+      </label>
 
-            {children}
+      {children}
 
-        </div>
-    )
+    </div>
+  )
 }
 
 
@@ -1002,35 +1320,35 @@ function Field({
 ============================================================ */
 
 function CloseIcon() {
-    return (
-        <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-        >
-            <path d="m6 6 12 12M18 6 6 18" />
-        </svg>
-    )
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="m6 6 12 12M18 6 6 18" />
+    </svg>
+  )
 }
 
 
 function SortIcon() {
-    return (
-        <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-        >
-            <path d="M4 7h10" />
-            <path d="M4 12h16" />
-            <path d="M4 17h7" />
-            <path d="m16 5 3 2-3 2" />
-        </svg>
-    )
+  return (
+    <svg
+      className="h-4 w-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+    >
+      <path d="M4 7h10" />
+      <path d="M4 12h16" />
+      <path d="M4 17h7" />
+      <path d="m16 5 3 2-3 2" />
+    </svg>
+  )
 }
 
 
