@@ -86,16 +86,16 @@ def test_orchestrator_matches_reference_and_passes_it_to_evaluator():
     )
 
     with patch(
-        "evaluation.scoring.evaluation_orchestrator."
+        "AI.evaluation.scoring.evaluation_orchestrator."
         "load_evaluation_context"
     ) as mock_context, patch(
-        "evaluation.scoring.evaluation_orchestrator."
+        "AI.evaluation.scoring.evaluation_orchestrator."
         "match_reference_solution_with_confidence"
     ) as mock_matcher, patch(
-        "evaluation.scoring.evaluation_orchestrator."
+        "AI.evaluation.scoring.evaluation_orchestrator."
         "evaluate_with_llm"
     ) as mock_evaluator, patch(
-        "evaluation.scoring.evaluation_orchestrator."
+        "AI.evaluation.scoring.evaluation_orchestrator."
         "classify_answer"
     ) as mock_classify:
 
@@ -161,10 +161,10 @@ def test_orchestrator_rejects_invalid_reference_match():
     )
 
     with patch(
-        "evaluation.scoring.evaluation_orchestrator."
+        "AI.evaluation.scoring.evaluation_orchestrator."
         "load_evaluation_context"
     ) as mock_context, patch(
-        "evaluation.scoring.evaluation_orchestrator."
+        "AI.evaluation.scoring.evaluation_orchestrator."
         "match_reference_solution_with_confidence"
     ) as mock_matcher:
 

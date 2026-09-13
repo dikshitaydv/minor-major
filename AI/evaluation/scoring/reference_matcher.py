@@ -596,21 +596,16 @@ def match_reference_solution_with_confidence(
         )
 
     # --------------------------------------------------------
-    # STAGE 2
-    # Generate confidence against ONLY selected reference
+    # STAGE 2 — DISABLED
+    # Match confidence is currently not used by the 
+    # evaluation/adaptive pipeline.
+    #
+    # Keeping the return shape as (reference_id, None)
+    # preserves compatibility with existing callers while
+    # avoiding the second LLM inference.
     # --------------------------------------------------------
 
-    confidence = _generate_match_confidence(
-        candidate_state=candidate_state,
-        selected_reference=selected_reference,
-    )
-
-    # If Stage 2 determines that the selected reference is not
-    # sufficiently supported, preserve the no-match contract.
-    if confidence is None:
-        return None, None
-
-    return reference_id, confidence
+    return reference_id, None
 
 
 # ============================================================

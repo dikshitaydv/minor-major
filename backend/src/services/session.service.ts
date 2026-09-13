@@ -14,7 +14,10 @@ import {
 
 import { updateInterviewStatus } from "../repositories/interview.repository.js";
 
-import { createEvaluation } from "../repositories/evaluation.repository.js";
+import {
+  createEvaluation,
+  findEvaluationByInterviewId,
+} from "../repositories/evaluation.repository.js";
 
 import { evaluateFinal, evaluateTurn } from "./evaluation.client.js";
 
@@ -28,7 +31,9 @@ import {
   ConflictError,
 } from "../utils/app-error.js";
 
-type OwnedSession = Awaited<ReturnType<typeof findSessionById>>;
+type OwnedSession = NonNullable<
+  Awaited<ReturnType<typeof findSessionById>>
+>;
 type InterviewQuestionWithQuestion =
   NonNullable<OwnedSession>["interview"]["questions"][number];
 
@@ -46,11 +51,35 @@ const assertOwnedSession = async (candidateId: string, sessionId: string) => {
   return session;
 };
 
+const isSessionExpired = (session: OwnedSession) => {
+  const durationSeconds = session.interview.duration * 60;
+  const elapsedSeconds =
+    (Date.now() - session.startedAt.getTime()) / 1000;
+
+  return elapsedSeconds >= durationSeconds;
+};
+
+const getElapsedDurationSeconds = (session: OwnedSession) => {
+  return Math.max(
+    0,
+    Math.floor(
+      (Date.now() - session.startedAt.getTime()) / 1000,
+    ),
+  );
+};
+
 export const getSessionDetail = async (
   candidateId: string,
   sessionId: string,
 ) => {
-  const session = await assertOwnedSession(candidateId, sessionId);
+  let session = await assertOwnedSession(candidateId, sessionId);
+
+  if (session.status === "IN_PROGRESS" && isSessionExpired(session)) {
+    await endInterviewSession(candidateId, sessionId);
+
+    // Re-fetch so the response contains the updated COMPLETED status.
+    session = await assertOwnedSession(candidateId, sessionId);
+  }
 
   const questions = session.interview.questions.map(
     ({ question, status, order }: InterviewQuestionWithQuestion) => ({
@@ -106,6 +135,16 @@ export const sendCandidateMessage = async (
 
   if (session.status !== "IN_PROGRESS") {
     throw new ConflictError("This interview session has already ended");
+  }
+
+  if (isSessionExpired(session)) {
+    await endInterviewSession(candidateId, sessionId);
+
+    return {
+      sessionEnded: true,
+      expired: true,
+      message: "Interview time has expired. The interview has been submitted.",
+    };
   }
 
   const orderedQuestions = session.interview.questions;
@@ -228,7 +267,13 @@ export const endInterviewSession = async (
   const session = await assertOwnedSession(candidateId, sessionId);
 
   if (session.status === "COMPLETED") {
-    throw new ConflictError("This interview session has already ended");
+    const existingEvaluation = await findEvaluationByInterviewId(session.interview.id);
+
+    return {
+      message: "Interview already completed",
+      durationSeconds: session.durationSeconds ?? 0,
+      overallScore: existingEvaluation?.overallScore ?? null,
+    };
   }
 
   const endedAt = new Date();
@@ -237,11 +282,23 @@ export const endInterviewSession = async (
     Math.floor((endedAt.getTime() - session.startedAt.getTime()) / 1000),
   );
 
-  await endSessionRepo(sessionId, {
+  const endResult = await endSessionRepo(sessionId, {
     status: "COMPLETED",
     endedAt,
     durationSeconds,
   });
+
+  if (endResult.count === 0) {
+    const existingEvaluation = await findEvaluationByInterviewId(
+      session.interview.id,
+    );
+
+    return {
+      message: "Interview already completed",
+      durationSeconds: session.durationSeconds ?? durationSeconds,
+      overallScore: existingEvaluation?.overallScore ?? 0,
+    };
+  }
 
   await updateInterviewStatus(session.interview.id, "COMPLETED");
 

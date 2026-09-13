@@ -76,43 +76,67 @@ def evaluate_turn(request: EvaluationRequest) -> dict[str, Any]:
 @app.post("/v1/evaluate/opening")
 def evaluate_opening(request: EvaluationRequest) -> dict[str, Any]:
     try:
-        message = generate_followup_question(
-            problem=request.problem,
-            candidate_answer="",
-            candidate_state={"history": request.history},
-            followup_strategy={
-                "objective": "introduce the problem and ask the candidate to explain their approach",
-                "instruction": "Ask the opening interview question for this problem.",
-            },
+        message = (
+            "Hello! Please begin by explaining how you would approach this problem."
         )
-        if not message or not message.strip():
-            raise RuntimeError("The evaluation layer did not produce an opening question")
-        return {"success": True, "data": {"message": message.strip()}}
-    except Exception as error:
-        raise HTTPException(status_code=502, detail=str(error)) from error
 
+        return {
+            "success": True,
+            "data": {
+                "message": message,
+            },
+        }
+
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail=str(error),
+        ) from error
 
 @app.post("/v1/evaluate/final")
 def evaluate_final(request: EvaluationRequest) -> dict[str, Any]:
     try:
-        result = evaluate_answer(request)
-        scores = result["evaluation"].get("scores", {})
+        features = extract_candidate_features(
+            request.candidate_answer,
+            request.problem,
+        )
+
+        evaluation = evaluate_with_llm(
+            candidate_features=features,
+            problem=request.problem,
+            candidate_state={"history": request.history},
+        )
+
+        classification = classify_answer(features, evaluation)
+
+        scores = evaluation.get("scores", {})
+
         numeric_scores = [
             value["score"]
             for value in scores.values()
-            if isinstance(value, dict) and isinstance(value.get("score"), (int, float))
+            if isinstance(value, dict)
+            and isinstance(value.get("score"), (int, float))
         ]
-        overall_score = round(sum(numeric_scores) / len(numeric_scores)) if numeric_scores else 0
+
+        overall_score = (
+            round(sum(numeric_scores) / len(numeric_scores))
+            if numeric_scores
+            else 0
+        )
+
         return {
             "success": True,
             "data": {
-                **result,
+                "message": "Interview evaluation completed",
+                "evaluation": evaluation,
+                "classification": classification,
+                "features": features,
                 "overallScore": overall_score,
             },
         }
+
     except Exception as error:
         raise HTTPException(status_code=502, detail=str(error)) from error
-
 
 if __name__ == "__main__":
     import uvicorn

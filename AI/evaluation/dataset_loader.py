@@ -25,7 +25,7 @@ from typing import Any
 # PROJECT PATHS
 # ============================================================
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # The current repository keeps shared dataset assets under AI/.
 AI_ROOT = PROJECT_ROOT / "AI"
