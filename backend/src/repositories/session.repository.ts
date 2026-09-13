@@ -73,9 +73,10 @@ export const endSession = async (
     durationSeconds: number;
   },
 ) => {
-  return prisma.interviewSession.update({
+  return prisma.interviewSession.updateMany({
     where: {
       id: sessionId,
+      status: "IN_PROGRESS",
     },
     data,
   });

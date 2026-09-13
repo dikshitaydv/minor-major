@@ -18,14 +18,14 @@ reference matcher models pulled.
 
 import time
 
-from evaluation.configs.ai_config import (
+from AI.evaluation.configs.ai_config import (
     EXTRACTOR_MODEL,
     REFERENCE_MATCHER_MODEL,
 )
 
-from evaluation.extraction.extraction_service import extract_candidate_features
-from evaluation.scoring.reference_matcher import match_reference_solution_with_confidence
-from evaluation.dataset_loader import load_reference_solution
+from AI.evaluation.extraction.extraction_service import extract_candidate_features
+from AI.evaluation.scoring.reference_matcher import match_reference_solution_with_confidence
+from AI.evaluation.dataset_loader import load_reference_solution
 
 
 SAMPLE_ANSWERS = {

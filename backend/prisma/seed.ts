@@ -25,6 +25,19 @@ async function main() {
     },
   })
 
+  const recruiter = await prisma.user.upsert({
+    where: { email: 'recruiter@example.com' },
+    update: {},
+    create: {
+      firstName: 'Test',
+      lastName: 'Recruiter',
+      email: 'recruiter@example.com',
+      passwordHash,
+      role: 'RECRUITER',
+      emailVerified: true,
+    },
+  })
+
   const questionData = [
     {
       title: 'Two Sum',
@@ -95,7 +108,16 @@ async function main() {
       scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       duration: 45,
       status: 'SCHEDULED',
-      candidateId: candidate.id,
+      candidate: {
+        connect: {
+          id: candidate.id,
+        },
+      },
+      recruiter: {
+        connect: {
+          id: recruiter.id,
+        },
+      },
       questions: {
         create: questions.map((question, index) => ({
           questionId: question.id,
