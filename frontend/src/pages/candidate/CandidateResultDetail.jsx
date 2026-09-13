@@ -13,6 +13,52 @@ const DIMENSION_META = {
   edgeCases: 'Edge Case Handling',
 }
 
+// A response counts as meaningful when it contains enough actual
+// interview content to represent an attempted solution, rather than
+// a short acknowledgement such as "yes", "ok", or "hmm".
+const isMeaningfulResponse = (response) => {
+  const text = String(response || '').trim()
+
+  if (!text) return false
+
+  const genericResponses = new Set([
+    'yes',
+    'no',
+    'ok',
+    'okay',
+    'sure',
+    'hmm',
+    'hm',
+    'yeah',
+    'yep',
+    'nope',
+    'fine',
+    'done',
+    'got it',
+    'i dont know',
+    "i don't know",
+  ])
+
+  if (genericResponses.has(text.toLowerCase())) {
+    return false
+  }
+
+  // Require a substantive response, not just a very short acknowledgement.
+  return text.length >= 20
+}
+
+const isQuestionSolved = (question) => {
+  const candidateResponses = question?.candidateResponses || []
+
+  const hasMeaningfulChat = candidateResponses.some(
+    isMeaningfulResponse,
+  )
+
+  // `question.solved` remains the source of truth for the saved/completed
+  // state. Meaningful chat is required in addition to that state.
+  return Boolean(question?.solved && hasMeaningfulChat)
+}
+
 function CandidateResultDetail() {
   const { id: interviewId } = useParams()
   const navigate = useNavigate()
@@ -120,6 +166,15 @@ function CandidateResultDetail() {
   const questionAnalysis = detail.questionAnalysis || []
   const strengths = detail.strengths || []
   const improvements = detail.improvements || []
+
+  // Count a question as solved only when the saved/completed state is
+  // present AND the candidate actually provided meaningful responses.
+  const questionsSolved = questionAnalysis.filter(
+    isQuestionSolved,
+  ).length
+
+  const totalQuestions =
+    detail.totalQuestions ?? questionAnalysis.length
 
   const score = detail.overallScore ?? 0
 
@@ -248,7 +303,7 @@ function CandidateResultDetail() {
 
           <MiniStat
             label="Questions Solved"
-            value={`${detail.questionsSolved ?? 0}/${detail.totalQuestions ?? 0}`}
+            value={`${questionsSolved}/${totalQuestions}`}
             icon={<CheckIcon />}
           />
 
@@ -430,7 +485,7 @@ function CandidateResultDetail() {
                       </div>
 
 
-                      <StatusBadge solved={question.solved} />
+                      <StatusBadge solved={isQuestionSolved(question)} />
 
                     </div>
 
