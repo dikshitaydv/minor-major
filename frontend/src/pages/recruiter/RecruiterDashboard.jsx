@@ -8,7 +8,7 @@ import ActiveJobs from '../../components/recruiter/dashboard/ActiveJobs'
 import HiringPipeline from '../../components/recruiter/dashboard/HiringPipeline'
 import RecentCandidates from '../../components/recruiter/dashboard/RecentCandidates'
 
-import * as recruiterInterviewApi from '../../api/Interview.api.js'
+import * as recruiterInterviewApi from '../../api/interview.api.js'
 
 
 function RecruiterDashboard() {
