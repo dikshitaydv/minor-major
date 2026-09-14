@@ -19,20 +19,60 @@ function CandidateInterviews() {
       .then((data) => {
         if (cancelled) return
 
-        setInterviews(
-          data.map((interview) => ({
+        const mappedInterviews = data.map((interview) => {
+          const status = candidateApi.toInterviewStatusLabel(interview.status)
+
+          // Completed interviews should be ordered by when the candidate
+          // actually took the interview. Prefer endedAt, then startedAt,
+          // and finally fall back to the scheduled time.
+          const activityAt =
+            status === 'Completed'
+              ? interview.endedAt || interview.startedAt || interview.scheduledAt
+              : interview.scheduledAt
+
+          return {
             id: interview.id,
             title: interview.title,
             type: interview.type,
             company: interview.company,
-            date: candidateApi.formatDate(interview.scheduledAt),
-            time: candidateApi.formatTime(interview.scheduledAt),
+            scheduledAt: interview.scheduledAt,
+            startedAt: interview.startedAt,
+            endedAt: interview.endedAt,
+            activityAt,
+            date: candidateApi.formatDate(activityAt),
+            time: candidateApi.formatTime(activityAt),
             duration: candidateApi.formatDuration(interview.duration),
-            status: candidateApi.toInterviewStatusLabel(interview.status),
+            status,
             score: interview.score,
             topics: interview.topics || [],
-          })),
-        )
+          }
+        })
+
+        // Ordering:
+        // 1. Upcoming interviews are ALWAYS first.
+        //    Soonest scheduled interview comes first.
+        // 2. Completed interviews come next.
+        //    Most recently TAKEN interview comes first.
+        // 3. Expired interviews come last.
+        //    Most recently scheduled interview comes first.
+        const sortedInterviews = [...mappedInterviews].sort((a, b) => {
+          const aUpcoming = a.status === 'Upcoming'
+          const bUpcoming = b.status === 'Upcoming'
+
+          if (aUpcoming && !bUpcoming) return -1
+          if (!aUpcoming && bUpcoming) return 1
+
+          const aTime = new Date(a.activityAt).getTime()
+          const bTime = new Date(b.activityAt).getTime()
+
+          if (aUpcoming && bUpcoming) {
+            return aTime - bTime
+          }
+
+          return bTime - aTime
+        })
+
+        setInterviews(sortedInterviews)
       })
       .catch(
         (err) =>
@@ -44,6 +84,18 @@ function CandidateInterviews() {
     return () => {
       cancelled = true
     }
+  }, [])
+
+  // Keep the UI availability in sync when a candidate leaves this page
+  // open until the scheduled start time.
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
   }, [])
 
 
@@ -329,6 +381,7 @@ function CandidateInterviews() {
                   <InterviewListItem
                     key={interview.id}
                     interview={interview}
+                    currentTime={currentTime}
                     onOpen={() => {
 
                       if (interview.status === 'Upcoming') {
@@ -459,7 +512,9 @@ function SummaryCard({
    INTERVIEW LIST ITEM
 ============================================================ */
 
-function InterviewListItem({ interview, onOpen }) {
+function InterviewListItem({ interview, currentTime, onOpen }) {
+  const scheduledTime = new Date(interview.scheduledAt).getTime()
+  const canStart = scheduledTime <= currentTime
 
   const isUpcoming = interview.status === 'Upcoming'
   const isCompleted = interview.status === 'Completed'
@@ -618,15 +673,30 @@ function InterviewListItem({ interview, onOpen }) {
 
             <button
               type="button"
-              onClick={onOpen}
-              className="group/btn flex items-center gap-2 rounded-xl bg-blue-400 px-4 py-2.5 text-xs font-semibold text-[#061018] transition-all hover:bg-blue-300 hover:shadow-[0_0_25px_rgba(96,165,250,0.2)]"
+              onClick={canStart ? onOpen : undefined}
+              disabled={!canStart}
+              aria-disabled={!canStart}
+              title={
+                canStart
+                  ? 'Open Interview'
+                  : `Available at ${candidateApi.formatTime(interview.scheduledAt)}`
+              }
+              className={`group/btn flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all ${
+                canStart
+                  ? 'bg-blue-400 text-[#061018] hover:bg-blue-300 hover:shadow-[0_0_25px_rgba(96,165,250,0.2)]'
+                  : 'cursor-not-allowed border border-white/[0.08] bg-white/[0.04] text-zinc-600'
+              }`}
             >
 
-              Open Interview
+              {canStart
+                ? 'Open Interview'
+                : `Available at ${candidateApi.formatTime(interview.scheduledAt)}`}
 
-              <span className="transition-transform group-hover/btn:translate-x-1">
-                →
-              </span>
+              {canStart && (
+                <span className="transition-transform group-hover/btn:translate-x-1">
+                  →
+                </span>
+              )}
 
             </button>
 

@@ -12,6 +12,7 @@ export const findInterviewsByCandidate = async (
     },
     include: {
       evaluation: true,
+      session: true,
     },
     orderBy: {
       scheduledAt: 'asc',

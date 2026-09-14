@@ -845,9 +845,11 @@ def test_end_to_end():
     # must only be inspected after the session has finished.
     if session.is_finished():
 
+        final_result = session.get_final_result()
+
         assert isinstance(
-        final_result,
-        dict,
+            final_result,
+            dict,
         )
 
         assert (
@@ -856,8 +858,8 @@ def test_end_to_end():
         )
 
         print_field(
-        "Final result validated",
-        True,
+            "Final result validated",
+            True,
         )
 
     else:
@@ -898,10 +900,23 @@ def test_end_to_end():
     print("✓ Match confidence generation disabled as intended")
     print("✓ Evaluator executed")
     print("✓ Seven dimension scores generated")
-    print(
-        f"✓ Primary classification = "
-        f"{final_result['primary_classification']}"
-    )
+
+    # final_result only exists when the interview has actually
+    # finished. After the first turn, the interview can correctly
+    # remain in progress while an unassessed dimension is probed.
+    if session.is_finished():
+        print(
+            f"✓ Primary classification = "
+            f"{final_result['primary_classification']}"
+        )
+        print("✓ Final result validated")
+    else:
+        print(
+            "✓ Primary classification = "
+            f"{state.primary_classification}"
+        )
+        print("✓ Interview correctly remains in progress")
+
     print("✓ Adaptive state generated")
     print("✓ target_reference_id field present")
     print("✓ Complete state serialized")

@@ -13,14 +13,10 @@ Important design rule:
 from __future__ import annotations
 
 import json
-import urllib.error
-import urllib.request
 from typing import Any, Dict, List, Optional
 
-from AI.evaluation.configs.ai_config import (
-    EXTRACTOR_MODEL,
-    OLLAMA_BASE_URL,
-)
+from AI.evaluation.configs.ai_config import EXTRACTOR_MODEL
+from AI.evaluation.llm.ollama_client import generate_structured_json
 
 
 # ============================================================
@@ -98,6 +94,7 @@ def _clean_string(value: Any) -> Optional[str]:
     This function performs only structural cleanup.
     It does not add, infer, or reinterpret information.
     """
+
     if value is None:
         return None
 
@@ -122,6 +119,7 @@ def _clean_list(value: Any) -> List[str]:
 
     No domain-specific normalization is performed here.
     """
+
     if value is None:
         return []
 
@@ -160,6 +158,7 @@ def _clean_complexity(value: Any) -> Optional[str]:
 
     No complexity is calculated or inferred here.
     """
+
     value = _clean_string(value)
 
     if value is None:
@@ -174,6 +173,7 @@ def _clean_optimization(value: Any) -> Optional[bool]:
 
     Only explicit boolean-like representations are accepted.
     """
+
     if value is None:
         return None
 
@@ -193,119 +193,38 @@ def _clean_optimization(value: Any) -> Optional[bool]:
 
 
 # ============================================================
-# Ollama call
+# Groq call
 # ============================================================
 
-def _call_ollama(prompt: str) -> Dict[str, Any]:
+def _call_groq(prompt: str) -> Dict[str, Any]:
     """
-    Send the extraction prompt to Ollama and parse the structured
+    Send the extraction prompt to Groq and parse the structured
     JSON response.
+
+    The extraction logic remains unchanged.
+    Only the LLM transport has been migrated from Ollama/OpenAI
+    to the centralized Groq client.
     """
-    url = f"{OLLAMA_BASE_URL.rstrip('/')}/api/generate"
-
-    payload = {
-        "model": EXTRACTOR_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "format": EXTRACTION_SCHEMA,
-        "think": False,
-        "options": {
-            "temperature": 0,
-            "seed": 42,
-        },
-    }
-
-    request_body = json.dumps(payload).encode("utf-8")
-
-    request = urllib.request.Request(
-        url,
-        data=request_body,
-        headers={
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
 
     try:
-        with urllib.request.urlopen(request, timeout=300) as response:
-            raw_response = response.read().decode("utf-8")
-
-    except urllib.error.HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="replace")
-
-        raise RuntimeError(
-            f"Ollama extraction request failed with HTTP "
-            f"{exc.code}: {error_body}"
-        ) from exc
-
-    except urllib.error.URLError as exc:
-        raise RuntimeError(
-            f"Could not connect to Ollama at {url}: {exc}"
-        ) from exc
-
-    except TimeoutError as exc:
-        raise RuntimeError(
-            "Ollama extraction request timed out."
-        ) from exc
-
-    try:
-        outer_response = json.loads(raw_response)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(
-            "Ollama returned invalid outer JSON."
-        ) from exc
-
-    if not isinstance(outer_response, dict):
-        raise RuntimeError(
-            "Ollama response must be a JSON object."
+        result = generate_structured_json(
+            prompt=prompt,
+            model=EXTRACTOR_MODEL,
+            schema=EXTRACTION_SCHEMA,
+            num_predict=800,
         )
 
-    response_text = outer_response.get("response")
-
-    if not isinstance(response_text, str):
+    except Exception as exc:
         raise RuntimeError(
-            "Ollama response does not contain a valid 'response' field."
+            f"Groq extraction request failed: {exc}"
+        ) from exc
+
+    if not isinstance(result, dict):
+        raise RuntimeError(
+            "Groq extraction result must be a JSON object."
         )
 
-    response_text = response_text.strip()
-
-    if not response_text:
-        raise RuntimeError(
-            "Ollama returned an empty extraction response."
-        )
-
-    # Primary parsing path.
-    try:
-        parsed = json.loads(response_text)
-    except json.JSONDecodeError:
-        parsed = None
-
-    # Defensive fallback for models that occasionally wrap JSON
-    # with additional text despite structured-output mode.
-    if parsed is None:
-        start = response_text.find("{")
-        end = response_text.rfind("}")
-
-        if start == -1 or end == -1 or end <= start:
-            raise RuntimeError(
-                "Could not find a JSON object in the Ollama response."
-            )
-
-        json_candidate = response_text[start:end + 1]
-
-        try:
-            parsed = json.loads(json_candidate)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(
-                "Ollama returned malformed extraction JSON."
-            ) from exc
-
-    if not isinstance(parsed, dict):
-        raise RuntimeError(
-            "Extraction result must be a JSON object."
-        )
-
-    return parsed
+    return result
 
 
 # ============================================================
@@ -482,10 +401,18 @@ def _validate_result(result: Dict[str, Any]) -> Dict[str, Any]:
             )
 
     cleaned = {
-        "approach": _clean_string(result.get("approach")),
-        "algorithms": _clean_list(result.get("algorithms")),
-        "concepts": _clean_list(result.get("concepts")),
-        "operations": _clean_list(result.get("operations")),
+        "approach": _clean_string(
+            result.get("approach")
+        ),
+        "algorithms": _clean_list(
+            result.get("algorithms")
+        ),
+        "concepts": _clean_list(
+            result.get("concepts")
+        ),
+        "operations": _clean_list(
+            result.get("operations")
+        ),
         "data_structures": _clean_list(
             result.get("data_structures")
         ),
@@ -538,7 +465,7 @@ def extract_with_llm(
         If the candidate answer is invalid or empty.
 
     RuntimeError
-        If the Ollama request or model response is invalid.
+        If the Groq request or model response is invalid.
     """
 
     if not isinstance(candidate_answer, str):
@@ -555,7 +482,7 @@ def extract_with_llm(
 
     prompt = _build_user_prompt(candidate_answer)
 
-    raw_result = _call_ollama(prompt)
+    raw_result = _call_groq(prompt)
 
     return _validate_result(raw_result)
 
@@ -570,6 +497,7 @@ def extract_candidate_state(
     """
     Backward-compatible wrapper around extract_with_llm().
     """
+
     return extract_with_llm(candidate_answer)
 
 
@@ -579,4 +507,5 @@ def extract_candidate_answer(
     """
     Backward-compatible wrapper around extract_with_llm().
     """
+
     return extract_with_llm(candidate_answer)

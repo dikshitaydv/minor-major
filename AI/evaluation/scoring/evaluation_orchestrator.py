@@ -23,6 +23,17 @@ from AI.evaluation.scoring.reference_matcher import (
     match_reference_solution_with_confidence
 )
 
+from AI.evaluation.interviewer.followup_strategy import (
+    get_followup_strategy
+)
+
+from AI.evaluation.interviewer.followup_generator import (
+    generate_followup_question
+)
+
+from AI.evaluation.interviewer.interview_controller import (
+    should_continue_interview
+)
 
 from AI.evaluation.dataset_loader import (
     load_evaluation_context
@@ -263,7 +274,7 @@ def evaluate_candidate_turn(
               |
               v
         Current Reference
-        + Match Confidence
+        + Matcher Confidence
               |
               v
         LLM Evaluation
@@ -276,6 +287,10 @@ def evaluate_candidate_turn(
               |
               v
         Adaptive Interview
+
+    The matcher may generate a confidence value internally.
+    The current CandidateEvaluationState contract intentionally
+    does not persist that confidence value.
     """
 
     # ==================================================
@@ -306,6 +321,14 @@ def evaluate_candidate_turn(
             "problem must be a dictionary."
         )
 
+    if not isinstance(
+        candidate_answer,
+        str
+    ):
+        raise TypeError(
+            "candidate_answer must be a string."
+        )
+
     # ==================================================
     # TURN NUMBER
     # ==================================================
@@ -326,98 +349,6 @@ def evaluate_candidate_turn(
     # 1. CANDIDATE NLP STATE
     # ==================================================
 
-    new_nlp_state = CandidateNLPState(
-        approach=candidate_features.get(
-            "approach"
-        ),
-
-        algorithms=list(
-            candidate_features.get(
-                "algorithms"
-            ) or []
-        ),
-
-        concepts=list(
-            candidate_features.get(
-                "concepts"
-            )
-            or candidate_features.get(
-                "concepts_detected"
-            )
-            or []
-        ),
-
-        operations=list(
-            candidate_features.get(
-                "operations"
-            ) or []
-        ),
-
-        data_structures=list(
-            candidate_features.get(
-                "data_structures"
-            ) or []
-        ),
-
-        time_complexity=(
-            candidate_features.get(
-                "time_complexity"
-            )
-            or (
-                candidate_features.get(
-                    "complexity_claim"
-                ) or {}
-            ).get("time")
-        ),
-
-        space_complexity=(
-            candidate_features.get(
-                "space_complexity"
-            )
-            or (
-                candidate_features.get(
-                    "complexity_claim"
-                ) or {}
-            ).get("space")
-        ),
-
-        edge_cases=list(
-            candidate_features.get(
-                "edge_cases"
-            ) or []
-        ),
-
-        reasoning_summary=(
-            candidate_features.get(
-                "reasoning_summary"
-            )
-            or " ".join(
-                candidate_features.get(
-                    "reasoning"
-                ) or []
-            )
-            or None
-        ),
-
-        assumptions=list(
-            candidate_features.get(
-                "assumptions"
-            ) or []
-        ),
-
-        optimization=(
-            candidate_features.get(
-                "optimization"
-            )
-        ),
-    )
-
-    # Merge this turn's newly extracted NLP
-    # information into the persistent candidate state.
-    state.update_nlp_state(
-        new_nlp_state
-    )
-
     candidate_state = (
         state.nlp_state.to_dict()
     )
@@ -436,6 +367,19 @@ def evaluate_candidate_turn(
         )
     )
 
+    if not isinstance(
+        reference_solutions,
+        list
+    ):
+        raise RuntimeError(
+            "Reference solutions must be a list."
+        )
+
+    if not reference_solutions:
+        raise RuntimeError(
+            "No reference solutions were loaded."
+        )
+
     (
         matched_reference_id,
         match_confidence,
@@ -444,18 +388,18 @@ def evaluate_candidate_turn(
         reference_solutions=reference_solutions
     )
 
-    # Persist the matcher result.
+    # --------------------------------------------------
+    # Persist CURRENT REFERENCE only.
     #
-    # At session start these fields are None.
-    # After a candidate answer is processed, the matcher
-    # populates them when a match is found.
+    # The matcher confidence is intentionally NOT stored
+    # in CandidateEvaluationState.
+    # --------------------------------------------------
+
     state.reference_answer_id = (
         matched_reference_id
     )
 
-    state.reference_match_confidence = (
-        match_confidence
-    )
+    state.reference_match_confidence = None
 
     _print_section(
         "REFERENCE MATCH"
@@ -468,7 +412,7 @@ def evaluate_candidate_turn(
 
     print(
         f"{'Confidence':<24}: "
-        f"{_display(match_confidence)}"
+        f"{_display(None)}"
     )
 
     # ==================================================
@@ -504,10 +448,11 @@ def evaluate_candidate_turn(
                 matched_reference = reference
                 break
 
-    if matched_reference is None and evaluation_reference_id is not None:
+    if matched_reference is None:
         raise RuntimeError(
-        "Matched reference ID was not found "
-        "in the supplied reference set.")
+            "Matched reference ID was not found "
+            "in the supplied reference set."
+        )
 
     # ==================================================
     # 4. LLM EVALUATION
@@ -793,12 +738,16 @@ def evaluate_candidate_turn(
             )
         )
 
+    # ==================================================
+    # 10. STORE REAL GAP
+    # ==================================================
+
     state.primary_adaptive_gap = (
         primary_adaptive_gap
     )
 
     # ==================================================
-    # 10. UPDATE HISTORY
+    # 11. UPDATE HISTORY
     # ==================================================
 
     if state.history:
@@ -807,5 +756,129 @@ def evaluate_candidate_turn(
             "primary_adaptive_gap"
         ] = primary_adaptive_gap
 
+    # ==================================================
+    # 12. CONTINUE / STOP
+    # ==================================================
+
+    should_continue = (
+        should_continue_interview(
+            state=state,
+            llm_evaluation=llm_evaluation,
+            adaptive_classifications=(
+                adaptive_classifications
+            ),
+            adaptive_probe=adaptive_probe
+        )
+    )
+
+    state.should_continue = bool(
+        should_continue
+    )
+
+    _print_adaptive(
+        should_continue=state.should_continue,
+        primary_adaptive_gap=primary_adaptive_gap,
+        adaptive_probe=adaptive_probe
+    )
+
+    if not state.should_continue:
+        return state
+
+    # ==================================================
+    # 13. FOLLOW-UP TARGET
+    # ==================================================
+
+    followup_target = (
+        primary_adaptive_gap
+        if primary_adaptive_gap
+        else adaptive_probe
+    )
+
+    if not followup_target:
+        return state
+
+    # ==================================================
+    # 14. FOLLOW-UP STRATEGY
+    # ==================================================
+
+    followup_strategy = (
+        get_followup_strategy(
+            followup_target
+        )
+    )
+
+    if not followup_strategy:
+        return state
+
+    # ==================================================
+    # 15. FOLLOW-UP QUESTION
+    # ==================================================
+
+    state_dict = state.to_dict()
+
+    state_dict[
+        "adaptive_probe"
+    ] = adaptive_probe
+
+    state_dict[
+        "should_continue"
+    ] = state.should_continue
+
+    followup_question = (
+        generate_followup_question(
+            problem=problem,
+            candidate_answer=candidate_answer,
+            candidate_state=state_dict,
+            followup_strategy=(
+                followup_strategy
+            )
+        )
+    )
+
+    if isinstance(
+        followup_question,
+        dict
+    ):
+        followup_question = (
+            followup_question.get(
+                "question"
+            )
+        )
+
+    if not isinstance(
+        followup_question,
+        str
+    ):
+        raise RuntimeError(
+            "Follow-up generator did not "
+            "return a valid question string."
+        )
+
+    followup_question = (
+        followup_question.strip()
+    )
+
+    if not followup_question:
+        raise RuntimeError(
+            "Follow-up generator returned "
+            "an empty question."
+        )
+
+    # ==================================================
+    # 16. STORE FOLLOW-UP QUESTION
+    # ==================================================
+
+    state.set_interviewer_question(
+        followup_question
+    )
+
+    _print_followup(
+        followup_strategy=followup_strategy,
+        followup_question=followup_question
+    )
+
+    # ==================================================
+    # 17. RETURN UPDATED STATE
+    # ==================================================
 
     return state

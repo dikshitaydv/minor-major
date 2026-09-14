@@ -47,3 +47,12 @@ export const getRecruiterCandidateById = async (
   // Supports both possible backend response structures
   return result.data?.data || result.data || null
 }
+export const getCandidateOptions = async () => {
+  const result = await apiClient.get(
+    '/recruiter/candidate-options',
+  )
+
+  return Array.isArray(result.data)
+    ? result.data
+    : result.data?.data || []
+}

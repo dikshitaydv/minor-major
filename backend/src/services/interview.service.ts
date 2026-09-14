@@ -29,6 +29,29 @@ export const listCandidateInterviews = async (
   status?: InterviewStatus,
 ) => {
   const interviews = await findInterviewsByCandidate(candidateId, status);
+  const now = Date.now();
+
+  // Persist expiry for scheduled interviews that were never started.
+  // The availability window is [scheduledAt, scheduledAt + duration].
+  await Promise.all(
+    interviews.map(async (interview) => {
+      if (interview.status !== "SCHEDULED") return;
+
+      const scheduledAtMs = new Date(interview.scheduledAt).getTime();
+      const expiryAtMs =
+        scheduledAtMs + interview.duration * 60 * 1000;
+
+      if (now >= expiryAtMs) {
+        await updateInterviewStatus(interview.id, "EXPIRED");
+
+        // When no explicit status filter was requested, reflect the
+        // persisted status immediately in this response as well.
+        if (!status) {
+          interview.status = "EXPIRED";
+        }
+      }
+    }),
+  );
 
   return interviews.map(
     (
@@ -43,6 +66,11 @@ export const listCandidateInterviews = async (
       duration: interview.duration,
       status: interview.status,
       score: interview.evaluation?.overallScore ?? null,
+      // The actual session timestamps let the candidate UI sort completed
+      // interviews by when they were actually taken, rather than only by
+      // the originally scheduled time.
+      startedAt: interview.session?.startedAt ?? null,
+      endedAt: interview.session?.endedAt ?? null,
     }),
   );
 };
@@ -61,6 +89,19 @@ export const getCandidateInterview = async (
     throw new ForbiddenError("This interview does not belong to you");
   }
 
+  let effectiveStatus = interview.status;
+
+  if (interview.status === "SCHEDULED") {
+    const scheduledAtMs = new Date(interview.scheduledAt).getTime();
+    const expiryAtMs =
+      scheduledAtMs + interview.duration * 60 * 1000;
+
+    if (Date.now() >= expiryAtMs) {
+      await updateInterviewStatus(interview.id, "EXPIRED");
+      effectiveStatus = "EXPIRED";
+    }
+  }
+
   return {
     id: interview.id,
     title: interview.title,
@@ -69,7 +110,7 @@ export const getCandidateInterview = async (
     topics: interview.focusAreas,
     scheduledAt: interview.scheduledAt,
     duration: interview.duration,
-    status: interview.status,
+    status: effectiveStatus,
     score: interview.evaluation?.overallScore ?? null,
     sessionId: interview.session?.id ?? null,
   };
@@ -95,6 +136,36 @@ export const startInterview = async (
 
   if (interview.status === "EXPIRED" || interview.status === "CANCELLED") {
     throw new ConflictError("This interview is no longer available");
+  }
+
+  // The scheduled time is an eligibility boundary, not just display data.
+  // Enforce it on the backend so a candidate cannot bypass the UI by
+  // navigating directly to the interview URL or calling the start endpoint.
+  const scheduledAt = new Date(interview.scheduledAt);
+  const now = new Date();
+  const expiryAt = new Date(
+    scheduledAt.getTime() + interview.duration * 60 * 1000,
+  );
+
+  if (scheduledAt.getTime() > now.getTime()) {
+    throw new ConflictError(
+      `This interview is scheduled to start at ${scheduledAt.toLocaleString(
+        "en-IN",
+        {
+          dateStyle: "medium",
+          timeStyle: "short",
+        },
+      )}. Please return at the scheduled time.`,
+    );
+  }
+
+  // A scheduled interview that was never started expires when its scheduled
+  // duration window ends.
+  if (now.getTime() >= expiryAt.getTime()) {
+    await updateInterviewStatus(interviewId, "EXPIRED");
+    throw new ConflictError(
+      "This interview has expired and can no longer be started.",
+    );
   }
 
   const existingSession = await findSessionByInterviewId(interviewId);

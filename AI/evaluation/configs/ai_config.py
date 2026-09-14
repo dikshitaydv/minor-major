@@ -11,13 +11,28 @@ EVALUATION_DIR = Path(__file__).resolve().parent.parent
 
 ENV_FILE = EVALUATION_DIR / ".env"
 
-load_dotenv(
-    ENV_FILE
+load_dotenv(ENV_FILE)
+
+
+# ==========================================================
+# Groq Configuration
+# ==========================================================
+
+GROQ_API_KEY = os.getenv(
+    "GROQ_API_KEY"
 )
+
+GROQ_MODEL = os.getenv(
+    "GROQ_MODEL",
+    "openai/gpt-oss-120b"
+)
+
 
 # ==========================================================
 # OpenAI Configuration
 # ==========================================================
+# Kept temporarily for backward compatibility.
+# These can be removed after the complete migration to Groq.
 
 OPENAI_API_KEY = os.getenv(
     "OPENAI_API_KEY"
@@ -32,6 +47,8 @@ OPENAI_MODEL = os.getenv(
 # ==========================================================
 # Ollama Configuration
 # ==========================================================
+# Kept temporarily because the remaining components are
+# being migrated from Ollama to Groq one by one.
 
 OLLAMA_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL",
@@ -40,37 +57,43 @@ OLLAMA_BASE_URL = os.getenv(
 
 
 # ==========================================================
-# Ollama Models
+# Model Aliases
 # ==========================================================
+# These names are preserved so the existing application
+# architecture does not need to change.
+#
+# All LLM-based components will eventually use GROQ_MODEL.
 
 # NLP extraction model
 EXTRACTOR_MODEL = os.getenv(
     "EXTRACTOR_MODEL",
-    "qwen3:1.7b"
+    GROQ_MODEL
 )
 
 # Reference solution matching model
 REFERENCE_MATCHER_MODEL = os.getenv(
     "REFERENCE_MATCHER_MODEL",
-    "qwen3:1.7b"
+    GROQ_MODEL
 )
 
 # Candidate evaluation model
 EVALUATOR_MODEL = os.getenv(
     "EVALUATOR_MODEL",
-    "qwen3:1.7b"
+    GROQ_MODEL
 )
 
 # Interview follow-up generation model
 FOLLOWUP_MODEL = os.getenv(
     "FOLLOWUP_MODEL",
-    "qwen3:1.7b"
+    GROQ_MODEL
 )
 
 
 # ==========================================================
 # Embedding Model
 # ==========================================================
+# This is still separate from the chat/completion model.
+# We will migrate the embedding layer separately.
 
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL",

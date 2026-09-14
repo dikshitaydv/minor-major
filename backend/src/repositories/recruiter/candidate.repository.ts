@@ -219,3 +219,29 @@ export const findCandidateByIdForRecruiter = async (
     },
   })
 }
+// ─────────────────────────────────────────────
+// FIND ALL CANDIDATES FOR INTERVIEW SELECTION
+// Used when recruiter creates a new interview.
+// This intentionally does NOT require an existing
+// interview with the recruiter.
+// ─────────────────────────────────────────────
+
+export const findAllCandidatesForSelection = async () => {
+  return prisma.user.findMany({
+    where: {
+      role: 'CANDIDATE',
+    },
+
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      createdAt: true,
+    },
+
+    orderBy: {
+      firstName: 'asc',
+    },
+  })
+}

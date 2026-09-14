@@ -14,6 +14,7 @@ import {
 import {
   getCandidatesController,
   getCandidateByIdController,
+  listAllCandidatesForSelection,
 } from "../../controllers/recruiters/candidate.controller.js";
 
 import {
@@ -30,7 +31,9 @@ import {
   deleteInterviewController,
 } from "../../controllers/recruiters/interview.controller.js";
 
+
 const router = Router();
+
 
 // ─────────────────────────────────────────────
 // RECRUITER DASHBOARD
@@ -48,13 +51,20 @@ router.get(
   },
 );
 
+
 // ─────────────────────────────────────────────
 // RECRUITER JOBS
 // ─────────────────────────────────────────────
 
 // GET all jobs
 
-router.get("/jobs", authenticate, requireRole("RECRUITER"), getJobsController);
+router.get(
+  "/jobs",
+  authenticate,
+  requireRole("RECRUITER"),
+  getJobsController,
+);
+
 
 // GET one job
 
@@ -65,6 +75,7 @@ router.get(
   getJobByIdController,
 );
 
+
 // CREATE a job
 
 router.post(
@@ -74,6 +85,7 @@ router.post(
   createJobController,
 );
 
+
 // DELETE a job
 
 router.delete(
@@ -82,6 +94,7 @@ router.delete(
   requireRole("RECRUITER"),
   deleteJobController,
 );
+
 
 // ─────────────────────────────────────────────
 // RECRUITER INTERVIEWS
@@ -94,12 +107,14 @@ router.get(
   getQuestionsController,
 );
 
+
 router.post(
   "/questions",
   authenticate,
   requireRole("RECRUITER"),
   createQuestionController,
 );
+
 
 // GET all interviews created by recruiter
 
@@ -110,6 +125,7 @@ router.get(
   getInterviewsController,
 );
 
+
 // GET one interview
 
 router.get(
@@ -118,6 +134,7 @@ router.get(
   requireRole("RECRUITER"),
   getInterviewByIdController,
 );
+
 
 // CREATE interview
 
@@ -128,6 +145,7 @@ router.post(
   createInterviewController,
 );
 
+
 // UPDATE interview
 
 router.patch(
@@ -136,6 +154,7 @@ router.patch(
   requireRole("RECRUITER"),
   updateInterviewController,
 );
+
 
 // UPDATE interview status
 
@@ -146,6 +165,7 @@ router.patch(
   updateInterviewStatusController,
 );
 
+
 // DELETE interview
 
 router.delete(
@@ -154,6 +174,7 @@ router.delete(
   requireRole("RECRUITER"),
   deleteInterviewController,
 );
+
 
 // ─────────────────────────────────────────────
 // RECRUITER CANDIDATES
@@ -168,6 +189,18 @@ router.get(
   getCandidatesController,
 );
 
+
+// GET all registered candidates
+// Used for the Create Interview candidate dropdown
+
+router.get(
+  "/candidate-options",
+  authenticate,
+  requireRole("RECRUITER"),
+  listAllCandidatesForSelection,
+);
+
+
 // GET one candidate
 
 router.get(
@@ -176,5 +209,6 @@ router.get(
   requireRole("RECRUITER"),
   getCandidateByIdController,
 );
+
 
 export default router;
