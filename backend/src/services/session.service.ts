@@ -68,6 +68,34 @@ const getElapsedDurationSeconds = (session: OwnedSession) => {
   );
 };
 
+const expireInterviewSession = async (
+  candidateId: string,
+  sessionId: string,
+) => {
+  const session = await assertOwnedSession(candidateId, sessionId);
+  const endedAt = new Date();
+  const durationSeconds = Math.max(
+    0,
+    Math.floor((endedAt.getTime() - session.startedAt.getTime()) / 1000),
+  );
+
+  const result = await endSessionRepo(sessionId, {
+    status: "EXPIRED",
+    endedAt,
+    durationSeconds,
+  });
+
+  if (result.count > 0) {
+    await updateInterviewStatus(session.interview.id, "EXPIRED");
+  }
+
+  return {
+    message: "Interview time has expired.",
+    durationSeconds,
+    expired: true,
+  };
+};
+
 export const getSessionDetail = async (
   candidateId: string,
   sessionId: string,
@@ -75,9 +103,18 @@ export const getSessionDetail = async (
   let session = await assertOwnedSession(candidateId, sessionId);
 
   if (session.status === "IN_PROGRESS" && isSessionExpired(session)) {
-    await endInterviewSession(candidateId, sessionId);
+    const messages = await findMessagesBySession(sessionId);
+    const hasCandidateAttempt = messages.some(
+      (message) => message.sender === "CANDIDATE",
+    );
 
-    // Re-fetch so the response contains the updated COMPLETED status.
+    if (hasCandidateAttempt) {
+      await endInterviewSession(candidateId, sessionId);
+    } else {
+      await expireInterviewSession(candidateId, sessionId);
+    }
+
+    // Re-fetch so the response contains the updated session status.
     session = await assertOwnedSession(candidateId, sessionId);
   }
 
@@ -138,12 +175,29 @@ export const sendCandidateMessage = async (
   }
 
   if (isSessionExpired(session)) {
-    await endInterviewSession(candidateId, sessionId);
+    const messages = await findMessagesBySession(sessionId);
+    const hasCandidateAttempt = messages.some(
+      (message) => message.sender === "CANDIDATE",
+    );
+
+    if (hasCandidateAttempt) {
+      await endInterviewSession(candidateId, sessionId);
+
+      return {
+        sessionEnded: true,
+        expired: false,
+        submitted: true,
+        message: "Interview time has expired. The interview has been submitted.",
+      };
+    }
+
+    await expireInterviewSession(candidateId, sessionId);
 
     return {
       sessionEnded: true,
       expired: true,
-      message: "Interview time has expired. The interview has been submitted.",
+      submitted: false,
+      message: "Interview time has expired.",
     };
   }
 
@@ -166,6 +220,14 @@ export const sendCandidateMessage = async (
     message: input.message,
   });
 
+  // Keep the value passed to the evaluation service explicitly string-based.
+  // The validator already normalizes supported message-shaped inputs, but
+  // this boundary protects the AI client from unexpected runtime values.
+  const candidateAnswer =
+    typeof input.message === "string"
+      ? input.message
+      : String(input.message);
+
   const currentQuestion = orderedQuestions[currentIndex]?.question;
 
   if (!currentQuestion) {
@@ -178,7 +240,7 @@ export const sendCandidateMessage = async (
       title: currentQuestion.title,
       description: currentQuestion.description,
     },
-    candidateAnswer: input.message,
+    candidateAnswer,
     history: (await findMessagesBySession(sessionId)).map((message) => ({
       sender: message.sender,
       message: message.message,

@@ -37,6 +37,7 @@ enum Difficulty {
 enum SessionStatus {
   IN_PROGRESS
   COMPLETED
+  EXPIRED
 }
 
 enum QuestionStatus {

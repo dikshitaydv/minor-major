@@ -1,10 +1,33 @@
 import {
   findCandidateByIdForRecruiter,
   findCandidatesByRecruiter,
+  findAllCandidatesForSelection,
 } from '../../repositories/recruiter/candidate.repository.js'
 
 import { NotFoundError } from '../../utils/app-error.js'
 
+// ─────────────────────────────────────────────
+// GET ALL CANDIDATES FOR INTERVIEW SELECTION
+// ─────────────────────────────────────────────
+
+export const getAllCandidatesForSelection = async () => {
+  const candidates = await findAllCandidatesForSelection()
+
+  return candidates.map((candidate) => ({
+    id: candidate.id,
+
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+
+    name: `${candidate.firstName || ''} ${
+      candidate.lastName || ''
+    }`.trim(),
+
+    email: candidate.email,
+
+    joinedAt: candidate.createdAt,
+  }))
+}
 
 // ─────────────────────────────────────────────
 // GET ALL CANDIDATES FOR A RECRUITER

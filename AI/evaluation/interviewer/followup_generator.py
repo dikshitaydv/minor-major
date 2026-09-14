@@ -1,15 +1,221 @@
 import json
-import urllib.request
 
-from AI.evaluation.configs.ai_config import (
-    OLLAMA_BASE_URL,
-    FOLLOWUP_MODEL
-)
+from AI.evaluation.configs.ai_config import FOLLOWUP_MODEL
+from AI.evaluation.dataset_loader import load_evaluation_context
+from AI.evaluation.llm.ollama_client import generate_groq_response
 
-from AI.evaluation.dataset_loader import (
-    load_evaluation_context
-)
 
+# ============================================================
+# HELPERS
+# ============================================================
+
+def _safe_string(value):
+    if value is None:
+        return ""
+
+    if isinstance(value, str):
+        return value.strip()
+
+    return str(value).strip()
+
+
+def _safe_list(value):
+    if not isinstance(value, list):
+        return []
+
+    return [
+        item
+        for item in value
+        if item is not None
+    ]
+
+
+def _compact_dict(
+    value,
+    keys,
+):
+    if not isinstance(value, dict):
+        return {}
+
+    result = {}
+
+    for key in keys:
+        item = value.get(key)
+
+        if item is not None:
+            result[key] = item
+
+    return result
+
+
+def _extract_previous_questions(history):
+    questions = []
+
+    if not isinstance(history, list):
+        return questions
+
+    for turn in history:
+
+        if not isinstance(turn, dict):
+            continue
+
+        question = turn.get(
+            "current_interviewer_question"
+        )
+
+        if (
+            isinstance(question, str)
+            and question.strip()
+        ):
+            questions.append(
+                question.strip()
+            )
+
+    return questions
+
+
+def _compact_history(history):
+    """
+    Keep only information that can affect the next
+    interviewer question.
+
+    The full history can become very large and unnecessarily
+    consume Groq TPM quota.
+    """
+
+    if not isinstance(history, list):
+        return []
+
+    compact = []
+
+    for turn in history[-5:]:
+
+        if not isinstance(turn, dict):
+            continue
+
+        compact_turn = {}
+
+        for key in (
+            "candidate_answer",
+            "current_interviewer_question",
+            "primary_classification",
+            "secondary_classification",
+            "primary_adaptive_gap",
+        ):
+            value = turn.get(key)
+
+            if value is not None:
+                compact_turn[key] = value
+
+        if compact_turn:
+            compact.append(
+                compact_turn
+            )
+
+    return compact
+
+
+def _compact_scores(scores):
+    """
+    Only send dimension + score.
+
+    Evidence is handled separately and does not need the
+    entire evaluation structure.
+    """
+
+    if not isinstance(scores, dict):
+        return {}
+
+    compact = {}
+
+    for dimension, value in scores.items():
+
+        if not isinstance(value, dict):
+            continue
+
+        score = value.get("score")
+
+        if score is not None:
+            compact[dimension] = score
+
+    return compact
+
+
+def _compact_evidence(evidence):
+    """
+    Keep evidence short enough for the follow-up prompt.
+    """
+
+    if not isinstance(evidence, dict):
+        return {}
+
+    compact = {}
+
+    for key, value in evidence.items():
+
+        if value is None:
+            continue
+
+        text = str(value).strip()
+
+        if not text:
+            continue
+
+        # Prevent huge evaluation evidence from entering
+        # the follow-up generation prompt.
+        compact[key] = text[:500]
+
+    return compact
+
+
+def _compact_reference(reference):
+    """
+    Only include fields required to guide the adaptive
+    question.
+
+    Do not send the complete dataset reference object.
+    """
+
+    if not isinstance(reference, dict):
+        return None
+
+    allowed_keys = [
+        "Reference ID",
+        "Solution Type",
+        "Expected Approach",
+        "Expected Data Structures",
+        "Time Complexity",
+        "Space Complexity",
+        "Reasoning Steps",
+        "Edge Cases",
+        "Optimization Goal",
+        "Next Better Reference ID",
+    ]
+
+    result = {}
+
+    for key in allowed_keys:
+
+        value = reference.get(key)
+
+        if value is None:
+            continue
+
+        if isinstance(value, list):
+            result[key] = value[:10]
+
+        elif isinstance(value, str):
+            result[key] = value[:1000]
+
+        else:
+            result[key] = value
+
+    return result
+
+
+# ============================================================
+# FOLLOW-UP GENERATOR
+# ============================================================
 
 def generate_followup_question(
     problem: dict,
@@ -17,79 +223,123 @@ def generate_followup_question(
     candidate_state: dict,
     followup_strategy: dict
 ) -> str:
+    """
+    Generate exactly one adaptive follow-up question.
 
-    # ==================================================
-    # EXTRACT STRATEGY
-    # ==================================================
+    The adaptive decision itself is NOT made here.
 
-    adaptive_gap = followup_strategy.get(
-        "adaptive_gap",
-        ""
-    )
+    This function only converts the already-selected
+    adaptive target into a natural interviewer question.
 
-    objective = followup_strategy.get(
-        "objective",
-        ""
-    )
+    Groq is used as the text-generation backend.
+    """
 
-    focus = followup_strategy.get(
-        "focus",
-        []
-    )
+    # ========================================================
+    # VALIDATION
+    # ========================================================
 
-    instruction = followup_strategy.get(
-        "instruction",
-        ""
-    )
-
-    current_reference_id = followup_strategy.get(
-        "current_reference_id"
-    )
-
-    target_reference_id = followup_strategy.get(
-        "target_reference_id"
-    )
-
-    # ==================================================
-    # EXTRACT PROBLEM
-    # ==================================================
-
-    problem_title = problem.get(
-        "title",
-        ""
-    )
-
-    problem_description = problem.get(
-        "description",
-        ""
-    )
-
-    current_reference = None
-    target_reference = None
-
-    if current_reference_id or target_reference_id:
-
-        reference_solutions, _ = (
-            load_evaluation_context(
-                problem
-            )
+    if not isinstance(
+        problem,
+        dict
+    ):
+        raise TypeError(
+            "problem must be a dictionary."
         )
 
-        for reference in reference_solutions:
+    if not isinstance(
+        candidate_state,
+        dict
+    ):
+        raise TypeError(
+            "candidate_state must be a dictionary."
+        )
 
-            reference_id = reference.get(
-                "Reference ID"
-            )
+    if not isinstance(
+        followup_strategy,
+        dict
+    ):
+        raise TypeError(
+            "followup_strategy must be a dictionary."
+        )
 
-            if reference_id == current_reference_id:
-                current_reference = reference
+    if not isinstance(
+        candidate_answer,
+        str
+    ):
+        raise TypeError(
+            "candidate_answer must be a string."
+        )
 
-            if reference_id == target_reference_id:
-                target_reference = reference
+    # ========================================================
+    # EXTRACT STRATEGY
+    # ========================================================
 
-    # ==================================================
+    adaptive_gap = _safe_string(
+        followup_strategy.get(
+            "adaptive_gap",
+            ""
+        )
+    )
+
+    objective = _safe_string(
+        followup_strategy.get(
+            "objective",
+            ""
+        )
+    )
+
+    focus = _safe_list(
+        followup_strategy.get(
+            "focus",
+            []
+        )
+    )
+
+    instruction = _safe_string(
+        followup_strategy.get(
+            "instruction",
+            ""
+        )
+    )
+
+    current_reference_id = (
+        followup_strategy.get(
+            "current_reference_id"
+        )
+    )
+
+    target_reference_id = (
+        followup_strategy.get(
+            "target_reference_id"
+        )
+    )
+
+    # ========================================================
+    # EXTRACT PROBLEM
+    # ========================================================
+
+    problem_title = _safe_string(
+        problem.get(
+            "title",
+            ""
+        )
+    )
+
+    problem_description = _safe_string(
+        problem.get(
+            "description",
+            ""
+        )
+    )
+
+    # Keep the problem description bounded.
+    problem_description = (
+        problem_description[:2000]
+    )
+
+    # ========================================================
     # EXTRACT STATE
-    # ==================================================
+    # ========================================================
 
     scores = candidate_state.get(
         "scores",
@@ -106,385 +356,351 @@ def generate_followup_question(
         []
     )
 
-    # ==================================================
-    # PREVIOUS QUESTIONS
-    # ==================================================
+    compact_scores = _compact_scores(
+        scores
+    )
 
-    previous_questions = []
+    compact_evidence = _compact_evidence(
+        evidence
+    )
 
-    for previous_turn in history:
+    compact_history = _compact_history(
+        history
+    )
 
-        if not isinstance(
-            previous_turn,
-            dict
-        ):
-            continue
+    previous_questions = (
+        _extract_previous_questions(
+            history
+        )
+    )
 
-        question = previous_turn.get(
-            "current_interviewer_question"
+    # Only keep the most recent questions.
+    previous_questions = (
+        previous_questions[-5:]
+    )
+
+    # ========================================================
+    # REFERENCE SOLUTIONS
+    # ========================================================
+
+    current_reference = None
+    target_reference = None
+
+    if (
+        current_reference_id
+        or target_reference_id
+    ):
+
+        reference_solutions, _ = (
+            load_evaluation_context(
+                problem
+            )
         )
 
-        if (
-            isinstance(question, str)
-            and question.strip()
+        if not isinstance(
+            reference_solutions,
+            list
         ):
-            previous_questions.append(
-                question.strip()
+            reference_solutions = []
+
+        for reference in reference_solutions:
+
+            if not isinstance(
+                reference,
+                dict
+            ):
+                continue
+
+            reference_id = reference.get(
+                "Reference ID"
             )
 
-    # ==================================================
+            if (
+                reference_id
+                == current_reference_id
+            ):
+                current_reference = (
+                    _compact_reference(
+                        reference
+                    )
+                )
+
+            if (
+                reference_id
+                == target_reference_id
+            ):
+                target_reference = (
+                    _compact_reference(
+                        reference
+                    )
+                )
+
+    # ========================================================
+    # COMPACT CANDIDATE ANSWER
+    # ========================================================
+
+    candidate_answer_for_prompt = (
+        candidate_answer.strip()
+    )
+
+    # Prevent accidental enormous prompts.
+    if len(candidate_answer_for_prompt) > 5000:
+        candidate_answer_for_prompt = (
+            candidate_answer_for_prompt[:5000]
+        )
+
+    # ========================================================
     # PROMPT
-    # ==================================================
+    # ========================================================
 
     prompt = f"""
 You are an adaptive technical interviewer.
 
-Generate exactly ONE natural follow-up question
-for the candidate.
+Generate exactly ONE natural follow-up question for the candidate.
 
 Do not solve the problem.
+Do not reveal scores.
+Do not mention evaluation, rubrics, weaknesses, classifications,
+adaptive gaps, or internal system information.
+Do not give the answer.
 
-Do not reveal scores or evaluation information.
-
-Do not mention gaps, weaknesses, classifications,
-rubrics, or evaluation.
-
-==================================================
 PROBLEM
-==================================================
-
-Title:
-{problem_title}
+Title: {problem_title}
 
 Description:
 {problem_description}
 
-==================================================
 CANDIDATE ANSWER
-==================================================
+{candidate_answer_for_prompt}
 
-{candidate_answer}
-
-==================================================
 CURRENT SCORES
-==================================================
+{json.dumps(compact_scores, ensure_ascii=False)}
 
-{json.dumps(scores, indent=2)}
-
-==================================================
 CURRENT EVIDENCE
-==================================================
+{json.dumps(compact_evidence, ensure_ascii=False)}
 
-{json.dumps(evidence, indent=2)}
+RECENT CONVERSATION
+{json.dumps(compact_history, ensure_ascii=False)}
 
-==================================================
-CONVERSATION HISTORY
-==================================================
-
-{json.dumps(history, indent=2)}
-
-==================================================
 PREVIOUS FOLLOW-UP QUESTIONS
-==================================================
+{json.dumps(previous_questions, ensure_ascii=False)}
 
-{json.dumps(previous_questions, indent=2)}
-
-==================================================
 ADAPTIVE TARGET
-==================================================
+Target: {adaptive_gap}
+Objective: {objective}
+Focus: {json.dumps(focus, ensure_ascii=False)}
+Instruction: {instruction}
 
-Target:
-{adaptive_gap}
+CURRENT REFERENCE
+ID: {current_reference_id}
+{json.dumps(current_reference, ensure_ascii=False)}
 
-Objective:
-{objective}
+TARGET REFERENCE
+ID: {target_reference_id}
+{json.dumps(target_reference, ensure_ascii=False)}
 
-Focus:
-{json.dumps(focus, indent=2)}
-
-Instruction:
-{instruction}
-
-==================================================
-REFERENCE-SOLUTION PROGRESSION
-==================================================
-
-Current Reference ID:
-{current_reference_id}
-
-Current Reference:
-{json.dumps(current_reference, indent=2)}
-
-Target Reference ID:
-{target_reference_id}
-
-Target Reference:
-{json.dumps(target_reference, indent=2)}
-
-
-==================================================
 RULES
-==================================================
 
 1. Ask exactly ONE question.
-
 2. Target the adaptive area.
-
-3. Make the question specific to the candidate's
-   actual approach.
-
+3. Make the question specific to the candidate's actual approach.
 4. Do not repeat a previous question.
-
-5. If this area has already been questioned,
-   probe a different or deeper aspect.
-
-6. Do not mention scores.
-
-7. Do not mention the adaptive classification.
-
-8. Do not reveal internal evaluation information.
-
-9. Do not provide the answer.
-
-10. Do not give the candidate a solution.
-
-11. Keep the question concise.
-
-12. When a target reference solution is provided, use it
-    only as internal guidance for deciding what concept
-    or improvement the candidate should be asked to explore.
-
-13. The question should help move the candidate from
-    the current approach toward the target approach.
-
-14. Do NOT reveal the target reference solution.
-
-15. Do NOT directly state the target algorithm,
-    data structure, complexity, or solution.
-
-16. Instead, ask a question that naturally leads the
-    candidate to discover the improvement themselves.
-
-17. The candidate should still have to explain or derive
-    the improved approach.
+5. If the same area was already questioned, probe a deeper aspect.
+6. Do not mention scores or evaluation.
+7. Do not reveal internal reasoning.
+8. Do not provide the solution.
+9. Keep the question concise.
+10. Use the target reference only as internal guidance.
+11. Do not reveal the target reference.
+12. Do not directly state the target algorithm or solution.
+13. Lead the candidate to discover the improvement themselves.
+14. The candidate must still explain or derive the answer.
 
 Return ONLY valid JSON.
 
-The JSON MUST have exactly this structure:
+Exactly this structure:
 
 {{
-  "question": "your question here"
+    "question": "your question here"
 }}
-"""
+""".strip()
 
-    # ==================================================
-    # OLLAMA REQUEST
-    # ==================================================
-
-    payload = {
-        "model": FOLLOWUP_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "think": False,
-        "format": "json",
-        "options": {
-            "num_predict": 200
-        }
-    }
-
-    data = json.dumps(
-        payload
-    ).encode("utf-8")
-
-    ollama_url = (
-    f"{OLLAMA_BASE_URL.rstrip('/')}"
-    "/api/generate"
-    )
-
-    request = urllib.request.Request(
-        ollama_url,
-        data=data,
-        headers={
-            "Content-Type": "application/json"
-        },
-        method="POST"
-    )
-
-    # ==================================================
-    # CALL OLLAMA
-    # ==================================================
+    # ========================================================
+    # GROQ REQUEST
+    # ========================================================
 
     try:
 
-        with urllib.request.urlopen(
-            request
-        ) as response:
-
-            result = json.loads(
-                response.read().decode(
-                    "utf-8"
-                )
-            )
+        response_text = generate_groq_response(
+            prompt,
+            temperature=0,
+            max_tokens=300
+        )
 
     except Exception as error:
 
         raise RuntimeError(
             f"Failed to generate follow-up question: {error}"
-        )
+        ) from error
 
-    # ==================================================
-    # GET RAW RESPONSE
-    # ==================================================
-
-    response_text = result.get(
-        "response",
-        ""
-    )
+    # ========================================================
+    # PARSE RESPONSE
+    # ========================================================
 
     if not isinstance(
         response_text,
         str
     ):
-        response_text = str(
-            response_text
+        raise RuntimeError(
+            "Groq follow-up response must be a string."
         )
 
-    response_text = response_text.strip()
-
-    # --------------------------------------------------
-    # IMPORTANT DEBUG OUTPUT
-    # --------------------------------------------------
-
-    print()
-    print("=" * 60)
-    print("          RAW FOLLOW-UP RESPONSE")
-    print("=" * 60)
-    print(response_text)
-    print("=" * 60)
-    print()
+    response_text = (
+        response_text.strip()
+    )
 
     if not response_text:
-
         raise RuntimeError(
-            "Ollama returned an empty follow-up response."
+            "Groq returned an empty follow-up response."
         )
 
-    # ==================================================
-    # PARSE JSON
-    # ==================================================
+    # --------------------------------------------------------
+    # Remove markdown fences if Groq adds them.
+    # --------------------------------------------------------
+
+    if response_text.startswith(
+        "```"
+    ):
+
+        lines = (
+            response_text.splitlines()
+        )
+
+        if lines:
+            lines = lines[1:]
+
+        if (
+            lines
+            and lines[-1].strip()
+            == "```"
+        ):
+            lines = lines[:-1]
+
+        response_text = (
+            "\n".join(lines)
+            .strip()
+        )
+
+    # ========================================================
+    # JSON PARSING
+    # ========================================================
 
     try:
 
-        followup = json.loads(
+        parsed = json.loads(
             response_text
         )
 
-    except json.JSONDecodeError as error:
+    except json.JSONDecodeError:
 
-        raise RuntimeError(
-            "Ollama returned invalid JSON for the "
-            f"follow-up question: {error}\n\n"
-            f"Raw response:\n{response_text}"
+        # ----------------------------------------------------
+        # Fallback: find the JSON object inside surrounding
+        # text.
+        # ----------------------------------------------------
+
+        start = response_text.find(
+            "{"
         )
 
-    # ==================================================
-    # EXTRACT QUESTION
-    # ==================================================
+        end = response_text.rfind(
+            "}"
+        )
 
-    question = None
+        if (
+            start == -1
+            or end == -1
+            or end <= start
+        ):
+            raise RuntimeError(
+                "Groq did not return valid JSON "
+                "for the follow-up question."
+            )
 
-    # --------------------------------------------------
-    # Expected format
-    # --------------------------------------------------
+        try:
 
-    if isinstance(
-        followup,
+            parsed = json.loads(
+                response_text[
+                    start:end + 1
+                ]
+            )
+
+        except json.JSONDecodeError as error:
+
+            raise RuntimeError(
+                "Groq returned malformed follow-up JSON."
+            ) from error
+
+    # ========================================================
+    # VALIDATE JSON
+    # ========================================================
+
+    if not isinstance(
+        parsed,
         dict
     ):
-
-        question = followup.get(
-            "question"
+        raise RuntimeError(
+            "Follow-up response must be a JSON object."
         )
 
-        # --------------------------------------------------
-        # Some models may return:
-        #
-        # {
-        #     "follow_up_question": "..."
-        # }
-        # --------------------------------------------------
-
-        if not question:
-
-            question = followup.get(
-                "follow_up_question"
-            )
-
-        # --------------------------------------------------
-        # Or:
-        #
-        # {
-        #     "followup_question": "..."
-        # }
-        # --------------------------------------------------
-
-        if not question:
-
-            question = followup.get(
-                "followup_question"
-            )
-
-    # ==================================================
-    # VALIDATE
-    # ==================================================
+    question = parsed.get(
+        "question"
+    )
 
     if not isinstance(
         question,
         str
     ):
-
         raise RuntimeError(
-            "Ollama returned valid JSON, but no question "
-            "field was found.\n\n"
-            f"Parsed response:\n{followup}"
+            "Follow-up response does not contain "
+            "a valid question string."
         )
 
-    question = question.strip()
+    question = (
+        question.strip()
+    )
 
     if not question:
-
         raise RuntimeError(
-            "Ollama returned an empty question."
+            "Follow-up question is empty."
         )
 
-    # ==================================================
-    # INTERNAL INFORMATION CHECK
-    # ==================================================
+    # ========================================================
+    # REMOVE ACCIDENTAL MULTIPLE QUESTIONS
+    # ========================================================
 
-    lower_question = question.lower()
-
-    forbidden_terms = [
-        "your score",
-        "your scores",
-        "your gap",
-        "you have a gap",
-        "your weakness",
-        "evaluation says",
-        "evaluation shows",
-        "rubric"
-    ]
-
-    for term in forbidden_terms:
-
-        if term in lower_question:
-
-            raise RuntimeError(
-                "Generated question contains internal "
-                f"evaluation information: '{term}'"
-            )
-
-    # ==================================================
-    # RETURN
-    # ==================================================
+    # We don't rewrite the generated question. We only
+    # validate that the model returned something usable.
 
     return question
+
+
+# ============================================================
+# BACKWARD-COMPATIBILITY ALIAS
+# ============================================================
+
+def generate_followup(
+    problem: dict,
+    candidate_answer: str,
+    candidate_state: dict,
+    followup_strategy: dict
+) -> str:
+    """
+    Backward-compatible alias.
+    """
+
+    return generate_followup_question(
+        problem=problem,
+        candidate_answer=candidate_answer,
+        candidate_state=candidate_state,
+        followup_strategy=followup_strategy
+    )

@@ -40,7 +40,8 @@ export type Difficulty = (typeof Difficulty)[keyof typeof Difficulty]
 
 export const SessionStatus = {
   IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED'
+  COMPLETED: 'COMPLETED',
+  EXPIRED: 'EXPIRED'
 } as const
 
 export type SessionStatus = (typeof SessionStatus)[keyof typeof SessionStatus]

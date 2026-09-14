@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { createInterview } from '../../../api/interview.api.js'
 import { getRecruiterQuestions } from '../../../api/question.api.js'
-import {
-  getRecruiterCandidates,
-} from '../../../api/recruiterCandidate.api.js'
+import { getCandidateOptions } from '../../../api/recruiterCandidate.api.js'
 
 
 function CreateInterviewModal({ onClose, onSuccess }) {
@@ -87,7 +85,7 @@ function CreateInterviewModal({ onClose, onSuccess }) {
         setCandidateError(null)
 
         const data =
-          await getRecruiterCandidates()
+          await getCandidateOptions()
 
         console.log(
           'RECRUITER CANDIDATES:',

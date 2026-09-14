@@ -88,8 +88,9 @@ function CandidateInterview() {
         setMessages(messageData.map(mapMessage))
 
         const completed = sessionData.session.status === 'COMPLETED'
+        const expired = sessionData.session.status === 'EXPIRED'
 
-        setSessionEnded(completed)
+        setSessionEnded(completed || expired)
 
         startedAtRef.current = new Date(
           sessionData.session.startedAt,
@@ -97,9 +98,9 @@ function CandidateInterview() {
 
         durationSecondsRef.current = sessionData.session.duration
 
-        // If the backend tells us the session is already complete,
+        // If the backend tells us the session has already ended,
         // don't start a countdown.
-        if (completed) {
+        if (completed || expired) {
           setRemainingSeconds(0)
         }
       } catch (err) {
@@ -519,9 +520,15 @@ function CandidateInterview() {
 
           setSessionEnded(true)
           setSending(false)
-          setSubmittingAssessment(true)
 
-          navigate(`/candidate/results/${interviewId}`)
+          if (result?.expired) {
+            setSubmittingAssessment(false)
+            navigate('/candidate/interviews')
+          } else {
+            setSubmittingAssessment(true)
+            navigate(`/candidate/results/${interviewId}`)
+          }
+
           return
         }
 
@@ -611,9 +618,15 @@ function CandidateInterview() {
       setError('')
 
       try {
-        await candidateApi.endInterview(sessionId)
+        const result = await candidateApi.endInterview(sessionId)
 
         setSessionEnded(true)
+
+        if (result?.expired) {
+          setSubmittingAssessment(false)
+          navigate('/candidate/interviews')
+          return
+        }
 
         navigate(`/candidate/results/${interviewId}`)
       } catch (err) {

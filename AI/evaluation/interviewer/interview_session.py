@@ -616,14 +616,181 @@ class InterviewSession:
                 )
             )
 
+        # ----------------------------------------------------
+        # TARGET-REFERENCE SAFEGUARD
+        # ----------------------------------------------------
+        #
+        # Reaching the target reference does NOT mean the
+        # interview can finish if an evaluation dimension
+        # is still unassessed.
+        #
+        # The production state can contain scores in either
+        # of these forms:
+        #
+        #   dimension -> numeric score
+        #
+        # or:
+        #
+        #   dimension -> {
+        #       "score": numeric score,
+        #       "assessment_status": "ASSESSED"
+        #   }
+        #
+        # Therefore both formats are handled here.
+        #
+        # Example:
+        #
+        #   algorithm_correctness = 100
+        #   logical_reasoning    = 85
+        #   concept_coverage     = 90
+        #   completeness         = 80
+        #   data_structure       = 100
+        #   complexity           = 100
+        #   edge_cases           = None
+        #
+        # The interview must continue in this situation so
+        # the candidate can answer the generated edge-case
+        # follow-up question.
+        #
+        # Hard limits above remain authoritative and are
+        # never overridden by this safeguard.
+        # ----------------------------------------------------
+
+        if policy_decision.get(
+            "action"
+        ) == "STOP":
+
+            stop_reason = str(
+                policy_decision.get(
+                    "reason",
+                    ""
+                )
+            ).lower()
+
+            target_reached_stop = (
+                "target reference" in stop_reason
+                or "reached the target" in stop_reason
+                or "target reference solution" in stop_reason
+            )
+
+            unassessed_dimensions = []
+
+            if isinstance(
+                self.state.scores,
+                dict
+            ):
+
+                for dimension, score_data in (
+                    self.state.scores.items()
+                ):
+
+                    # ----------------------------------------
+                    # Numeric score representation:
+                    #
+                    # dimension -> 100.0
+                    # dimension -> None
+                    # ----------------------------------------
+
+                    if score_data is None:
+
+                        unassessed_dimensions.append(
+                            dimension
+                        )
+
+                        continue
+
+                    if isinstance(
+                        score_data,
+                        (int, float)
+                    ):
+
+                        continue
+
+                    # ----------------------------------------
+                    # Dictionary score representation:
+                    #
+                    # dimension -> {
+                    #     "score": ...,
+                    #     "assessment_status": ...
+                    # }
+                    # ----------------------------------------
+
+                    if isinstance(
+                        score_data,
+                        dict
+                    ):
+
+                        assessment_status = (
+                            score_data.get(
+                                "assessment_status"
+                            )
+                        )
+
+                        score = score_data.get(
+                            "score"
+                        )
+
+                        if (
+                            assessment_status
+                            == "NOT_ASSESSED"
+                            or score is None
+                        ):
+
+                            unassessed_dimensions.append(
+                                dimension
+                            )
+
+                        continue
+
+                    # ----------------------------------------
+                    # Unknown score representation.
+                    # Treat it as unassessed instead of
+                    # incorrectly considering the dimension
+                    # complete.
+                    # ----------------------------------------
+
+                    unassessed_dimensions.append(
+                        dimension
+                    )
+
+            if (
+                target_reached_stop
+                and unassessed_dimensions
+            ):
+
+                next_dimension = (
+                    unassessed_dimensions[0]
+                )
+
+                policy_decision = {
+                    **policy_decision,
+                    "action": "CONTINUE",
+                    "target_dimension": (
+                        next_dimension
+                    ),
+                    "goal": (
+                        "Assess the candidate's "
+                        f"{next_dimension.replace('_', ' ')}."
+                    ),
+                    "reason": (
+                        "Target reference reached, but "
+                        "one or more evaluation dimensions "
+                        "remain unassessed."
+                    ),
+                }
+
         print()
         print("Policy Decision:")
         print(policy_decision)
 
-        # PolicyEngine is the authoritative continuation
-        # decision for the conversation layer.
+        # PolicyEngine is authoritative for normal STOP/CONTINUE
+        # decisions. The only exception is the safeguard above:
+        # reaching the target reference cannot finish an interview
+        # while required evaluation dimensions remain unassessed.
 
-        if policy_decision.get("action") == "STOP":
+        if policy_decision.get(
+            "action"
+        ) == "STOP":
 
             self.state.should_continue = False
             self.finished = True
@@ -632,9 +799,11 @@ class InterviewSession:
 
             self.state.should_continue = True
 
-            next_question = self._generate_policy_followup(
-                policy_decision=policy_decision,
-                candidate_answer=candidate_answer
+            next_question = (
+                self._generate_policy_followup(
+                    policy_decision=policy_decision,
+                    candidate_answer=candidate_answer
+                )
             )
 
             if next_question:
@@ -644,8 +813,12 @@ class InterviewSession:
                 )
 
                 print()
-                print("Next Interviewer Question:")
-                print(next_question)
+                print(
+                    "Next Interviewer Question:"
+                )
+                print(
+                    next_question
+                )
 
             else:
 
