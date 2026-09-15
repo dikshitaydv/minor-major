@@ -114,6 +114,16 @@ const requestEvaluation = async (
   );
 
   console.log(
+    "[EVALUATION DEBUG] evaluation service URL:",
+    EVALUATION_SERVICE_URL,
+  );
+
+  console.log(
+    "[EVALUATION DEBUG] full request URL:",
+    `${EVALUATION_SERVICE_URL}${path}`,
+  );
+
+  console.log(
     "[EVALUATION DEBUG] candidateAnswer type:",
     typeof input.candidateAnswer,
   );
@@ -146,29 +156,118 @@ const requestEvaluation = async (
     JSON.stringify(candidateAnswer),
   );
 
-  if (path !== "/v1/evaluate/opening" && path !== "/v1/evaluate/final" && !candidateAnswer.trim()) {
+  if (
+    path !== "/v1/evaluate/opening" &&
+    path !== "/v1/evaluate/final" &&
+    !candidateAnswer.trim()
+  ) {
     throw new Error("Candidate answer cannot be empty.");
   }
 
-  const response = await fetch(`${EVALUATION_SERVICE_URL}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      problem: input.problem,
-      candidate_answer: candidateAnswer,
-      history: input.history,
-    }),
-  });
+  const requestBody = {
+    problem: input.problem,
+    candidate_answer: candidateAnswer,
+    history: input.history,
+  };
 
-  const payload = await response.json().catch(() => ({}));
+  console.log(
+    "[EVALUATION DEBUG] sending request to:",
+    `${EVALUATION_SERVICE_URL}${path}`,
+  );
 
-  if (!response.ok || !payload.success) {
+  console.log(
+    "[EVALUATION DEBUG] request body:",
+    describeValue(requestBody),
+  );
+
+  let response: Response;
+
+  try {
+    response = await fetch(
+      `${EVALUATION_SERVICE_URL}${path}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      },
+    );
+  } catch (error) {
+    console.error(
+      "[EVALUATION ERROR] Fetch to evaluation service failed:",
+      error,
+    );
+
     throw new Error(
-      payload.detail || "Evaluation service request failed",
+      `Evaluation service network request failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
+
+  console.log(
+    "[EVALUATION DEBUG] evaluation service HTTP status:",
+    response.status,
+  );
+
+  console.log(
+    "[EVALUATION DEBUG] evaluation service status text:",
+    response.statusText,
+  );
+
+  console.log(
+    "[EVALUATION DEBUG] evaluation service content-type:",
+    response.headers.get("content-type"),
+  );
+
+  const rawResponse = await response.text();
+
+  console.log(
+    "[EVALUATION DEBUG] raw evaluation service response:",
+    rawResponse,
+  );
+
+  let payload: any = {};
+
+  if (rawResponse.trim()) {
+    try {
+      payload = JSON.parse(rawResponse);
+    } catch (error) {
+      console.error(
+        "[EVALUATION ERROR] Evaluation service returned non-JSON response:",
+        error,
+      );
+
+      throw new Error(
+        `Evaluation service returned non-JSON response (HTTP ${response.status}): ${rawResponse}`,
+      );
+    }
+  }
+
+  console.log(
+    "[EVALUATION DEBUG] parsed evaluation service payload:",
+    describeValue(payload),
+  );
+
+  if (!response.ok || !payload.success) {
+    const errorMessage =
+      payload?.detail ||
+      payload?.message ||
+      payload?.error ||
+      `Evaluation service request failed with HTTP ${response.status}`;
+
+    console.error(
+      "[EVALUATION ERROR] Evaluation service request failed:",
+      errorMessage,
+    );
+
+    throw new Error(errorMessage);
+  }
+
+  console.log(
+    "[EVALUATION DEBUG] evaluation service request succeeded.",
+  );
 
   return payload.data;
 };
