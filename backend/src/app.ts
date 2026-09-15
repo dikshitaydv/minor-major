@@ -6,6 +6,7 @@ import morgan from 'morgan'
 
 import { env } from './config/env.js'
 import routes from './routes/index.js'
+import { errorHandler } from './middleware/error.middleware.js'
 
 const app = express()
 
@@ -34,5 +35,8 @@ app.get('/health', (_req, res) => {
 })
 
 app.use(routes)
+
+app.use(errorHandler)
+
 
 export default app
