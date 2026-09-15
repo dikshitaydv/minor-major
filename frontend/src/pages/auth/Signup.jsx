@@ -405,8 +405,13 @@ function Signup() {
                                     onChange={handleChange}
                                     placeholder="Last name"
                                     required
+                                    minLength={2}
                                     className="w-full border border-white/[0.12] bg-white/[0.025] px-4 py-3 text-sm text-white outline-none placeholder:text-white/20 focus:border-blue-400/70"
                                 />
+
+                                <p className="mt-1 text-[10px] leading-4 text-white/30">
+                                    Last name must be at least 2 characters.
+                                </p>
 
                             </div>
 
