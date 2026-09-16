@@ -2,20 +2,21 @@
   "candidate_id": "e2e_test_candidate",
   "question_id": "P001",
   "reference_answer_id": "P001-R3",
-  "reference_match_confidence": null,
+  "reference_match_confidence": 0.97,
   "target_reference_id": "P001-R3",
   "current_answer": "I would use a HashMap to store previously seen values.\nFor each number, I would calculate its complement and check\nwhether that complement already exists in the HashMap.\nIf it exists, I return the two indices. Otherwise, I store\nthe current number and continue iterating through the array.\nThis gives O(n) time and O(n) space.",
   "nlp_state": {
-    "approach": "Use a HashMap to store seen values and check complements while iterating.",
+    "approach": "Use a HashMap to store previously seen values and check complements while iterating through the array",
     "algorithms": [],
     "concepts": [
       "complement"
     ],
     "operations": [
-      "calculate complement",
+      "store previously seen values in HashMap",
+      "calculate complement for each number",
       "check if complement exists in HashMap",
-      "return the two indices",
-      "store the current number",
+      "return the two indices when complement found",
+      "store the current number in HashMap",
       "continue iterating through the array"
     ],
     "data_structures": [
@@ -30,8 +31,8 @@
   },
   "scores": {
     "algorithm_correctness": 100.0,
-    "logical_reasoning": 80.0,
-    "concept_coverage": 100.0,
+    "logical_reasoning": 85.0,
+    "concept_coverage": 90.0,
     "completeness": 80.0,
     "data_structure": 100.0,
     "complexity": 100.0,
@@ -42,25 +43,25 @@
   "adaptive_classifications": [],
   "primary_adaptive_gap": null,
   "evidence": {
-    "algorithm_correctness": "The candidate describes storing previously seen values in a HashMap, computing the complement (target - current number), checking for its presence, and returning the stored index with the current index, which correctly finds a pair that sums to the target.",
-    "logical_reasoning": "The candidate outlines a step‑by‑step process: compute complement, look it up in the HashMap, return indices if found, otherwise store the current number and continue, showing a logical flow from input to output.",
-    "concept_coverage": "The answer mentions a HashMap, complement calculation, array iteration, lookup in the map, and returning indices, covering all expected concepts.",
-    "completeness": "The candidate provides the core algorithm, describes the main operations, and states the time and space complexities, covering the essential solution components, though it does not discuss edge cases.",
+    "algorithm_correctness": "The candidate describes storing previously seen values in a HashMap, computing the complement for each number, checking for its existence, and returning the two indices when found. This is the standard correct solution for Two Sum.",
+    "logical_reasoning": "The candidate explains the sequence of steps: compute complement, look it up in the HashMap, return indices if found, otherwise store the current number. This concise explanation logically connects the operations to the desired output.",
+    "concept_coverage": "The answer mentions a HashMap (hash‑map), iterating through the array (array‑traversal), computing the complement (complement‑calculation), performing a lookup, and returning indices (index‑tracking). All core concepts are covered.",
+    "completeness": "The candidate provides the core approach, key processing steps, and complexity discussion. While concise, it includes the essential elements needed to solve the problem.",
     "data_structure": "The candidate explicitly states the use of a HashMap to store previously seen values.",
-    "complexity": "The candidate claims O(n) time and O(n) space, which matches the analysis of the described algorithm.",
-    "edge_cases": "The candidate does not mention any edge cases such as duplicate values, negative numbers, zero, or the situation where no solution exists."
+    "complexity": "The candidate claims O(n) time and O(n) space, which correctly matches the complexity of the described algorithm.",
+    "edge_cases": "The candidate does not mention any edge cases (e.g., duplicate values, negative numbers, zero, or no solution) or how they would be handled."
   },
   "history": [
     {
       "turn_number": 1,
       "candidate_answer": "I would use a HashMap to store previously seen values.\nFor each number, I would calculate its complement and check\nwhether that complement already exists in the HashMap.\nIf it exists, I return the two indices. Otherwise, I store\nthe current number and continue iterating through the array.\nThis gives O(n) time and O(n) space.",
       "reference_answer_id": "P001-R3",
-      "reference_match_confidence": null,
+      "reference_match_confidence": 0.97,
       "target_reference_id": "P001-R3",
       "scores": {
         "algorithm_correctness": 100.0,
-        "logical_reasoning": 80.0,
-        "concept_coverage": 100.0,
+        "logical_reasoning": 85.0,
+        "concept_coverage": 90.0,
         "completeness": 80.0,
         "data_structure": 100.0,
         "complexity": 100.0,
@@ -71,26 +72,27 @@
       "adaptive_classifications": [],
       "primary_adaptive_gap": null,
       "evidence": {
-        "algorithm_correctness": "The candidate describes storing previously seen values in a HashMap, computing the complement (target - current number), checking for its presence, and returning the stored index with the current index, which correctly finds a pair that sums to the target.",
-        "logical_reasoning": "The candidate outlines a step‑by‑step process: compute complement, look it up in the HashMap, return indices if found, otherwise store the current number and continue, showing a logical flow from input to output.",
-        "concept_coverage": "The answer mentions a HashMap, complement calculation, array iteration, lookup in the map, and returning indices, covering all expected concepts.",
-        "completeness": "The candidate provides the core algorithm, describes the main operations, and states the time and space complexities, covering the essential solution components, though it does not discuss edge cases.",
+        "algorithm_correctness": "The candidate describes storing previously seen values in a HashMap, computing the complement for each number, checking for its existence, and returning the two indices when found. This is the standard correct solution for Two Sum.",
+        "logical_reasoning": "The candidate explains the sequence of steps: compute complement, look it up in the HashMap, return indices if found, otherwise store the current number. This concise explanation logically connects the operations to the desired output.",
+        "concept_coverage": "The answer mentions a HashMap (hash‑map), iterating through the array (array‑traversal), computing the complement (complement‑calculation), performing a lookup, and returning indices (index‑tracking). All core concepts are covered.",
+        "completeness": "The candidate provides the core approach, key processing steps, and complexity discussion. While concise, it includes the essential elements needed to solve the problem.",
         "data_structure": "The candidate explicitly states the use of a HashMap to store previously seen values.",
-        "complexity": "The candidate claims O(n) time and O(n) space, which matches the analysis of the described algorithm.",
-        "edge_cases": "The candidate does not mention any edge cases such as duplicate values, negative numbers, zero, or the situation where no solution exists."
+        "complexity": "The candidate claims O(n) time and O(n) space, which correctly matches the complexity of the described algorithm.",
+        "edge_cases": "The candidate does not mention any edge cases (e.g., duplicate values, negative numbers, zero, or no solution) or how they would be handled."
       },
       "current_interviewer_question": "Please explain your approach for solving Two Sum.",
       "nlp_state": {
-        "approach": "Use a HashMap to store seen values and check complements while iterating.",
+        "approach": "Use a HashMap to store previously seen values and check complements while iterating through the array",
         "algorithms": [],
         "concepts": [
           "complement"
         ],
         "operations": [
-          "calculate complement",
+          "store previously seen values in HashMap",
+          "calculate complement for each number",
           "check if complement exists in HashMap",
-          "return the two indices",
-          "store the current number",
+          "return the two indices when complement found",
+          "store the current number in HashMap",
           "continue iterating through the array"
         ],
         "data_structures": [
@@ -105,6 +107,6 @@
       }
     }
   ],
-  "current_interviewer_question": "How does your hashmap-based solution handle cases where the array contains duplicate values that could form the target sum, or when no two numbers add up to the target?",
+  "current_interviewer_question": "How does your hashmap-based solution handle cases such as duplicate numbers that could form the target, negative or zero values, or situations where no valid pair exists or the array has fewer than two elements?",
   "should_continue": true
 }

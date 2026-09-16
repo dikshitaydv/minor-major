@@ -612,7 +612,8 @@ class InterviewSession:
                     ),
                     target_reference_id=(
                         self.state.target_reference_id
-                    )
+                    ),
+                    reference_match_confidence=self.state.reference_match_confidence,
                 )
             )
 
