@@ -399,7 +399,7 @@ def evaluate_candidate_turn(
         matched_reference_id
     )
 
-    state.reference_match_confidence = None
+    state.reference_match_confidence = match_confidence
 
     _print_section(
         "REFERENCE MATCH"
