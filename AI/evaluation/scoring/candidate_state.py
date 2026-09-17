@@ -36,7 +36,7 @@ class CandidateNLPState:
     edge_cases: list[str] = field(default_factory=list)
     reasoning_summary: Optional[str] = None
     assumptions: list[str] = field(default_factory=list)
-    optimization: Optional[str] = None
+    optimization: Optional[bool] = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert NLP state to a dictionary."""
@@ -53,8 +53,10 @@ class CandidateNLPState:
 
         optimization = data.get("optimization")
 
-        if optimization is not None:
-            optimization = str(optimization)
+        if optimization is not None and not isinstance(optimization, bool):
+            # Tolerate legacy persisted state saved before this fix,
+            # where optimization was coerced to the string "True"/"False".
+            optimization = str(optimization).strip().casefold() == "true"
 
         return cls(
             approach=data.get("approach"),
