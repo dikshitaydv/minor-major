@@ -40,7 +40,7 @@ function ChatMessage({ message }) {
                 : 'text-blue-200'
             }`}
           >
-            {isAI ? 'AI Interviewer' : 'You'}
+            {isAI ? 'Agent' : 'You'}
           </span>
 
         </div>

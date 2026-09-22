@@ -161,7 +161,7 @@ function Signup() {
 
                         <img
                             src="/images/logo.png"
-                            alt="InterviewIQ Logo"
+                            alt="Seek Labs Logo"
                             className="h-9 w-9 object-contain transition-transform duration-300 group-hover:scale-105"
                         />
 
@@ -289,7 +289,7 @@ function Signup() {
 
                         <img
                             src="/images/interviewiq-logo.png"
-                            alt="InterviewIQ"
+                            alt="Seek Labs"
                             className="h-8 w-8 object-contain"
                         />
 

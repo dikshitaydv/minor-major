@@ -73,7 +73,7 @@ function CandidateSidebar() {
           <div>
 
             <p className="text-[17px] font-semibold tracking-tight text-white">
-              Interview<span className="text-blue-400">AI</span>
+              Seek<span className="text-blue-400">LABS</span>
             </p>
 
             <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-600">

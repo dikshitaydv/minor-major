@@ -17,7 +17,7 @@ function ChatHeader({ isActive = true }) {
           <div className="flex items-center gap-2">
 
             <p className="text-sm font-semibold tracking-tight text-white">
-              AI Interviewer
+              Agent
             </p>
 
             {isActive && (

@@ -78,7 +78,7 @@ function RecruiterSidebar() {
         <div>
 
           <p className="text-base font-semibold tracking-tight text-white">
-            InterviewAI
+            SeekLABS
           </p>
 
           <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500">

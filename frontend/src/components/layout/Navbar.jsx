@@ -27,9 +27,9 @@ function Navbar() {
 
                     <span className="text-base font-semibold tracking-[-0.04em] text-white">
 
-                        Interview
+                        Seek
                         <span className="text-white/40">
-                            IQ
+                            LABS
                         </span>
 
                     </span>
