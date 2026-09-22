@@ -17,7 +17,7 @@ function InterviewTopBar({
 
         <div>
           <p className="text-sm font-bold text-[#173b63]">
-            InterviewAI
+            SeekLABS
           </p>
 
           <p className="text-[10px] text-slate-400">
