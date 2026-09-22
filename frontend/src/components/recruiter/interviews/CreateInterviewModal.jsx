@@ -572,7 +572,7 @@ function CreateInterviewModal({ onClose, onSuccess }) {
                         event.target.value,
                       )
                     }
-                    placeholder="e.g. InterviewAI"
+                    placeholder="e.g. SeekLABS"
                     className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-500 transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
                   />
 

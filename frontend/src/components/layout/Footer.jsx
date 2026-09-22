@@ -61,9 +61,9 @@ function Footer() {
 
                             <span className="text-base font-semibold tracking-[-0.04em]">
 
-                                Interview
+                                Seek
                                 <span className="text-white/40">
-                                    IQ
+                                    LABS
                                 </span>
 
                             </span>

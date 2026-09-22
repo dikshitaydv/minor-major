@@ -120,7 +120,7 @@ function HeroSection() {
                     className="mt-8 max-w-xl text-center text-sm leading-7 text-white/50"
                 >
 
-                    interviewIQ transforms technical assessments into
+                    SeekLABS transform technical assessments into
                     adaptive conversations that evaluate reasoning,
                     decision-making, and problem-solving ability.
 
@@ -222,7 +222,7 @@ function HeroSection() {
                             {/* Title */}
 
                             <span className="text-[9px] uppercase tracking-[0.18em] text-white/25">
-                                interviewIQ / Live Session
+                                SeekLABS / Live Session
                             </span>
 
 

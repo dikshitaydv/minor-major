@@ -129,7 +129,7 @@ function Login() {
 
               <img
                 src="/images/logo.png"
-                alt="InterviewIQ Logo"
+                alt="Seek Labs Logo"
                 className="h-full w-full object-contain"
               />
 
@@ -142,7 +142,7 @@ function Login() {
               to="/"
               className="text-sm font-medium tracking-[-0.02em] text-white transition-opacity hover:opacity-70"
             >
-              InterviewIQ
+              Seek Labs
             </Link>
 
           </div>
@@ -277,7 +277,7 @@ function Login() {
 
 
             <span className="text-sm font-medium">
-              InterviewIQ
+              Seek Labs
             </span>
 
           </div>
@@ -339,7 +339,7 @@ function Login() {
 
             <p className="mt-2 text-sm leading-6 text-white/40">
 
-              Continue your journey with InterviewIQ.
+              Continue your journey with Seek Labs.
 
             </p>
 
@@ -551,7 +551,7 @@ function Login() {
                     </>
                   ) : (
                     <>
-                      Continue to InterviewIQ
+                      Continue to Seek Labs
 
                       <span className="transition-transform duration-300 group-hover:translate-x-1">
                         →
@@ -588,7 +588,7 @@ function Login() {
         <footer className="relative z-10 flex shrink-0 items-center justify-between border-t border-white/[0.06] px-7 py-5 text-[9px] uppercase tracking-[0.12em] text-white/25 sm:px-10 lg:px-12">
 
           <span>
-            © 2026 InterviewIQ
+            © 2026 Seek Labs
           </span>
 
 
