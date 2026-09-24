@@ -5,7 +5,7 @@ import type { AuthenticatedRequest } from '../../middleware/auth.middleware.js'
 import type { InterviewStatus } from '../../generated/prisma/enums.js'
 
 import {
-  createRecruiterInterview,
+  createRecruiterInterviews,
   deleteRecruiterInterview,
   getRecruiterInterviewById,
   getRecruiterInterviews,
@@ -35,20 +35,27 @@ export const createInterviewController = async (
       scheduledAt,
       duration,
       candidateId,
+      candidateIds,
       questionIds,
     } = req.body
+
+    const normalizedCandidateIds = Array.isArray(candidateIds)
+      ? candidateIds
+      : candidateId
+        ? [candidateId]
+        : []
 
     if (
       !title ||
       !focusAreas ||
       !scheduledAt ||
-      !candidateId ||
+      normalizedCandidateIds.length === 0 ||
       !questionIds
     ) {
       res.status(400).json({
         success: false,
         message:
-          'title, focusAreas, scheduledAt, candidateId and questionIds are required',
+          'title, focusAreas, scheduledAt, candidateIds and questionIds are required',
       })
 
       return
@@ -72,7 +79,7 @@ export const createInterviewController = async (
       return
     }
 
-    const interview = await createRecruiterInterview(
+    const interviews = await createRecruiterInterviews(
       recruiterId,
       {
         title,
@@ -81,15 +88,18 @@ export const createInterviewController = async (
         focusAreas,
         scheduledAt: new Date(scheduledAt),
         duration,
-        candidateId,
+        candidateIds: normalizedCandidateIds,
         questionIds,
       },
     )
 
     res.status(201).json({
       success: true,
-      message: 'Interview created successfully',
-      data: interview,
+      message:
+        normalizedCandidateIds.length === 1
+          ? 'Interview created successfully'
+          : `${normalizedCandidateIds.length} interviews created successfully`,
+      data: interviews,
     })
   } catch (error) {
     console.error('Create interview error:', error)

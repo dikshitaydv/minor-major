@@ -63,7 +63,7 @@ function HeroSection() {
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
 
                     <span className="text-[10px] uppercase tracking-[0.25em] text-white/40">
-                        Adaptive Technical Interviews
+                        SeekLABS - Adaptive Technical Interviews
                     </span>
 
                 </motion.div>
@@ -94,7 +94,7 @@ function HeroSection() {
                     <br />
 
                     <span className="text-white/35">
-                        how people think.
+                        think. seek. solve.
                     </span>
 
                 </motion.h1>

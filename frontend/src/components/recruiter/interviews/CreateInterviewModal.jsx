@@ -13,7 +13,7 @@ function CreateInterviewModal({ onClose, onSuccess }) {
   const [title, setTitle] = useState('')
   const [type, setType] = useState('Technical Interview')
   const [company, setCompany] = useState('')
-  const [candidateId, setCandidateId] = useState('')
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState([])
   const [scheduledAt, setScheduledAt] = useState('')
   const [focusAreas, setFocusAreas] = useState([])
 
@@ -359,9 +359,9 @@ function CreateInterviewModal({ onClose, onSuccess }) {
     }
 
 
-    if (!candidateId) {
+    if (selectedCandidateIds.length === 0) {
       setError(
-        'Please select a candidate.',
+        'Please select at least one candidate.',
       )
       return
     }
@@ -394,7 +394,7 @@ function CreateInterviewModal({ onClose, onSuccess }) {
         company:
           company.trim() || undefined,
 
-        candidateId,
+        candidateIds: selectedCandidateIds,
 
         focusAreas,
 
@@ -579,60 +579,129 @@ function CreateInterviewModal({ onClose, onSuccess }) {
                 </Field>
 
 
-                {/* CANDIDATE DROPDOWN */}
+                {/* CANDIDATE SELECTION */}
 
                 <Field
-                  label="Candidate"
+                  label="Candidates"
                   required
                 >
 
-                  <select
-                    value={candidateId}
-                    onChange={(event) =>
-                      setCandidateId(
-                        event.target.value,
-                      )
-                    }
-                    disabled={loadingCandidates}
-                    className="w-full border border-zinc-700 bg-[#181818] px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
+                  <div className="border border-zinc-700 bg-[#181818]">
 
-                    <option value="">
-                      {loadingCandidates
-                        ? 'Loading candidates...'
-                        : 'Select a candidate'}
-                    </option>
+                    <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
 
+                      <label className="flex cursor-pointer items-center gap-3 text-xs text-zinc-300">
+                        <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={
+                              candidates.length > 0 &&
+                              selectedCandidateIds.length === candidates.length
+                            }
+                            onChange={(event) => {
+                              if (event.target.checked) {
+                                setSelectedCandidateIds(
+                                  candidates.map((candidate) => candidate.id),
+                                )
+                              } else {
+                                setSelectedCandidateIds([])
+                              }
+                            }}
+                            disabled={
+                              loadingCandidates ||
+                              candidates.length === 0
+                            }
+                            className="peer absolute inset-0 h-4 w-4 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                          />
+                          <span className="pointer-events-none flex h-4 w-4 items-center justify-center rounded-sm border border-zinc-600 bg-[#181818] transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-500 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500/40">
+                            {selectedCandidateIds.length === candidates.length && candidates.length > 0 && (
+                              <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-white" aria-hidden="true">
+                                <path d="M3.5 8.25 6.5 11l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </span>
+                        </span>
+                        <span>
+                          {selectedCandidateIds.length === candidates.length && candidates.length > 0
+                            ? 'Deselect All'
+                            : 'Select All'}
+                        </span>
+                      </label>
 
-                    {candidates.map(
-                      (candidate) => {
+                      <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+                        {selectedCandidateIds.length} selected
+                      </span>
 
-                        const name =
-                          candidate.name ||
-                          `${candidate.firstName || ''} ${
-                            candidate.lastName || ''
-                          }`.trim()
+                    </div>
 
-                        return (
-                          <option
-                            key={candidate.id}
-                            value={candidate.id}
-                          >
-                            {name} — {candidate.email}
-                          </option>
-                        )
-                      },
-                    )}
+                    <div className="max-h-48 overflow-y-auto">
 
-                  </select>
+                      {loadingCandidates ? (
+                        <p className="px-4 py-4 text-xs text-zinc-500">
+                          Loading candidates...
+                        </p>
+                      ) : candidates.length === 0 ? (
+                        <p className="px-4 py-4 text-xs text-zinc-500">
+                          No candidates available.
+                        </p>
+                      ) : (
+                        candidates.map((candidate) => {
+                          const name =
+                            candidate.name ||
+                            `${candidate.firstName || ''} ${candidate.lastName || ''}`.trim()
 
+                          const selected = selectedCandidateIds.includes(
+                            candidate.id,
+                          )
+
+                          return (
+                            <label
+                              key={candidate.id}
+                              className="flex cursor-pointer items-center gap-3 border-b border-zinc-800/70 px-4 py-3 last:border-b-0 hover:bg-zinc-800/40"
+                            >
+                              <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => {
+                                    setSelectedCandidateIds((previous) =>
+                                      previous.includes(candidate.id)
+                                        ? previous.filter((id) => id !== candidate.id)
+                                        : [...previous, candidate.id],
+                                    )
+                                  }}
+                                  className="peer absolute inset-0 h-4 w-4 cursor-pointer opacity-0"
+                                />
+                                <span className="pointer-events-none flex h-4 w-4 items-center justify-center rounded-sm border border-zinc-600 bg-[#181818] transition-colors peer-checked:border-blue-500 peer-checked:bg-blue-500 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-500/40">
+                                  {selected && (
+                                    <svg viewBox="0 0 16 16" fill="none" className="h-3 w-3 text-white" aria-hidden="true">
+                                      <path d="M3.5 8.25 6.5 11l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </span>
+                              </span>
+
+                              <div className="min-w-0">
+                                <p className="truncate text-sm text-white">
+                                  {name || 'Unnamed Candidate'}
+                                </p>
+                                <p className="truncate text-[10px] text-zinc-500">
+                                  {candidate.email}
+                                </p>
+                              </div>
+                            </label>
+                          )
+                        })
+                      )}
+
+                    </div>
+
+                  </div>
 
                   {candidateError && (
-
                     <p className="mt-2 text-[10px] text-red-400">
                       {candidateError}
                     </p>
-
                   )}
 
                 </Field>
