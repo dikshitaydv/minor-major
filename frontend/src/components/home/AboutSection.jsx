@@ -92,7 +92,7 @@ function AboutSection() {
                         whether a candidate reaches the correct answer.
 
                         <span className="text-white">
-                            {" "}Seeks Labs focuses on the reasoning,
+                            {" "}SeekLABS focuse on the reasoning,
                             decisions, and understanding behind it.
                         </span>
 

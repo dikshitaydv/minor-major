@@ -162,11 +162,10 @@ function CandidateInterview() {
   }, [sessionId, sessionEnded])
 
   // ------------------------------------------------------------
-// INTERACTION PROTECTION
+  // INTERACTION PROTECTION
   // ------------------------------------------------------------
-  // Prevent copying, cutting, pasting, and text selection during
-  // the interview. When an attempt is detected, briefly blur and
-  // darken the interview and show a warning.
+  // Prevent pasting during the interview.
+  // Copying, cutting, text selection, and keyboard shortcuts remain allowed.
   //
   // This is browser-level protection only; it cannot prevent
   // every possible external capture or OS-level action.
@@ -187,60 +186,25 @@ function CandidateInterview() {
       }, 3000)
     }
 
-    const handleCopy = (event) => {
-      event.preventDefault()
-      showInteractionWarning()
-    }
-
-    const handleCut = (event) => {
-      event.preventDefault()
-      showInteractionWarning()
-    }
-
     const handlePaste = (event) => {
       event.preventDefault()
       showInteractionWarning()
     }
 
-    const handleSelectStart = (event) => {
-      event.preventDefault()
-      showInteractionWarning()
-    }
-
-    const handleKeyDown = (event) => {
-      const key = String(event.key || '').toLowerCase()
-      const modifier = event.ctrlKey || event.metaKey
-
-      const blockedShortcut =
-        modifier &&
-        (key === 'c' ||
-          key === 'x' ||
-          key === 'v' ||
-          key === 'a')
-
-      if (!blockedShortcut) return
-
-      event.preventDefault()
-      showInteractionWarning()
-    }
-
-    document.addEventListener('copy', handleCopy)
-    document.addEventListener('cut', handleCut)
     document.addEventListener('paste', handlePaste)
-    document.addEventListener('selectstart', handleSelectStart)
-    document.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      document.removeEventListener('copy', handleCopy)
-      document.removeEventListener('cut', handleCut)
       document.removeEventListener('paste', handlePaste)
-      document.removeEventListener('selectstart', handleSelectStart)
-      document.removeEventListener('keydown', handleKeyDown)
 
       if (warningTimeoutId) {
         window.clearTimeout(warningTimeoutId)
       }
     }
+  }, [])
+
+  const closeInteractionWarning = useCallback(() => {
+    setInteractionWarning(false)
+    setScreenProtected(false)
   }, [])
 
   // ------------------------------------------------------------
@@ -902,8 +866,16 @@ function CandidateInterview() {
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-white/80">
-                  Copying, pasting, and text selection are not allowed during the interview.
+                  Pasting is not allowed during the interview.
                 </p>
+
+                <button
+                  type="button"
+                  onClick={closeInteractionWarning}
+                  className="mt-5 rounded-lg border border-white/20 bg-white/10 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+                >
+                  Close
+                </button>
               </div>
             )}
           </div>

@@ -36,6 +36,42 @@ export const createRecruiterInterview = async (
 
 
 // ─────────────────────────────────────────────
+// CREATE INTERVIEWS FOR MULTIPLE CANDIDATES
+// ─────────────────────────────────────────────
+
+export const createRecruiterInterviews = async (
+  recruiterId: string,
+
+  data: {
+    title: string
+    type?: string
+    company?: string
+    focusAreas: string[]
+    scheduledAt: Date
+    duration?: number
+    candidateIds: string[]
+    questionIds: string[]
+  },
+) => {
+  return Promise.all(
+    data.candidateIds.map((candidateId) =>
+      createInterview({
+        title: data.title,
+        focusAreas: data.focusAreas,
+        scheduledAt: data.scheduledAt,
+        candidateId,
+        recruiterId,
+        questionIds: data.questionIds,
+        ...(data.type !== undefined ? { type: data.type } : {}),
+        ...(data.company !== undefined ? { company: data.company } : {}),
+        ...(data.duration !== undefined ? { duration: data.duration } : {}),
+      }),
+    ),
+  )
+}
+
+
+// ─────────────────────────────────────────────
 // GET ALL RECRUITER INTERVIEWS
 // ─────────────────────────────────────────────
 

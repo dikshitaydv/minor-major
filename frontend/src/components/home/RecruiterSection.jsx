@@ -117,7 +117,7 @@ function RecruiterSection() {
                         >
                             <h2 className="text-5xl font-medium leading-[0.92] tracking-[-0.06em] sm:text-6xl xl:text-[78px]">
 
-                                See
+                                Seek
 
                                 <br />
 
@@ -263,7 +263,7 @@ function RecruiterSection() {
                         <RecruiterFeature
                             number="01"
                             title="Understand reasoning"
-                            description="Look beyond final answers and understand the thinking behind every technical decision."
+                            description="SEEK beyond final answers and understand the thinking behind every technical decision."
                         />
 
 
